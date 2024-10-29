@@ -1,20 +1,21 @@
 # HOLMS: A HOL Light Library for Modal Systems
 
-(c) Copyright, Antonella Bilotta, Marco Maggesi, Cosimo Perini Brogi, Leonardo Quartini 2024. 
+(c) Copyright, Antonella Bilotta, Marco Maggesi, Cosimo Perini Brogi, Leonardo Quartini 2024.
 
-This [website](https://holms-lib.github.io/) gives a brief overview of our [HOLMS library](https://github.com/HOLMS-lib/HOLMS) for the [HOL Light](https://hol-light.github.io/) theorem prover.
+See the [website](https://holms-lib.github.io/) for a brief overview of our [HOLMS library](https://github.com/HOLMS-lib/HOLMS) for the [HOL Light](https://hol-light.github.io/) theorem prover.
 
-This repository introduces HOLMS (HOL-Light Library for Modal Systems), a new framework within the HOL Light proof assistant, designed for automated theorem proving and countermodel construction in modal logics. Building on our prior work focused on Gödel-Löb logic (GL), we generalise our approach to cover a broader range of normal modal systems, starting here with the minimal system K. HOLMS provides a flexible mechanism for automating proof search and countermodel generation by leveraging labelled sequent calculi, interactive theorem proving, and formal completeness results.
+This repository introduces HOLMS (HOL-Light Library for Modal Systems), a new framework within the HOL Light proof assistant, designed for automated theorem proving and countermodel construction in modal logics.
+Building on our prior work focused on Gödel-Löb logic (GL), we generalise our approach to cover a broader range of normal modal systems, starting here with the minimal system K.
+HOLMS provides a flexible mechanism for automating proof search and countermodel generation by leveraging labelled sequent calculi, interactive theorem proving, and formal completeness results.
 
 The top-level file is `make.ml`.
 
-The main theorems are: 
+The main theorems are:
 1. `GEN_TRUTH_LEMMA` in file `gen_completeness.ml`.
 2. `K_COMPLETENESS_THM` in file `k_completness.ml`
 3. `GL_COMPLETENESS_THM` in file `gl_completness.ml`
 
-
-# USAGE GUIDE: Principal definitions and theorems
+# Usage guide and source code
 
 ## Axiomatic Definition
 ```
@@ -30,13 +31,11 @@ let MODPROVES_RULES,MODPROVES_INDUCT,MODPROVES_CASES =
 ## Deduction Lemma
 ```
 MODPROVES_DEDUCTION_LEMMA
-|- `!S H p q. [S . H |~ p --> q] <=> [S . p INSERT H |~ q]`
+|- !S H p q. [S . H |~ p --> q] <=> [S . p INSERT H |~ q]
 ```
 
 ## Relational semantics
-
 Kripke's Semantics of formulae.
-
 ```
 let holds =
   let pth = prove
@@ -63,22 +62,83 @@ let valid = new_definition
 ```
 
 ## Soundness and consistency of K
+We prove the consistency of K by modus ponens on the converse of `K_FRAME_VALID`.
 ```
+K_FRAME_VALID
+|- !H p.
+     [{} . H |~ p]
+     ==> (!q. q IN H ==> K_FRAME:(W->bool)#(W->W->bool)->bool |= q)
+         ==> K_FRAME:(W->bool)#(W->W->bool)->bool |= p
+
 K_CONSISTENT
-|- `~ [{} . {} |~ False]`
+|- ~ [{} . {} |~ False]
+
+let K_CONSISTENT = prove
+ (`~ [{} . {} |~ False]`,
+  REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] K_FRAME_VALID)) THEN
+  REWRITE_TAC[NOT_IN_EMPTY] THEN
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_K_FRAME; NOT_FORALL_THM] THEN
+  MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. F`] THEN
+  REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 ```
 
 ## Soundness and consistency of GL
+To develop this proof of consistency we use modal correspondence theory for GL, therefore we prove `TRANSNT_EQ_LOB` and we derive as its consequence`GL_ITF_VALID`.
+
 ```
-GL_consistent 
-|- `~ [GL_AX . {} |~  False]`
+let TRANSNT_DEF = new_definition
+  `TRANSNT =
+   {(W:W->bool,R:W->W->bool) |
+    ~(W = {}) /\
+    (!x y:W. R x y ==> x IN W /\ y IN W) /\
+    (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
+    WF(\x y. R y x)}`;;
+
+let ITF_DEF = new_definition
+  `ITF =
+   {(W:W->bool,R:W->W->bool) |
+    ~(W = {}) /\
+    (!x y:W. R x y ==> x IN W /\ y IN W) /\
+    FINITE W /\
+    (!x. x IN W ==> ~R x x) /\
+    (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)}`;;
+
+TRANSNT_EQ_LOB
+|- !W R. (!x y:W. R x y ==> x IN W /\ y IN W)
+         ==> ((!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z
+                       ==> R x z) /\
+              WF (\x y. R y x) <=>
+              (!p. holds_in (W,R) (Box(Box p --> p) --> Box p)))
+
+GL_TRANSNT_VALID
+|- !H p. [GL_AX . H |~ p] /\
+         (!q. q IN H ==> TRANSNT:(W->bool)#(W->W->bool)->bool |= q)
+         ==> TRANSNT:(W->bool)#(W->W->bool)->bool |= p
+
+GL_ITF_VALID
+|- !p. [GL_AX . {} |~ p] ==> ITF:(W->bool)#(W->W->bool)->bool |= p
 ```
 
-## Completeness theorem
+The consistency theorem for GL is proved by modus ponens on the converse of `GL_ITF_VALID`.
+```
+GL_consistent
+|- ~ [GL_AX . {} |~  False]
+
+let GL_consistent = prove
+ (`~ [GL_AX . {} |~  False]`,
+  REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] GL_ITF_VALID)) THEN
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
+              IN_ITF; NOT_FORALL_THM] THEN
+  MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. F`] THEN
+  REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
+```
+
+## Completeness theorems
 
 The proof is organized in three steps.
-We can observe that, by working with HOL, it is possible to identify all those lines of reasoning that are _parametric_ for P (the specific propriety of each frame of a logic) and S (the set of axioms of the logic) 
-and develop each of of the three steps while avoiding code duplication as much as possible. In particular  the step 3 is already fully formalised in HOLMS with the `GEN_TRUTH_LEMMA`.
+We can observe that, by working with HOL, it is possible to identify all those lines of reasoning that are _parametric_ for P (the specific propriety of each frame of a logic) and S (the set of axioms of the logic)
+and develop each of of the three steps while avoiding code duplication as much as possible.
+In particular  the step 3 is already fully formalised in HOLMS with the `GEN_TRUTH_LEMMA`.
 
 ### STEP 1
 Identification of a model <W,R,V> depending on a formula p and, in particular, of a non-empty set of possible worlds given by a subclass of maximal consistent sets of formulas.
@@ -112,20 +172,20 @@ let K_STANDARD_FRAME_DEF = new_definition
   `K_STANDARD_FRAME = GEN_STANDARD_FRAME K_FRAME {}`;;
 
 IN_K_STANDARD_FRAME
-|- `(W,R) IN K_STANDARD_FRAME p <=>
+|- (W,R) IN K_STANDARD_FRAME p <=>
    W = {w | MAXIMAL_CONSISTENT {} p w /\
             (!q. MEM q w ==> q SUBSENTENCE p)} /\
    (W,R) IN K_FRAME /\
    (!q w. Box q SUBFORMULA p /\ w IN W
-          ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))`
+          ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))
 
 let K_STANDARD_MODEL_DEF = new_definition
    `K_STANDARD_MODEL = GEN_STANDARD_MODEL K_FRAME {}`;;
 
 K_STANDARD_MODEL_CAR
-|- `K_STANDARD_MODEL p (W,R) V <=>
+|- K_STANDARD_MODEL p (W,R) V <=>
    (W,R) IN K_STANDARD_FRAME p /\
-   (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`
+   (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))
 ```
 
 Definitions in `gl_completness.ml` (P=ITF, S=GL_AX)
@@ -143,21 +203,21 @@ let GL_STANDARD_FRAME_DEF = new_definition
   `GL_STANDARD_FRAME p = GEN_STANDARD_FRAME ITF GL_AX p`;;
 
 IN_GL_STANDARD_FRAME
-|- `!p W R. (W,R) IN GL_STANDARD_FRAME p <=>
+|- !p W R. (W,R) IN GL_STANDARD_FRAME p <=>
            W = {w | MAXIMAL_CONSISTENT GL_AX p w /\
                     (!q. MEM q w ==> q SUBSENTENCE p)} /\
            (W,R) IN ITF /\
            (!q w. Box q SUBFORMULA p /\ w IN W
-                  ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))`
+                  ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))
 
 let GL_STANDARD_MODEL_DEF = new_definition
-   `GL_STANDARD_MODEL = GEN_STANDARD_MODEL ITF GL_AX`;;
+  `GL_STANDARD_MODEL = GEN_STANDARD_MODEL ITF GL_AX`;;
 
 GL_STANDARD_MODEL_CAR
-|- `!W R p V.
+|- !W R p V.
      GL_STANDARD_MODEL p (W,R) V <=>
      (W,R) IN GL_STANDARD_FRAME p /\
-     (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p)) `
+     (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))
 ```
 
 ### STEP 2
@@ -172,28 +232,27 @@ let GEN_STANDARD_REL = new_definition
    (!B. MEM (Box B) w ==> MEM B x)`;;
 ```
 
-Definitions in `k_completness.ml` (S={}) and demonstration of the Accessibility Lemma for K.
+Definitions in `k_completness.ml` (S={}) and proof of the Accessibility Lemma for K.
 ```
 let K_STANDARD_REL_DEF = new_definition
   `K_STANDARD_REL p = GEN_STANDARD_REL {} p`;;
 
 K_STANDARD_REL_CAR
-|-`K_STANDARD_REL p w x <=>
+|- K_STANDARD_REL p w x <=>
    MAXIMAL_CONSISTENT {} p w /\ (!q. MEM q w ==> q SUBSENTENCE p) /\
    MAXIMAL_CONSISTENT {} p x /\ (!q. MEM q x ==> q SUBSENTENCE p) /\
-   (!B. MEM (Box B) w ==> MEM B x)`
+   (!B. MEM (Box B) w ==> MEM B x)
 
 K_ACCESSIBILITY_LEMMA_1
- |- `!p w q.
-    ~ [{} . {} |~ p] /\
-    MAXIMAL_CONSISTENT {} p w /\
-    (!q. MEM q w ==> q SUBSENTENCE p) /\
-    Box q SUBFORMULA p /\
-    (!x. K_STANDARD_REL p w x ==> MEM q x)
-    ==> MEM (Box q) w`
+|- !p w q. ~ [{} . {} |~ p] /\
+           MAXIMAL_CONSISTENT {} p w /\
+           (!q. MEM q w ==> q SUBSENTENCE p) /\
+           Box q SUBFORMULA p /\
+           (!x. K_STANDARD_REL p w x ==> MEM q x)
+           ==> MEM (Box q) w
 ```
 
-Definitions in `gl_completness.ml` (S=GL_AX) and demonstration of the Accessibility Lemma for GL.
+Definitions in `gl_completness.ml` (S=GL_AX) and proofs of the Accessibility Lemma for GL.
 ```
 let GL_STANDARD_REL_DEF = new_definition
   `GL_STANDARD_REL p w x <=>
@@ -202,7 +261,7 @@ let GL_STANDARD_REL_DEF = new_definition
    (?E. MEM (Box E) x /\ MEM (Not (Box E)) w)`;;
 
 GL_ACCESSIBILITY_LEMMA
-|- `!p M w q.
+|- !p M w q.
      ~ [GL_AX . {} |~ p] /\
      MAXIMAL_CONSISTENT GL_AX p M /\
      (!q. MEM q M ==> q SUBSENTENCE p) /\
@@ -211,33 +270,34 @@ GL_ACCESSIBILITY_LEMMA
      MEM (Not p) M /\
      Box q SUBFORMULA p /\
      (!x. GL_STANDARD_REL p w x ==> MEM q x)
-     ==> MEM (Box q) w`
+     ==> MEM (Box q) w
 ```
 
 ### STEP 3
-The reduction of the notion of forcing `holds (W,R) V q w` to that of a set-theoretic (list-theoretic) membership MEM q w 
+The reduction of the notion of forcing `holds (W,R) V q w` to that of a set-theoretic (list-theoretic) membership MEM q w
 for every subformula q of p, through a specific atomic evaluation function on (W,R).
 
 Parametric truth lemma in `gen_completness.ml` (parameters P, S)
 ```
 GEN_TRUTH_LEMMA
-|- `!P S W R p V q.
+|- !P S W R p V q.
      ~ [S . {} |~ p] /\
      GEN_STANDARD_MODEL P S p (W,R) V /\
      q SUBFORMULA p
-     ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)`
+     ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)
 ```
+
 Truth lemma specified for K in `k_completness.ml` (P=K_FRAME, S={})
 ```
 let K_TRUTH_LEMMA = prove
-(`!W R p V q.
-    ~ [{} . {} |~ p] /\
-    K_STANDARD_MODEL p (W,R) V /\
-    q SUBFORMULA p
-    ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)`,
+ (`!W R p V q.
+     ~ [{} . {} |~ p] /\
+     K_STANDARD_MODEL p (W,R) V /\
+     q SUBFORMULA p
+     ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)`,
   REWRITE_TAC[K_STANDARD_MODEL_DEF] THEN MESON_TAC[GEN_TRUTH_LEMMA]);;
-
 ```
+
 Truth lemma specified for GL in `gl_completness.ml` (P=ITF, S=GL_AX)
 ```
 let GL_truth_lemma = prove
@@ -247,25 +307,36 @@ let GL_truth_lemma = prove
      q SUBFORMULA p
      ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)`,
   REWRITE_TAC[GL_STANDARD_MODEL_DEF] THEN MESON_TAC[GEN_TRUTH_LEMMA]);;
-
 ```
 
-### The Theorem
+### The Theorems
 
 Completeness of K in `k_completness.ml`.
-This demonstration uses the `K_TRUTH_LEMMA` that specifies the `GEN_TRUTH_LEMMA`, therefore the first part of the demonstration of the completness theorem for K is completely parametrized.
+This proof uses the `K_TRUTH_LEMMA` that specifies the `GEN_TRUTH_LEMMA`, therefore the first part of the proof of the completness theorem for K is completely parametrized.
 ```
 K_COMPLETENESS_THM
-|- `!p. K_FRAME:(form list->bool)#(form list->form list->bool)->bool |= p
-       ==> [{} . {} |~ p]`
+|- !p. K_FRAME:(form list->bool)#(form list->form list->bool)->bool |= p
+       ==> [{} . {} |~ p]
 ```
 
-Completeness of GL in `gl_completness.ml`  
-This demonstration uses the `GL_TRUTH_LEMMA` that specifies the `GEN_TRUTH_LEMMA`, therefore the first part of the demonstration of the completness theorem for GL is completely parametrized.
+Completeness of GL in `gl_completness.ml`
+This proof uses the `GL_TRUTH_LEMMA` that specifies the `GEN_TRUTH_LEMMA`, therefore the first part of the proof of the completness theorem for GL is completely parametrized.
 ```
 GL_COMPLETENESS_THM
-|- `!p. ITF:(form list->bool)#(form list->form list->bool)->bool |= p
-       ==> [GL_AX . {} |~ p]`
+|- !p. ITF:(form list->bool)#(form list->form list->bool)->bool |= p
+       ==> [GL_AX . {} |~ p]
+```
+
+###  Modal completeness for models on a generic (infinite) domain.
+These theorems generalize the previous ones for models with infinite worlds.
+```
+K_COMPLETENESS_THM_GEN
+|- !p. INFINITE (:A) /\ K_FRAME:(A->bool)#(A->A->bool)->bool |= p
+       ==> [{} . {} |~ p]
+
+GL_COMPLETENESS_THM_GEN
+|- !p. INFINITE (:A) /\ ITF:(A->bool)#(A->A->bool)->bool |= p
+       ==> [GL_AX . {} |~ p]
 ```
 
 
@@ -274,8 +345,7 @@ GL_COMPLETENESS_THM
 ### In K
 Construction of the countermodels.
 ```
-let K_STDWORLDS_RULES,K_STDWORLDS_INDUCT,K_STDWORLDS_CASES =
-  new_inductive_set
+let K_STDWORLDS_RULES,K_STDWORLDS_INDUCT,K_STDWORLDS_CASES = new_inductive_set
   `!M. MAXIMAL_CONSISTENT {} p M /\
        (!q. MEM q M ==> q SUBSENTENCE p)
        ==> set_of_list M IN K_STDWORLDS p`;;
@@ -288,7 +358,7 @@ let K_STDREL_RULES,K_STDREL_INDUCT,K_STDREL_CASES = new_inductive_definition
 Theorem of existence of the finite countermodel.
 ```
 k_COUNTERMODEL_FINITE_SETS
-|- `!p. ~[{} . {} |~ p] ==> ~holds_in (K_STDWORLDS p, K_STDREL p) p`
+|- !p. ~[{} . {} |~ p] ==> ~holds_in (K_STDWORLDS p, K_STDREL p) p
 ```
 
 ### In GL
@@ -308,7 +378,7 @@ let GL_STDREL_RULES,GL_STDREL_INDUCT,GL_STDREL_CASES = new_inductive_definition
 Theorem of existence of the finite countermodel.
 ```
 GL_COUNTERMODEL_FINITE_SETS
-|- `!p. ~ [GL_AX . {} |~ p] ==> ~holds_in (GL_STDWORLDS p, GL_STDREL p) p`
+|- !p. ~ [GL_AX . {} |~ p] ==> ~holds_in (GL_STDWORLDS p, GL_STDREL p) p
 ```
 
 ## Automated theorem proving and countermodel construction
@@ -385,7 +455,3 @@ let GL_arithmetical_fixpoint = time GL_RULE
   `!p q. [GL_AX . {} |~ Dotbox (p <-> Not (Box (q --> p))) <->
                         Dotbox (p <-> Diam q)]`;;
 ```
-
-
-
-
