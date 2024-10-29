@@ -18,6 +18,34 @@ let GL_axiom_lob = prove
   MESON_TAC[MODPROVES_RULES; LOB_IN_GL_AX]);;
 
 (* ------------------------------------------------------------------------- *)
+(* Transitive Noetherian frames.                                             *)
+(* ------------------------------------------------------------------------- *)
+
+let MODAL_TRANS = prove
+ (`!W R.
+     (!w w' w'':W. w IN W /\ w' IN W /\ w'' IN W /\
+                   R w w' /\ R w' w''
+                   ==> R w w'') <=>
+     (!p. holds_in (W,R) (Box p --> Box Box p))`,
+  MODAL_SCHEMA_TAC THEN MESON_TAC[]);;
+
+let TRANSNT_DEF = new_definition
+  `TRANSNT =
+   {(W:W->bool,R:W->W->bool) |
+    ~(W = {}) /\
+    (!x y:W. R x y ==> x IN W /\ y IN W) /\
+    (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
+    WF(\x y. R y x)}`;;
+
+let IN_TRANSNT = prove
+ (`(W:W->bool,R:W->W->bool) IN TRANSNT <=>
+   ~(W = {}) /\
+   (!x y:W. R x y ==> x IN W /\ y IN W) /\
+   (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
+   WF(\x y. R y x)`,
+  REWRITE_TAC[TRANSNT_DEF; IN_ELIM_PAIR_THM]);;
+
+(* ------------------------------------------------------------------------- *)
 (* Proof of soundness w.r.t. transitive noetherian frames.                   *)
 (* ------------------------------------------------------------------------- *)
 
@@ -62,7 +90,7 @@ let KAXIOM_TRANSNT_VALID = prove
   SPEC_TAC (`f:(W->bool)#(W->W->bool)`,`f:(W->bool)#(W->W->bool)`) THEN
   MATCH_MP_TAC (MESON[PAIR_SURJECTIVE]
     `(!W:W->bool R:W->W->bool. P (W,R)) ==> (!f. P f)`) THEN
-  REWRITE_TAC[TRANSNT] THEN REPEAT GEN_TAC THEN REPEAT CONJ_TAC THEN
+  REWRITE_TAC[IN_TRANSNT] THEN REPEAT GEN_TAC THEN REPEAT CONJ_TAC THEN
   MODAL_TAC);;
 
 let GL_AX_TRANSNT_VALID = prove
@@ -72,7 +100,7 @@ let GL_AX_TRANSNT_VALID = prove
   SPEC_TAC (`f:(W->bool)#(W->W->bool)`,`f:(W->bool)#(W->W->bool)`) THEN
   MATCH_MP_TAC (MESON[PAIR_SURJECTIVE]
     `(!W:W->bool R:W->W->bool. P (W,R)) ==> (!f. P f)`) THEN
-  REWRITE_TAC[TRANSNT] THEN REPEAT GEN_TAC THEN
+  REWRITE_TAC[IN_TRANSNT] THEN REPEAT GEN_TAC THEN
   STRIP_TAC THEN MATCH_MP_TAC TRANSNT_IMP_LOB THEN ASM_REWRITE_TAC[]);;
 
 let GL_TRANSNT_VALID = prove
@@ -90,18 +118,29 @@ let GL_TRANSNT_VALID = prove
 (* Proof of soundness w.r.t. ITF                                             *)
 (* ------------------------------------------------------------------------- *)
 
-let ITF = new_definition
-  `ITF (W:W->bool,R:W->W->bool) <=>
+let ITF_DEF = new_definition
+  `ITF =
+   {(W:W->bool,R:W->W->bool) |
+    ~(W = {}) /\
+    (!x y:W. R x y ==> x IN W /\ y IN W) /\
+    FINITE W /\
+    (!x. x IN W ==> ~R x x) /\
+    (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)}`;;
+
+let IN_ITF = prove
+ (`(W:W->bool,R:W->W->bool) IN ITF <=>
    ~(W = {}) /\
    (!x y:W. R x y ==> x IN W /\ y IN W) /\
    FINITE W /\
    (!x. x IN W ==> ~R x x) /\
-   (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)`;;
+   (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)`,
+  REWRITE_TAC[ITF_DEF; IN_ELIM_PAIR_THM]);;
 
-let ITF_NT = prove
- (`!W R:W->W->bool. ITF(W,R) ==> TRANSNT(W,R)`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[ITF] THEN STRIP_TAC THEN
-  ASM_REWRITE_TAC[TRANSNT] THEN MATCH_MP_TAC WF_FINITE THEN
+let ITF_SUBSET_NT = prove
+ (`ITF:(W->bool)#(W->W->bool)->bool SUBSET TRANSNT`,
+  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_ITF] THEN
+  INTRO_TAC "![W] [R]" THEN STRIP_TAC THEN
+  ASM_REWRITE_TAC[IN_TRANSNT] THEN MATCH_MP_TAC WF_FINITE THEN
   CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
   CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
   GEN_TAC THEN MATCH_MP_TAC FINITE_SUBSET THEN EXISTS_TAC `W:W->bool` THEN
@@ -112,13 +151,13 @@ let GL_ITF_VALID = prove
   GEN_TAC THEN STRIP_TAC THEN
   SUBGOAL_THEN `TRANSNT:(W->bool)#(W->W->bool)->bool |= p` MP_TAC THENL
   [MATCH_MP_TAC GL_TRANSNT_VALID THEN ASM_MESON_TAC[NOT_IN_EMPTY];
-   REWRITE_TAC[valid; FORALL_PAIR_THM] THEN MESON_TAC[ITF_NT]]);;
+   REWRITE_TAC[valid; FORALL_PAIR_THM] THEN SET_TAC[ITF_SUBSET_NT]]);;
 
 let GL_consistent = prove
  (`~ [GL_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] GL_ITF_VALID)) THEN
   REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
-              ITF; NOT_FORALL_THM] THEN
+              IN_ITF; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. F`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 
@@ -129,49 +168,53 @@ let GL_consistent = prove
 let GL_schema_4 = prove
  (`!p. [GL_AX . {} |~ (Box p --> Box (Box p))]`,
   MESON_TAC[GL_axiom_lob; MLK_imp_box; MLK_and_pair_th; MLK_and_intro;
-    MLK_shunt; MLK_imp_trans;MLK_and_right_th;MLK_and_left_th;MLK_box_and_th]);;
+            MLK_shunt; MLK_imp_trans; MLK_and_right_th; MLK_and_left_th;
+            MLK_box_and_th]);;
 
 let GL_dot_box = prove
  (`!p. [GL_AX . {} |~ (Box p --> Box p && Box (Box p))]`,
   MESON_TAC[MLK_imp_refl_th; GL_schema_4; MLK_and_intro]);;
 
 (* ------------------------------------------------------------------------- *)
-(* GL standard frames and models.                                            *)
+(* Standard frames.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-(* ------------------------------------------------------------------------- *)
-(* Standard Frame.                                                           *)
-(* ------------------------------------------------------------------------- *)
+let GL_STANDARD_FRAME_DEF = new_definition
+  `GL_STANDARD_FRAME p = GEN_STANDARD_FRAME ITF GL_AX p`;;
 
-let GL_STANDARD_FRAME = new_definition
-  `GL_STANDARD_FRAME p (W,R) <=>
-   GEN_STANDARD_FRAME ITF GL_AX p (W,R)`;;
-
-let GL_STANDARD_FRAME_CAR = prove
- (`!p W R. GL_STANDARD_FRAME p (W,R) <=>
+let IN_GL_STANDARD_FRAME = prove
+ (`!p W R. (W,R) IN GL_STANDARD_FRAME p <=>
            W = {w | MAXIMAL_CONSISTENT GL_AX p w /\
                     (!q. MEM q w ==> q SUBSENTENCE p)} /\
-           ITF (W,R) /\
+           (W,R) IN ITF /\
            (!q w. Box q SUBFORMULA p /\ w IN W
                   ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC[GL_STANDARD_FRAME; GEN_STANDARD_FRAME; ITF; FRAME] THEN
+  REWRITE_TAC[GL_STANDARD_FRAME_DEF; IN_GEN_STANDARD_FRAME;
+              IN_ITF; IN_FRAME] THEN
   EQ_TAC THEN STRIP_TAC THEN ASM_REWRITE_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
-(* Standard model.                                                           *)
+(* Standard models.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
-let GL_STANDARD_MODEL = new_definition
-   `GL_STANDARD_MODEL p (W,R) V <=>
-    GEN_STANDARD_MODEL ITF GL_AX p (W,R) V`;;
+let GL_STANDARD_MODEL_DEF = new_definition
+   `GL_STANDARD_MODEL = GEN_STANDARD_MODEL ITF GL_AX`;;
+
+let ITF_SUBSET_FRAME = prove
+ (`ITF:(W->bool)#(W->W->bool)->bool SUBSET FRAME`,
+  REWRITE_TAC[SUBSET; FORALL_PAIR_THM] THEN INTRO_TAC "![W] [R]" THEN
+  REWRITE_TAC[IN_ITF] THEN STRIP_TAC THEN ASM_REWRITE_TAC[IN_FRAME]);;
 
 let GL_STANDARD_MODEL_CAR = prove
- (`!W R p V. GL_STANDARD_MODEL p (W,R) V <=>
-   GL_STANDARD_FRAME p (W,R) /\
-   (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p)) `,
-  REWRITE_TAC[GL_STANDARD_MODEL; GEN_STANDARD_MODEL;
-              GEN_STANDARD_FRAME; GL_STANDARD_FRAME]);;
+ (`!W R p V.
+     GL_STANDARD_MODEL p (W,R) V <=>
+     (W,R) IN GL_STANDARD_FRAME p /\
+     (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p)) `,
+  REPEAT GEN_TAC THEN REWRITE_TAC[GL_STANDARD_MODEL_DEF; GEN_STANDARD_MODEL_DEF] THEN
+  REWRITE_TAC[IN_GL_STANDARD_FRAME; IN_GEN_STANDARD_FRAME] THEN
+  EQ_TAC THEN STRIP_TAC THEN ASM_REWRITE_TAC[] THEN
+  MATCH_MP_TAC (REWRITE_RULE[SUBSET] ITF_SUBSET_FRAME) THEN ASM_MESON_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Truth Lemma.                                                              *)
@@ -183,13 +226,13 @@ let GL_truth_lemma = prove
      GL_STANDARD_MODEL p (W,R) V /\
      q SUBFORMULA p
      ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)`,
-  REWRITE_TAC[GL_STANDARD_MODEL] THEN MESON_TAC[GEN_TRUTH_LEMMA]);;
+  REWRITE_TAC[GL_STANDARD_MODEL_DEF] THEN MESON_TAC[GEN_TRUTH_LEMMA]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Accessibility lemma.                                                      *)
 (* ------------------------------------------------------------------------- *)
 
-let GL_STANDARD_REL = new_definition
+let GL_STANDARD_REL_DEF = new_definition
   `GL_STANDARD_REL p w x <=>
    GEN_STANDARD_REL GL_AX p w x /\
    (!B. MEM (Box B) w ==> MEM (Box B) x) /\
@@ -202,15 +245,15 @@ let GL_STANDARD_REL_CAR = prove
      MAXIMAL_CONSISTENT GL_AX p x /\ (!q. MEM q x ==> q SUBSENTENCE p) /\
      (!B. MEM (Box B) w ==> MEM (Box B) x /\ MEM B x) /\
      (?E. MEM (Box E) x /\ MEM (Not (Box E)) w)`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[GL_STANDARD_REL; GEN_STANDARD_REL] THEN
+  REPEAT GEN_TAC THEN REWRITE_TAC[GL_STANDARD_REL_DEF; GEN_STANDARD_REL] THEN
   EQ_TAC THEN REPEAT (ASM_MESON_TAC[]) THEN REPEAT (ASM_MESON_TAC[]));;
 
 let ITF_MAXIMAL_CONSISTENT = prove
- (`!S p. ~ [GL_AX . {} |~ p ]
-         ==> ITF ({M | MAXIMAL_CONSISTENT GL_AX p M /\
+ (`!S p. ~ [GL_AX . {} |~ p]
+         ==> ({M | MAXIMAL_CONSISTENT GL_AX p M /\
                        (!q. MEM q M ==> q SUBSENTENCE p)},
-                  GL_STANDARD_REL p)`,
-  INTRO_TAC "!S p; p" THEN REWRITE_TAC[ITF] THEN
+                   GL_STANDARD_REL p) IN ITF `,
+  INTRO_TAC "!S p; p" THEN REWRITE_TAC[IN_ITF] THEN
   (* Nonempty *)
   CONJ_TAC THENL
   [REWRITE_TAC[GSYM MEMBER_NOT_EMPTY; IN_ELIM_THM] THEN
@@ -218,7 +261,8 @@ let ITF_MAXIMAL_CONSISTENT = prove
    ALL_TAC] THEN
   (* Well-defined *)
   CONJ_TAC THENL
-  [REWRITE_TAC[GL_STANDARD_REL_CAR; IN_ELIM_THM] THEN MESON_TAC[]; ALL_TAC] THEN
+  [REWRITE_TAC[GL_STANDARD_REL_CAR; IN_ELIM_THM] THEN MESON_TAC[];
+   ALL_TAC] THEN
   (* Finite *)
   CONJ_TAC THENL
   [MATCH_MP_TAC FINITE_SUBSET THEN
@@ -259,7 +303,7 @@ let ITF_MAXIMAL_CONSISTENT = prove
   INTRO_TAC "!x y z; (x1 x2) (y1 y2) (z1 z2) +" THEN
   ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
-let ACCESSIBILITY_LEMMA =
+let GL_ACCESSIBILITY_LEMMA =
   let MEM_FLATMAP_LEMMA = prove
    (`!p l. MEM p (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) l) <=>
            (?q. p = Box q /\ MEM p l)`,
@@ -432,12 +476,12 @@ let GL_COUNTERMODEL = prove
      `p:form`] GL_truth_lemma) THEN
   ANTS_TAC THENL
   [ASM_REWRITE_TAC[SUBFORMULA_REFL; GL_STANDARD_MODEL_CAR;
-  GL_STANDARD_FRAME_CAR; GEN_STANDARD_MODEL] THEN
+                   IN_GL_STANDARD_FRAME; GEN_STANDARD_MODEL_DEF] THEN
    ASM_SIMP_TAC[ITF_MAXIMAL_CONSISTENT] THEN REWRITE_TAC[IN_ELIM_THM] THEN
    CONJ_TAC THENL [ALL_TAC; MESON_TAC[]] THEN
    INTRO_TAC "!q w; boxq w subf" THEN EQ_TAC THENL
    [ASM_REWRITE_TAC[GL_STANDARD_REL_CAR] THEN SIMP_TAC[]; ALL_TAC] THEN
-    INTRO_TAC "hp" THEN MATCH_MP_TAC ACCESSIBILITY_LEMMA THEN
+    INTRO_TAC "hp" THEN MATCH_MP_TAC GL_ACCESSIBILITY_LEMMA THEN
     MAP_EVERY EXISTS_TAC [`p:form`; `M:form list`] THEN
     ASM_REWRITE_TAC[];
    ALL_TAC] THEN
@@ -462,7 +506,7 @@ let GL_COUNTERMODEL_ALT = prove
   EXISTS_TAC `M:form list` THEN ASM_REWRITE_TAC[] THEN
   MATCH_MP_TAC GL_COUNTERMODEL THEN ASM_REWRITE_TAC[]);;
 
-let COMPLETENESS_THEOREM = prove
+let GL_COMPLETENESS_THM = prove
  (`!p. ITF:(form list->bool)#(form list->form list->bool)->bool |= p
        ==> [GL_AX . {} |~ p]`,
   GEN_TAC THEN GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM] THEN
@@ -478,14 +522,14 @@ let COMPLETENESS_THEOREM = prove
 (* Modal completeness for GL for models on a generic (infinite) domain.      *)
 (* ------------------------------------------------------------------------- *)
 
-let COMPLETENESS_THEOREM_GEN = prove
+let GL_COMPLETENESS_THM_GEN = prove
  (`!p. INFINITE (:A) /\ ITF:(A->bool)#(A->A->bool)->bool |= p
        ==> [GL_AX . {} |~ p]`,
   SUBGOAL_THEN
     `INFINITE (:A)
      ==> !p. ITF:(A->bool)#(A->A->bool)->bool |= p
              ==> ITF:(form list->bool)#(form list->form list->bool)->bool |= p`
-    (fun th -> MESON_TAC[th; COMPLETENESS_THEOREM]) THEN
+    (fun th -> MESON_TAC[th; GL_COMPLETENESS_THM]) THEN
   INTRO_TAC "A" THEN MATCH_MP_TAC BISIMILAR_VALID THEN
   REPEAT GEN_TAC THEN INTRO_TAC "itf1 w1" THEN
   CLAIM_TAC "@f. inj" `?f:form list->A. (!x y. f x = f y ==> x = y)` THENL
@@ -502,17 +546,17 @@ let COMPLETENESS_THEOREM_GEN = prove
      `\a:string w:A. ?x:form list. w = f x /\ V1 a x`;
      `f (w1:form list):A`] THEN
   CONJ_TAC THENL
-  [REWRITE_TAC[ITF] THEN
+  [REWRITE_TAC[IN_ITF] THEN
    CONJ_TAC THENL [HYP SET_TAC "w1" []; ALL_TAC] THEN
    CONJ_TAC THENL [SET_TAC[]; ALL_TAC] THEN
-   CONJ_TAC THENL [ASM_MESON_TAC[ITF; FINITE_IMAGE]; ALL_TAC] THEN
+   CONJ_TAC THENL [ASM_MESON_TAC[IN_ITF; FINITE_IMAGE]; ALL_TAC] THEN
    CONJ_TAC THENL
    [REWRITE_TAC[FORALL_IN_IMAGE] THEN
-    HYP_TAC "itf1: _ _ _ irrefl _" (REWRITE_RULE[ITF]) THEN
+    HYP_TAC "itf1: _ _ _ irrefl _" (REWRITE_RULE[IN_ITF]) THEN
     HYP MESON_TAC " irrefl inj" [];
     ALL_TAC] THEN
    REWRITE_TAC[IMP_CONJ; RIGHT_FORALL_IMP_THM; FORALL_IN_IMAGE] THEN
-   HYP_TAC "itf1: _ _ _ _ trans" (REWRITE_RULE[ITF]) THEN
+   HYP_TAC "itf1: _ _ _ _ trans" (REWRITE_RULE[IN_ITF]) THEN
    HYP MESON_TAC " trans inj" [];
    ALL_TAC] THEN
   REWRITE_TAC[BISIMILAR] THEN
@@ -523,18 +567,18 @@ let COMPLETENESS_THEOREM_GEN = prove
   CONJ_TAC THENL [HYP MESON_TAC "inj" []; ALL_TAC] THEN
   CONJ_TAC THENL
   [REPEAT STRIP_TAC THEN REWRITE_TAC[EXISTS_IN_IMAGE] THEN
-   ASM_MESON_TAC[ITF];
+   ASM_MESON_TAC[IN_ITF];
    ALL_TAC] THEN
   ASM_MESON_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
-(* Simple decision procedure for MLK_.                                         *)
+(* Simple decision procedure for GL.                                         *)
 (* ------------------------------------------------------------------------- *)
 
 let GL_TAC : tactic =
-  MATCH_MP_TAC COMPLETENESS_THEOREM THEN
+  MATCH_MP_TAC GL_COMPLETENESS_THM THEN
   REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds;
-              ITF; GSYM MEMBER_NOT_EMPTY] THEN
+              IN_ITF; GSYM MEMBER_NOT_EMPTY] THEN
   MESON_TAC[];;
 
 let GL_RULE tm =
@@ -636,7 +680,8 @@ let BISIMIMULATION_SET_OF_LIST = prove
    EXISTS_TAC `x2:form list` THEN EXISTS_TAC `y2:form list` THEN
    ASM_REWRITE_TAC[] THEN
    SIMP_TAC[NOREPETITION_LIST_OF_SET; FINITE_SET_OF_LIST] THEN
-   SIMP_TAC[EXTENSION; IN_SET_OF_LIST; MEM_LIST_OF_SET; FINITE_SET_OF_LIST] THEN
+   SIMP_TAC[EXTENSION; IN_SET_OF_LIST; MEM_LIST_OF_SET;
+            FINITE_SET_OF_LIST] THEN
    ASM_MESON_TAC[MAXIMAL_CONSISTENT];
    ALL_TAC] THEN
   CONJ_TAC THENL

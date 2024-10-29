@@ -1,14 +1,15 @@
 (* ========================================================================= *)
 (* Decision procedure for the provability logic K.                           *)
 (*                                                                           *)
-(* (c) Copyright, Marco Maggesi, Cosimo Perini Brogi 2020-2024.              *)
+(* (c) Copyright, Marco Maggesi, Cosimo Perini Brogi 2020-2022.              *)
+(* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
+(*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
 (* Lemmata.                                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-(* Serve?  Semplificare. *)
 let K_COMPLETENESS_NUM =
   let K_COMPLETENESS_THEOREM_NUM =
     REWRITE_RULE[num_INFINITE]
@@ -34,55 +35,55 @@ let K_COMPLETENESS_NUM =
   REPEAT GEN_TAC THEN INTRO_TAC "itf" THEN REPEAT STRIP_TAC THEN
   FIRST_X_ASSUM MATCH_MP_TAC THEN
   ASM_REWRITE_TAC[] THEN CONJ_TAC THENL
-  [REWRITE_TAC[holds] THEN ASM_MESON_TAC[K_FRAME_CAR]; ALL_TAC] THEN
-  CONJ_TAC THENL [REWRITE_TAC[holds] THEN ASM_MESON_TAC[K_FRAME_CAR]; ALL_TAC] THEN
-  CONJ_TAC THENL [REWRITE_TAC[holds] THEN ASM_MESON_TAC[K_FRAME_CAR]; ALL_TAC] THEN
-  REWRITE_TAC[holds] THEN ASM_MESON_TAC[K_FRAME_CAR]);;
+  [REWRITE_TAC[holds] THEN ASM_MESON_TAC[IN_K_FRAME]; ALL_TAC] THEN
+  CONJ_TAC THENL [REWRITE_TAC[holds] THEN ASM_MESON_TAC[IN_K_FRAME]; ALL_TAC] THEN
+  CONJ_TAC THENL [REWRITE_TAC[holds] THEN ASM_MESON_TAC[IN_K_FRAME]; ALL_TAC] THEN
+  REWRITE_TAC[holds] THEN ASM_MESON_TAC[IN_K_FRAME]);;
 
 (* ------------------------------------------------------------------------- *)
 (* The work horse of the tactic.                                             *)
 (* ------------------------------------------------------------------------- *)
 
-(* module Rule_K = struct *)
+module Rule_K = struct
 
   (* Non-recursive building block tactics. *)
 
-let GEN_BOX_RIGHT_TAC (kacc:thm_tactic) : tactic =
-  let ptac =
-    CONJ_TAC THENL
-    [FIRST_ASSUM MATCH_ACCEPT_TAC;
-     GEN_TAC THEN
-     DISCH_THEN (CONJUNCTS_THEN2 ASSUME_TAC kacc)] in
-  let ttac th = (MATCH_MP_TAC th THEN ptac) in
-  USE_THEN "boxr1" ttac ORELSE USE_THEN "boxr2" ttac;;
+  let GEN_BOX_RIGHT_TAC (kacc:thm_tactic) : tactic =
+    let ptac =
+      CONJ_TAC THENL
+      [FIRST_ASSUM MATCH_ACCEPT_TAC;
+       GEN_TAC THEN
+       DISCH_THEN (CONJUNCTS_THEN2 ASSUME_TAC kacc)] in
+    let ttac th = (MATCH_MP_TAC th THEN ptac) in
+    USE_THEN "boxr1" ttac ORELSE USE_THEN "boxr2" ttac
 
-let rec SATURATE_ACC_TCL:thm_tactical = fun ttac th ->
-  LABEL_TAC "acc" th THEN STEP_BOXL1_TCL ttac th;;
-
-let SATURATE_ACC_TAC:thm_tactic = fun th g ->
-  (STEP_BOXL1_TCL HOLDS_TAC th THEN SATURATE_ACC_TCL HOLDS_TAC th) g;;
-
+  let rec SATURATE_ACC_TCL:thm_tactical = fun ttac th ->
+    LABEL_TAC "acc" th THEN STEP_BOXL1_TCL ttac th
+  
+  let SATURATE_ACC_TAC:thm_tactic = fun th g ->
+    (STEP_BOXL1_TCL HOLDS_TAC th THEN SATURATE_ACC_TCL HOLDS_TAC th) g
+  
   (* Recursive theorem-tacticals. *)
-
-let BOX_RIGHT_TAC = GEN_BOX_RIGHT_TAC SATURATE_ACC_TAC;;
-
+  
+  let BOX_RIGHT_TAC = GEN_BOX_RIGHT_TAC SATURATE_ACC_TAC
+  
   (* Main tactic. *)
+  
+  let K_RIGHT_TAC : tactic =
+    CONV_TAC HOLDS_NNFC_UNFOLD_CONV THEN
+    PURE_ASM_REWRITE_TAC[AND_CLAUSES; OR_CLAUSES; NOT_CLAUSES] THEN
+    CONV_TAC CNF_CONV THEN
+    REPEAT CONJ_TAC THEN
+    TRY (NEG_RIGHT_TAC HOLDS_TAC)
+  
+  let K_STEP_TAC : tactic =
+    (FIRST o map CHANGED_TAC)
+      [K_RIGHT_TAC;
+       SORT_BOX_TAC THEN BOX_RIGHT_TAC];;
+  
+  let INNER_K_TAC : tactic = REPEAT K_STEP_TAC
 
-let K_RIGHT_TAC : tactic =
-  CONV_TAC HOLDS_NNFC_UNFOLD_CONV THEN
-  PURE_ASM_REWRITE_TAC[AND_CLAUSES; OR_CLAUSES; NOT_CLAUSES] THEN
-  CONV_TAC CNF_CONV THEN
-  REPEAT CONJ_TAC THEN
-  TRY (NEG_RIGHT_TAC HOLDS_TAC);;
-
-let K_STEP_TAC : tactic =
-  (FIRST o map CHANGED_TAC)
-    [K_RIGHT_TAC;
-     SORT_BOX_TAC THEN BOX_RIGHT_TAC];;
-
-let INNER_K_TAC : tactic = REPEAT K_STEP_TAC;;
-
-(* end;; *)
+end;;
 
 (* ------------------------------------------------------------------------- *)
 (* Generate a countermodel.                                                  *)

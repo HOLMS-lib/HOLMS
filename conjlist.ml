@@ -165,3 +165,26 @@ let MODPROVES_DEDUCTION_LEMMA_CONJLIST = prove
   ASM_REWRITE_TAC[SET_RULE
     `h:form INSERT H UNION set_of_list t =
      h INSERT (H UNION set_of_list t)`]);;
+
+let MLK_BOX_CONJLIST = prove
+ (`!S X. [S . {} |~ Box (CONJLIST X) <-> CONJLIST (MAP (Box) X)]`,
+  REPEAT GEN_TAC THEN GEN_REWRITE_TAC I [MLK_iff_sym] THEN
+  MATCH_ACCEPT_TAC CONJLIST_MAP_BOX);;
+
+g `!S p X. [S  . {} |~ CONJLIST X --> p]
+           ==> [S . {} |~ CONJLIST (MAP (Box) X) --> Box p]`;;
+e (REPEAT GEN_TAC);;
+e (STRIP_TAC);;
+e (CLAIM_TAC "asd" `[S . {} |~ Box CONJLIST X --> Box p]`);;
+ e (MATCH_MP_TAC MLK_imp_box);;
+ e (ASM_REWRITE_TAC[]);;
+e (MATCH_MP_TAC MLK_imp_trans);;
+e (EXISTS_TAC `Box CONJLIST X`);;
+e (ASM_REWRITE_TAC[]);;
+e (SUBGOAL_THEN
+     `[S . {} |~ CONJLIST (MAP (Box) X) <-> Box CONJLIST X]
+      ==> [S . {} |~ CONJLIST (MAP (Box) X) --> Box CONJLIST X]`
+     (fun(th) -> MATCH_MP_TAC th));;
+ e (MESON_TAC[MLK_iff_def]);;
+e (REWRITE_TAC[MLK_BOX_CONJLIST; MLK_iff_sym]);;
+let MKL_CONJLIST_BOX_IMP_BOX = top_thm();;

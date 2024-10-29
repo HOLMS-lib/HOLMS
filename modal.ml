@@ -41,7 +41,7 @@ let form_INJ = injectivity "form";;
 
 let holds =
   let pth = prove
-    (`(!WP. P WP) <=> (!W R. P (W,R))`,
+    (`(!WP. P WP) <=> (!W:W->bool R:W->W->bool. P (W,R))`,
      MATCH_ACCEPT_TAC FORALL_PAIR_THM) in
   (end_itlist CONJ o map (REWRITE_RULE[pth] o GEN_ALL) o CONJUNCTS o
    new_recursive_definition form_RECURSION)
@@ -57,12 +57,12 @@ let holds =
     !w'. w' IN FST WR /\ SND WR w w' ==> holds WR V p w')`;;
 
 let holds_in = new_definition
-  `holds_in (W,R) p <=> !V w. w IN W ==> holds (W,R) V p w`;;
+  `holds_in (W,R) p <=> !V w:W. w IN W ==> holds (W,R) V p w`;;
 
 parse_as_infix("|=",(11,"right"));;
 
 let valid = new_definition
-  `L: (W->bool)#(W->W->bool)->bool |= p <=> !f. L f ==> holds_in f p`;;
+  `L |= p <=> !f:(W->bool)#(W->W->bool). f IN L ==> holds_in f p`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Some model-theoretic lemmas.                                              *)
@@ -74,10 +74,10 @@ let MODAL_TAC =
 let MODAL_RULE tm = prove(tm,MODAL_TAC);;
 
 let HOLDS_FORALL_LEMMA = prove
- (`!W R P. (!p V. P (holds (W,R) V p)) <=> (!p:W->bool. P p)`,
+ (`!W:W->bool R P. (!p V. P (holds (W,R) V p)) <=> (!U. P U)`,
   REPEAT GEN_TAC THEN EQ_TAC THENL [ALL_TAC; SIMP_TAC[]] THEN
-  DISCH_TAC THEN GEN_TAC THEN
-  SUBGOAL_THEN `P (\w:W. holds (W,R) (\a. p) (Atom a) w):bool`
+  INTRO_TAC "hp; !U" THEN
+  SUBGOAL_THEN `P (\w:W. holds (W,R) (\a. U) (Atom a) w):bool`
     (MP_TAC o REWRITE_RULE[holds]) THEN
   ASM_REWRITE_TAC[ETA_AX]);;
 
@@ -85,25 +85,6 @@ let MODAL_SCHEMA_TAC =
   REWRITE_TAC[holds_in; holds] THEN MP_TAC HOLDS_FORALL_LEMMA THEN
   REPEAT(MATCH_MP_TAC MONO_FORALL THEN GEN_TAC) THEN
   DISCH_THEN(fun th -> REWRITE_TAC[th]);;
-
-(* ------------------------------------------------------------------------- *)
-(* Transitive Noetherian frames.                                             *)
-(* ------------------------------------------------------------------------- *)
-
-let MODAL_TRANS = prove
- (`!W R.
-     (!w w' w'':W. w IN W /\ w' IN W /\ w'' IN W /\
-                   R w w' /\ R w' w''
-                   ==> R w w'') <=>
-     (!p. holds_in (W,R) (Box p --> Box Box p))`,
-  MODAL_SCHEMA_TAC THEN MESON_TAC[]);;
-
-let TRANSNT = new_definition
-  `TRANSNT (W:W->bool,R:W->W->bool) <=>
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
-   WF(\x y. R y x)`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Subformulas.                                                              *)
@@ -324,9 +305,9 @@ let BISIMILAR_HOLDS_IN = prove
 let BISIMILAR_VALID = prove
  (`!L1 L2 .
     (!W1 R1 V1 w1:A.
-       L1 (W1,R1) /\ w1 IN W1
+       (W1,R1) IN L1 /\ w1 IN W1
        ==> ?W2 R2 V2 w2:B.
-             L2 (W2,R2) /\
+             (W2,R2) IN L2 /\
              BISIMILAR (W1,R1,V1) (W2,R2,V2) w1 w2)
     ==> (!p. L2 |= p ==> L1 |= p)`,
   REWRITE_TAC[valid; holds_in; FORALL_PAIR_THM] THEN

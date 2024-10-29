@@ -13,22 +13,23 @@
 let COMPLETENESS_NUM =
   let COMPLETENESS_THEOREM_NUM =
     REWRITE_RULE[num_INFINITE]
-      (INST_TYPE [`:num`,`:A`] COMPLETENESS_THEOREM_GEN)
+      (INST_TYPE [`:num`,`:A`] GL_COMPLETENESS_THM_GEN)
   and HOLDS_BOX_EQ = prove
    (`!W R p w:A.
-       ITF (W,R) /\ w IN W
+       (W,R) IN ITF /\ w IN W
        ==> (holds (W,R) V (Box p) w <=>
             (!y. y IN W /\ R w y ==> holds (W,R) V (Box p --> p) y))`,
     INTRO_TAC "!W R p w; WR w" THEN REWRITE_TAC[holds] THEN
     EQ_TAC THENL [MESON_TAC[]; ALL_TAC] THEN
-    CLAIM_TAC "tnt" `TRANSNT(W:A->bool,R)` THENL
-    [MATCH_MP_TAC ITF_NT THEN ASM_REWRITE_TAC[]; ALL_TAC] THEN
-    REPEAT STRIP_TAC THEN MATCH_MP_TAC
-     (REWRITE_RULE [holds_in; holds; RIGHT_IMP_FORALL_THM; IMP_IMP]
-                   TRANSNT_IMP_LOB) THEN
-    EXISTS_TAC `w:A` THEN HYP_TAC "tnt" (REWRITE_RULE[TRANSNT]) THEN
-    ASM_REWRITE_TAC[] THEN
-    ASM_MESON_TAC[]) in
+    CLAIM_TAC "tnt" `(W:A->bool,R) IN TRANSNT` THENL
+    [MATCH_MP_TAC (REWRITE_RULE [SUBSET] ITF_SUBSET_NT) THEN
+     ASM_REWRITE_TAC[];
+     ALL_TAC] THEN
+    REPEAT STRIP_TAC THEN
+    MATCH_MP_TAC (REWRITE_RULE [holds_in; holds; RIGHT_IMP_FORALL_THM; IMP_IMP]
+                               TRANSNT_IMP_LOB) THEN
+    EXISTS_TAC `w:A` THEN HYP_TAC "tnt" (REWRITE_RULE[IN_TRANSNT]) THEN
+    ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]) in
  prove
  (`!p. (!W R V w:num.
           (!x y z:num. R y z ==> R x y ==> R x z) /\
@@ -53,7 +54,7 @@ let COMPLETENESS_NUM =
   REPEAT GEN_TAC THEN INTRO_TAC "itf" THEN REPEAT STRIP_TAC THEN
   FIRST_X_ASSUM MATCH_MP_TAC THEN
   ASM_REWRITE_TAC[] THEN CONJ_TAC THENL
-  [ASM_MESON_TAC[ITF]; ALL_TAC] THEN
+  [ASM_MESON_TAC[IN_ITF]; ALL_TAC] THEN
   MATCH_MP_TAC (MESON [] `P /\ (P ==> Q) ==> P /\ Q`) THEN
   CONJ_TAC THENL
   [REPEAT STRIP_TAC THEN ASM_SIMP_TAC[HOLDS_BOX_EQ] THEN
@@ -61,7 +62,7 @@ let COMPLETENESS_NUM =
    ALL_TAC] THEN
   DISCH_TAC THEN
   CONJ_TAC THENL [POP_ASSUM MP_TAC THEN MESON_TAC[]; ALL_TAC] THEN
-  ONCE_REWRITE_TAC[holds] THEN ASM_MESON_TAC[ITF]);;
+  ONCE_REWRITE_TAC[holds] THEN ASM_MESON_TAC[IN_ITF]);;
 
 (* ------------------------------------------------------------------------- *)
 (* The work horse of the tactic.                                             *)
@@ -224,7 +225,7 @@ let GL_Godel_sentence_equiconsistent_consistency = time GL_RULE
                       Box (p <-> Not (Box False))]`;;
 
 (* ------------------------------------------------------------------------- *)
-(* For any arithmetical senteces p q, p is equivalent to unprovability       *)
+(* For any arithmetical sentences p q, p is equivalent to unprovability      *)
 (* of q --> p iff p is equivalent to consistency of q                        *)
 (* ------------------------------------------------------------------------- *)
 
@@ -237,4 +238,4 @@ let GL_arithmetical_fixpoint = time GL_RULE
 (* ------------------------------------------------------------------------- *)
 
 time GL_RULE
-`!a. [GL_AX . {} |~ Box(Diam(Box(Diam(a)))) <-> Box(Diam(a))]`;;
+  `!a. [GL_AX . {} |~ Box(Diam(Box(Diam(a)))) <-> Box(Diam(a))]`;;

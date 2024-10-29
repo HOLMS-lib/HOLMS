@@ -2,7 +2,7 @@
 (* Helper functions and tools for decisionp procedures.                      *)
 (*                                                                           *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi, Leonardo Quartini                     *)
+(*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
