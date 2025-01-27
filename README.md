@@ -494,6 +494,28 @@ K_RULE `!a b. [{} . {} |~ Box (a && b) <-> Box a && Box b]`;;
 K_RULE `!a b. [{} . {} |~ Box a || Box b --> Box (a || b)]`;;
 ```
 
+
+### In T
+
+Our tactic `T_TAC` and its associated rule `T_RULE` can automatically prove theorems in the modal logic T.
+
+Examples:
+```
+T_RULE `!a. [ T_AX . {} |~ a --> Diamond a ]`;;
+T_RULE `!a. [ T_AX . {} |~ Box a --> Diamond a ]`;;
+```
+
+### In K4
+
+Our tactic `K4_TAC` and its associated rule `K4_RULE` can automatically prove theorems in the modal logic K4.
+
+### Example of a formula valid in K4 but not in K
+```
+time GL_RULE
+  `!a. [GL_AX . {} |~ Box Diam Box Diam a <-> Box Diam a]`;;
+```
+
+
 ### In GL
 
 Our tactic `GL_TAC` and its associated rule `GL_RULE` can automatically prove theorems in the modal logic GL.
