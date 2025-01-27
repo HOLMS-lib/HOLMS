@@ -15,7 +15,7 @@ The top-level file is `make.ml`.
 
 The main parametric theorems are:
 1. `GEN_TRUTH_LEMMA` in file `gen_completeness.ml`.
-2.  
+2.  a
 
 The main theorems for the normal systems are:
 3. `K_COMPLETENESS_THM` in file `k_completness.ml`
