@@ -224,7 +224,6 @@ let GL_consistent = prove
 The proof is organized in three steps.
 We can observe that, by working with HOL, it is possible to identify all those lines of reasoning that are _parametric_ for P (the specific propriety of each frame of a logic) and S (the set of axioms of the logic)
 and develop each of of the three steps while avoiding code duplication as much as possible.
-In particular  the step 3 is already fully formalised in HOLMS with the `GEN_TRUTH_LEMMA`.
 
 ### STEP 1
 Identification of a model <W,R,V> depending on a formula p and, in particular, of a non-empty set of possible worlds given by a subclass of maximal consistent sets of formulas.
@@ -249,29 +248,72 @@ let GEN_STANDARD_MODEL_DEF = new_definition
    (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`;;
 ```
 
-Definitions in `k_completeness.ml` (P=K_FRAME, S={})
+Definitions in `k_completeness.ml` (P=FINITE_FRAME, S={})
 ```
-let K_FRAME_DEF = new_definition
-  `K_FRAME = {(W:W->bool,R) | (W,R) IN FRAME /\ FINITE W}`;;
-
 let K_STANDARD_FRAME_DEF = new_definition
-  `K_STANDARD_FRAME = GEN_STANDARD_FRAME K_FRAME {}`;;
+  `K_STANDARD_FRAME = GEN_STANDARD_FRAME {}`;;
 
 IN_K_STANDARD_FRAME
-|- (W,R) IN K_STANDARD_FRAME p <=>
-   W = {w | MAXIMAL_CONSISTENT {} p w /\
-            (!q. MEM q w ==> q SUBSENTENCE p)} /\
-   (W,R) IN K_FRAME /\
-   (!q w. Box q SUBFORMULA p /\ w IN W
-          ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))
-
-let K_STANDARD_MODEL_DEF = new_definition
-   `K_STANDARD_MODEL = GEN_STANDARD_MODEL K_FRAME {}`;;
+|- `(W,R) IN K_STANDARD_FRAME p <=>
+W = {w | MAXIMAL_CONSISTENT {} p w /\
+         (!q. MEM q w ==> q SUBSENTENCE p)} /\
+(W,R) IN FINITE_FRAME /\
+(!q w. Box q SUBFORMULA p /\ w IN W
+       ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))`
 
 K_STANDARD_MODEL_CAR
-|- K_STANDARD_MODEL p (W,R) V <=>
+|- `K_STANDARD_MODEL p (W,R) V <=>
    (W,R) IN K_STANDARD_FRAME p /\
-   (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))
+   (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`
+let K_STANDARD_MODEL_DEF = new_definition
+   `K_STANDARD_MODEL = GEN_STANDARD_MODEL {}`;;
+
+```
+
+Definitions in `t_completeness.ml` (P=FINITE_FRAME, S=T_AX})
+```
+let T_STANDARD_FRAME_DEF = new_definition
+`T_STANDARD_FRAME p = GEN_STANDARD_FRAME T_AX p`;;  
+
+IN_T_STANDARD_FRAME 
+|- `!p W R. (W,R) IN T_STANDARD_FRAME p <=>
+          W = {w | MAXIMAL_CONSISTENT T_AX p w /\
+                   (!q. MEM q w ==> q SUBSENTENCE p)} /\
+          (W,R) IN RF /\
+          (!q w. Box q SUBFORMULA p /\ w IN W
+                 ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))`
+
+let T_STANDARD_MODEL_DEF = new_definition
+   `T_STANDARD_MODEL = GEN_STANDARD_MODEL T_AX`;;
+
+T_STANDARD_MODEL_CAR
+|- `!W R p V.
+     T_STANDARD_MODEL p (W,R) V <=>
+     (W,R) IN T_STANDARD_FRAME p /\
+     (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`
+```
+
+Definitions in `k4_completeness.ml` (P=FINITE_FRAME, S=T_AX})
+```
+let K4_STANDARD_FRAME_DEF = new_definition
+`K4_STANDARD_FRAME p = GEN_STANDARD_FRAME K4_AX p`;;  
+
+IN_K4_STANDARD_FRAME
+|- (`!p W R. (W,R) IN K4_STANDARD_FRAME p <=>
+          W = {w | MAXIMAL_CONSISTENT K4_AX p w /\
+                   (!q. MEM q w ==> q SUBSENTENCE p)} /\
+          (W,R) IN TF /\
+          (!q w. Box q SUBFORMULA p /\ w IN W
+                 ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))`
+
+let K4_STANDARD_MODEL_DEF = new_definition
+   `K4_STANDARD_MODEL = GEN_STANDARD_MODEL K4_AX`;;
+
+K4_STANDARD_MODEL_CAR
+|- (`!W R p V.
+     K4_STANDARD_MODEL p (W,R) V <=>
+     (W,R) IN K4_STANDARD_FRAME p /\
+     (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`,
 ```
 
 Definitions in `gl_completeness.ml` (P=ITF, S=GL_AX)
