@@ -6,22 +6,29 @@ See the [website](https://holms-lib.github.io/) for a brief overview of our [HOL
 
 This repository introduces HOLMS (HOL-Light Library for Modal Systems), a new framework within the HOL Light proof assistant, designed for automated theorem proving and countermodel construction in modal logics.
 Building on our prior work focused on Gödel-Löb logic (GL), we generalise our approach to cover a broader range of normal modal systems, starting here with:
-- K: minimal system;
-- K4: system properly extended by GL;
-- T: that is not extended by GL or K4, nor is an extension of K4 or K4.
+- K: the minimal system;
+- K4: a system properly extended by GL;
+- GL: provability logic
+- T: a system that is not extended by GL or K4, nor is an extension of K4 or K4.
+  
 HOLMS provides a flexible mechanism for automating proof search and countermodel generation by leveraging labelled sequent calculi, interactive theorem proving, and formal completeness results.
 
 The top-level file is `make.ml`.
 
-The main parametric theorems are:
-1. `GEN_TRUTH_LEMMA` in file `gen_completeness.ml`.
-2.  a
+To partially generalise and parametrize the proof of completness for normal systems, we develop four main theorems in `gen_completeness.ml`:
+1. `GEN_TRUTH_LEMMA`;
+2. `GEN_ACCESSIBILITY_LEMMA`;
+3.  `GEN_COUNTERMODEL_ALT `
+4.  `GEN_LEMMA_FOR_GEN_COMPLETNESS`
 
-The main theorems for the normal systems are:
-3. `K_COMPLETENESS_THM` in file `k_completness.ml`
-4. `T_COMPLETENESS_THM` in file `t_completness.ml
-5. `K4_COMPLETENESS_THM` in file `k4_completness.ml
-6. `GL_COMPLETENESS_THM` in file `gl_completness.ml`
+For each normal system L, implemented in HOLMS, we prove the following main theorems:
+1. **The Correspondence theorem for L** proves that a certain set of finite frames, distinguished by an accessibility relation with certain property, correspond (if p follows from L then p is valid in such a frame) to L. (`APPRL_CORR_L`)
+2. **The Validity theorem for L**  proves that if something is a theorem of L then it is valid in its appropriate frame. (`L_APPRL_VALID`)
+3. **Consistency for L** proves that L cannot prove the false. (`L_CONSISTENT`)
+4. **The Completness theorem for L** proves that if someting is valid in a frame that corresponds to L then it is a theorem of L. (`L_COMPLETNESS_THM`)
+5. **A simple rule of decision for L** that applies a simple decision procedure to prove whether something is a theorem of L or not. (`L_RULE`)
+
+For example, in `t_completness.ml` we prove: (1) `RF_CORR_T`; (2) `T_RF_VALID`; (3) `T_CONSISTENT`; (4) `T_COMPLETENESS_THM`; (5) `T_RULE`.
 
 # Usage guide and source code
 
