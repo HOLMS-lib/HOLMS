@@ -15,24 +15,24 @@ HOLMS provides a flexible mechanism for automating proof search and countermodel
 
 The top-level file is `make.ml`.
 
-To partially generalise and parametrize the proof of completness for normal systems, we develop four main theorems in `gen_completeness.ml`:
+To partially generalise and parametrize the proof of completeness for normal systems, we develop four main theorems in `gen_completeness.ml`:
 1. `GEN_TRUTH_LEMMA`;
 2. `GEN_ACCESSIBILITY_LEMMA`;
 3.  `GEN_COUNTERMODEL_ALT `
-4.  `GEN_LEMMA_FOR_GEN_COMPLETNESS`
+4.  `GEN_LEMMA_FOR_GEN_COMPLETENESS`
 
 For each normal system L, implemented in HOLMS, we prove the following main theorems:
 1. **The Correspondence theorem for L** proves that a certain set of finite frames, distinguished by an accessibility relation with certain property, correspond (if p follows from L then p is valid in such a frame) to L. (`APPRL_CORR_L`)
 2. **The Validity theorem for L**  proves that if something is a theorem of L then it is valid in its appropriate frame. (`L_APPRL_VALID`)
 3. **Consistency for L** proves that L cannot prove the false. (`L_CONSISTENT`)
-4. **The Completness theorem for L** proves that if someting is valid in a frame that corresponds to L then it is a theorem of L. (`L_COMPLETNESS_THM`)
+4. **The completeness theorem for L** proves that if someting is valid in a frame that corresponds to L then it is a theorem of L. (`L_COMPLETENESS_THM`)
 5. **A simple rule of decision for L** that applies a simple decision procedure to prove whether something is a theorem of L or not. (`L_RULE`)
 
-For example, in `t_completness.ml` we prove: (1) `RF_CORR_T`; (2) `T_RF_VALID`; (3) `T_CONSISTENT`; (4) `T_COMPLETENESS_THM`; (5) `T_RULE`.
+For example, in `t_completeness.ml` we prove: (1) `RF_CORR_T`; (2) `T_RF_VALID`; (3) `T_CONSISTENT`; (4) `T_COMPLETENESS_THM`; (5) `T_RULE`.
 
 # Usage guide and source code
 
-## Axiomatic Definition
+## Calcus Definition
 ```
 let MODPROVES_RULES,MODPROVES_INDUCT,MODPROVES_CASES =
   new_inductive_definition
@@ -74,7 +74,76 @@ let holds_in = new_definition
 
 let valid = new_definition
   `L |= p <=> !f:(W->bool)#(W->W->bool). f IN L ==> holds_in f p`;;
+
+let FRAME_DEF = new_definition
+  `FRAME = {(W:W->bool,R:W->W->bool) | ~(W = {}) /\
+                                       (!x y:W. R x y ==> x IN W /\ y IN W)}`;;
 ```
+## Theory of Correspondence
+We define the set of correspondent frames.
+```
+let CORR_DEF = new_definition
+  `CORR S = {(W:W->bool,R:W->W->bool) |
+             (((W,R) IN FINITE_FRAME ) /\
+             (!p. [S. {} |~ p] ==> holds_in (W:W->bool,R:W->W->bool) (p)))}`;;
+```
+We demonstrate that each frame that is correspondent to L is valid for L.
+```
+GEN_CORR_VALID
+|- `!S p. [S. {} |~ p] ==> CORR S:(W->bool)#(W->W->bool)->bool |= p`;;
+```
+For each one of the normal system L developed in HOLMS we prove what set of frames is correspondent to L.
+
+### K-FINITE FRAMES
+We prove that the set of finite frames is the correspond set to K.
+```
+FINITE_FRAME_CORR_K
+ |-`FINITE_FRAME:(W->bool)#(W->W->bool)->bool = CORR {}`;; 
+```
+### T-REFLEXIVE FRAMES
+We prove that the set of reflexive frames is the correspond set to T.
+```
+let RF_DEF = new_definition
+ `RF =
+  {(W:W->bool,R:W->W->bool) |
+   ~(W = {}) /\
+   (!x y:W. R x y ==> x IN W /\ y IN W) /\
+   FINITE W /\
+   (!x. x IN W ==> R x x)}`;;
+
+RF_CORR_T
+ |-`FINITE_FRAME:(W->bool)#(W->W->bool)->bool = CORR {}`;;
+```
+### K4-TRANSITIVE FRAMES
+We prove that the set of transitive frames is the correspond set to K4.
+```
+let TF_DEF = new_definition
+ `TF =
+  {(W:W->bool,R:W->W->bool) |
+   ~(W = {}) /\
+   (!x y:W. R x y ==> x IN W /\ y IN W) /\
+   FINITE W /\
+   (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)}`;;
+
+TF_CORR_K4
+ |-`TF: (W->bool)#(W->W->bool)->bool = CORR K4_AX`;;
+```
+### GL-IRREFLEXIVE AND TRANSITIVE FRAMES
+We prove that the set of transitive and irreflexive frames is the correspond set to GL.
+```
+let ITF_DEF = new_definition
+  `ITF =
+   {(W:W->bool,R:W->W->bool) |
+    ~(W = {}) /\
+    (!x y:W. R x y ==> x IN W /\ y IN W) /\
+    FINITE W /\
+    (!x. x IN W ==> ~R x x) /\
+    (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)}`;;
+
+ITF_CORR_GL
+ |-`ITF: (W->bool)#(W->W->bool)->bool = CORR GL_AX`;;
+```
+
 
 ## Soundness and consistency of K
 We prove the consistency of K by modus ponens on the converse of `K_FRAME_VALID`.
@@ -85,9 +154,6 @@ K_FRAME_VALID
      ==> (!q. q IN H ==> K_FRAME:(W->bool)#(W->W->bool)->bool |= q)
          ==> K_FRAME:(W->bool)#(W->W->bool)->bool |= p
 
-K_CONSISTENT
-|- ~ [{} . {} |~ False]
-
 let K_CONSISTENT = prove
  (`~ [{} . {} |~ False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] K_FRAME_VALID)) THEN
@@ -97,48 +163,53 @@ let K_CONSISTENT = prove
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 ```
 
-## Soundness and consistency of GL
-To develop this proof of consistency we use modal correspondence theory for GL, therefore we prove `TRANSNT_EQ_LOB` and we derive as its consequence`GL_ITF_VALID`.
+## Soundness and consistency of T
+To develop this proof of consistency we use modal correspondence theory for T and, by  `GEN_CORR_VALID `, we prove `T_RF_VALID`.
+```
+T_RF_VALID
+|- `!p. [T_AX . {} |~ p] ==> RF:(W->bool)#(W->W->bool)->bool |= p`
+```
+
+We prove the consistency of T by modus ponens on the converse of `T_FRAME_VALID`.
+```
+let T_CONSISTENT = prove
+ (`~ [T_AX . {} |~  False]`,
+  REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] T_RF_VALID)) THEN
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
+              IN_RF; NOT_FORALL_THM] THEN
+  MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. x = 0 /\ x = y`] THEN
+  REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
+```
+
+## Soundness and consistency of K4
+To develop this proof of consistency we use modal correspondence theory for K4 and, by  `GEN_CORR_VALID `, we prove `K4_TF_VALID`.
 
 ```
-let TRANSNT_DEF = new_definition
-  `TRANSNT =
-   {(W:W->bool,R:W->W->bool) |
-    ~(W = {}) /\
-    (!x y:W. R x y ==> x IN W /\ y IN W) /\
-    (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
-    WF(\x y. R y x)}`;;
+K4_TF_VALID
+|- `!p. [K4_AX . {} |~ p] ==> TF:(W->bool)#(W->W->bool)->bool |= p`
+```
 
-let ITF_DEF = new_definition
-  `ITF =
-   {(W:W->bool,R:W->W->bool) |
-    ~(W = {}) /\
-    (!x y:W. R x y ==> x IN W /\ y IN W) /\
-    FINITE W /\
-    (!x. x IN W ==> ~R x x) /\
-    (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)}`;;
+The consistency theorem for K4 is proved by modus ponens on the converse of `K4_TF_VALID`.
+```
+let K4_CONSISTENT = prove
+ (`~ [K4_AX . {} |~  False]`,
+  REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] K4_TF_VALID)) THEN
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
+              IN_TF; NOT_FORALL_THM] THEN
+  MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. F`] THEN
+  REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
+```
 
-TRANSNT_EQ_LOB
-|- !W R. (!x y:W. R x y ==> x IN W /\ y IN W)
-         ==> ((!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z
-                       ==> R x z) /\
-              WF (\x y. R y x) <=>
-              (!p. holds_in (W,R) (Box(Box p --> p) --> Box p)))
+## Soundness and consistency of GL
+To develop this proof of consistency we use modal correspondence theory for GL and, by  `GEN_CORR_VALID `, we prove `GL_ITF_VALID`.
 
-GL_TRANSNT_VALID
-|- !H p. [GL_AX . H |~ p] /\
-         (!q. q IN H ==> TRANSNT:(W->bool)#(W->W->bool)->bool |= q)
-         ==> TRANSNT:(W->bool)#(W->W->bool)->bool |= p
-
+```
 GL_ITF_VALID
 |- !p. [GL_AX . {} |~ p] ==> ITF:(W->bool)#(W->W->bool)->bool |= p
 ```
 
 The consistency theorem for GL is proved by modus ponens on the converse of `GL_ITF_VALID`.
 ```
-GL_consistent
-|- ~ [GL_AX . {} |~  False]
-
 let GL_consistent = prove
  (`~ [GL_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] GL_ITF_VALID)) THEN
@@ -158,7 +229,7 @@ In particular  the step 3 is already fully formalised in HOLMS with the `GEN_TRU
 ### STEP 1
 Identification of a model <W,R,V> depending on a formula p and, in particular, of a non-empty set of possible worlds given by a subclass of maximal consistent sets of formulas.
 
-Parametric Definitions in `gen_completness.ml` (parameters P, S)
+Parametric Definitions in `gen_completeness.ml` (parameters P, S)
 ```
 let FRAME_DEF = new_definition
   `FRAME = {(W:W->bool,R:W->W->bool) | ~(W = {}) /\
@@ -178,7 +249,7 @@ let GEN_STANDARD_MODEL_DEF = new_definition
    (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`;;
 ```
 
-Definitions in `k_completness.ml` (P=K_FRAME, S={})
+Definitions in `k_completeness.ml` (P=K_FRAME, S={})
 ```
 let K_FRAME_DEF = new_definition
   `K_FRAME = {(W:W->bool,R) | (W,R) IN FRAME /\ FINITE W}`;;
@@ -203,7 +274,7 @@ K_STANDARD_MODEL_CAR
    (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))
 ```
 
-Definitions in `gl_completness.ml` (P=ITF, S=GL_AX)
+Definitions in `gl_completeness.ml` (P=ITF, S=GL_AX)
 ```
 let ITF_DEF = new_definition
   `ITF =
@@ -238,7 +309,7 @@ GL_STANDARD_MODEL_CAR
 ### STEP 2
 Definition of a “standard” accessibility relation depending on axiom set S between these worlds such that the frame is appropriate to S.
 
-Parametric definition of the standard relation in `gen_completness.ml` (parameter S)
+Parametric definition of the standard relation in `gen_completeness.ml` (parameter S)
 ```
 let GEN_STANDARD_REL = new_definition
   `GEN_STANDARD_REL S p w x <=>
@@ -247,7 +318,7 @@ let GEN_STANDARD_REL = new_definition
    (!B. MEM (Box B) w ==> MEM B x)`;;
 ```
 
-Definitions in `k_completness.ml` (S={}) and proof of the Accessibility Lemma for K.
+Definitions in `k_completeness.ml` (S={}) and proof of the Accessibility Lemma for K.
 ```
 let K_STANDARD_REL_DEF = new_definition
   `K_STANDARD_REL p = GEN_STANDARD_REL {} p`;;
@@ -267,7 +338,7 @@ K_ACCESSIBILITY_LEMMA_1
            ==> MEM (Box q) w
 ```
 
-Definitions in `gl_completness.ml` (S=GL_AX) and proofs of the Accessibility Lemma for GL.
+Definitions in `gl_completeness.ml` (S=GL_AX) and proofs of the Accessibility Lemma for GL.
 ```
 let GL_STANDARD_REL_DEF = new_definition
   `GL_STANDARD_REL p w x <=>
@@ -292,7 +363,7 @@ GL_ACCESSIBILITY_LEMMA
 The reduction of the notion of forcing `holds (W,R) V q w` to that of a set-theoretic (list-theoretic) membership MEM q w
 for every subformula q of p, through a specific atomic evaluation function on (W,R).
 
-Parametric truth lemma in `gen_completness.ml` (parameters P, S)
+Parametric truth lemma in `gen_completeness.ml` (parameters P, S)
 ```
 GEN_TRUTH_LEMMA
 |- !P S W R p V q.
@@ -302,7 +373,7 @@ GEN_TRUTH_LEMMA
      ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)
 ```
 
-Truth lemma specified for K in `k_completness.ml` (P=K_FRAME, S={})
+Truth lemma specified for K in `k_completeness.ml` (P=K_FRAME, S={})
 ```
 let K_TRUTH_LEMMA = prove
  (`!W R p V q.
@@ -313,7 +384,7 @@ let K_TRUTH_LEMMA = prove
   REWRITE_TAC[K_STANDARD_MODEL_DEF] THEN MESON_TAC[GEN_TRUTH_LEMMA]);;
 ```
 
-Truth lemma specified for GL in `gl_completness.ml` (P=ITF, S=GL_AX)
+Truth lemma specified for GL in `gl_completeness.ml` (P=ITF, S=GL_AX)
 ```
 let GL_truth_lemma = prove
  (`!W R p V q.
@@ -326,16 +397,16 @@ let GL_truth_lemma = prove
 
 ### The Theorems
 
-Completeness of K in `k_completness.ml`.
-This proof uses the `K_TRUTH_LEMMA` that specifies the `GEN_TRUTH_LEMMA`, therefore the first part of the proof of the completness theorem for K is completely parametrized.
+Completeness of K in `k_completeness.ml`.
+This proof uses the `K_TRUTH_LEMMA` that specifies the `GEN_TRUTH_LEMMA`, therefore the first part of the proof of the completeness theorem for K is completely parametrized.
 ```
 K_COMPLETENESS_THM
 |- !p. K_FRAME:(form list->bool)#(form list->form list->bool)->bool |= p
        ==> [{} . {} |~ p]
 ```
 
-Completeness of GL in `gl_completness.ml`
-This proof uses the `GL_TRUTH_LEMMA` that specifies the `GEN_TRUTH_LEMMA`, therefore the first part of the proof of the completness theorem for GL is completely parametrized.
+Completeness of GL in `gl_completeness.ml`
+This proof uses the `GL_TRUTH_LEMMA` that specifies the `GEN_TRUTH_LEMMA`, therefore the first part of the proof of the completeness theorem for GL is completely parametrized.
 ```
 GL_COMPLETENESS_THM
 |- !p. ITF:(form list->bool)#(form list->form list->bool)->bool |= p
@@ -343,11 +414,25 @@ GL_COMPLETENESS_THM
 ```
 
 ###  Modal completeness for models on a generic (infinite) domain.
-These theorems generalize the previous ones for models with infinite worlds.
+Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we quickly generalize the completeness theorem for models with infinite worlds for each normal sysrem.
+
 ```
+GEN_LEMMA_FOR_GEN_COMPLETENESS
+|- `!S. INFINITE (:A)
+       ==> !p. CORR S:(A->bool)#(A->A->bool)->bool |= p
+            ==> CORR S:(form list->bool)#(form list->form list->bool)->bool |= p`;;
+
 K_COMPLETENESS_THM_GEN
-|- !p. INFINITE (:A) /\ K_FRAME:(A->bool)#(A->A->bool)->bool |= p
-       ==> [{} . {} |~ p]
+|- `!p. INFINITE (:A) /\ FINITE_FRAME:(A->bool)#(A->A->bool)->bool |= p
+       ==> [{} . {} |~ p]`
+
+T_COMPLETENESS_THM_GEN
+|- `!p. INFINITE (:A) /\ RF:(A->bool)#(A->A->bool)->bool |= p
+       ==> [T_AX . {} |~ p]`
+
+K4_COMPLETENESS_THM_GEN
+|- `!p. INFINITE (:A) /\ TF:(A->bool)#(A->A->bool)->bool |= p
+       ==> [K4_AX . {} |~ p]`
 
 GL_COMPLETENESS_THM_GEN
 |- !p. INFINITE (:A) /\ ITF:(A->bool)#(A->A->bool)->bool |= p
