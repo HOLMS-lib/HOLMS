@@ -5,15 +5,23 @@
 See the [website](https://holms-lib.github.io/) for a brief overview of our [HOLMS library](https://github.com/HOLMS-lib/HOLMS) for the [HOL Light](https://hol-light.github.io/) theorem prover.
 
 This repository introduces HOLMS (HOL-Light Library for Modal Systems), a new framework within the HOL Light proof assistant, designed for automated theorem proving and countermodel construction in modal logics.
-Building on our prior work focused on Gödel-Löb logic (GL), we generalise our approach to cover a broader range of normal modal systems, starting here with the minimal system K.
+Building on our prior work focused on Gödel-Löb logic (GL), we generalise our approach to cover a broader range of normal modal systems, starting here with:
+- K: minimal system;
+- K4: system properly extended by GL;
+- T: that is not extended by GL or K4, nor is an extension of K4 or K4.
 HOLMS provides a flexible mechanism for automating proof search and countermodel generation by leveraging labelled sequent calculi, interactive theorem proving, and formal completeness results.
 
 The top-level file is `make.ml`.
 
-The main theorems are:
+The main parametric theorems are:
 1. `GEN_TRUTH_LEMMA` in file `gen_completeness.ml`.
-2. `K_COMPLETENESS_THM` in file `k_completness.ml`
-3. `GL_COMPLETENESS_THM` in file `gl_completness.ml`
+2.  
+
+The main theorems for the normal systems are:
+3. `K_COMPLETENESS_THM` in file `k_completness.ml`
+4. `T_COMPLETENESS_THM` in file `t_completness.ml
+5. `K4_COMPLETENESS_THM` in file `k4_completness.ml
+6. `GL_COMPLETENESS_THM` in file `gl_completness.ml`
 
 # Usage guide and source code
 
