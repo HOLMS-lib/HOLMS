@@ -13,7 +13,7 @@ Extending our [previous work on Gödel-Löb logic (GL)](https://doi.org/10.1007/
 - **GL**: provability logic is developed and fully parametrized in `gl_completeness.ml`;
 - **T**: a system that is not extended by GL or K4, nor is an extension of K4 or K4 is developed in `t_completeness.ml`.
 
-HOLMS lays the foundation for a comprehensive tool for modal reasoning in HOL, offering a high level of confidence and full automation by providing the essential mathematical components of principled decision algorithms for modal systems. The automated theorem prover and countermodel constructor for K and GL, already integrated into our library in `k_decid.ml` and `gl_decid.ml`, serve as evidence of the feasibility of this approach merging general purpose proof assistants, enriched sequent calculi, and formalised mathematics.`
+HOLMS lays the foundation for a comprehensive tool for modal reasoning in HOL, offering a high level of confidence and full automation by providing the essential mathematical components of principled decision algorithms for modal systems. The automated theorem prover and countermodel constructor for K and GL, already integrated into our library in `k_decid.ml` and `gl_decid.ml`, serve as evidence of the feasibility of this approach merging general purpose proof assistants, enriched sequent calculi, and formalised mathematics.
 
 The top-level file is `make.ml`.
 
