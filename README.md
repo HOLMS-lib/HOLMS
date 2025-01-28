@@ -1,34 +1,50 @@
 # HOLMS: A HOL Light Library for Modal Systems
 
-(c) Copyright, Antonella Bilotta, Marco Maggesi, Cosimo Perini Brogi, Leonardo Quartini 2024.
+(c) Copyright, Antonella Bilotta, Marco Maggesi, Cosimo Perini Brogi, Leonardo Quartini 2024. <br>
+(c) Copyright, Antonella Bilotta, Marco Maggesi, Cosimo Perini Brogi 2025.
 
 See the [website](https://holms-lib.github.io/) for a brief overview of our [HOLMS library](https://github.com/HOLMS-lib/HOLMS) for the [HOL Light](https://hol-light.github.io/) theorem prover.
 
-This repository introduces HOLMS (HOL-Light Library for Modal Systems), a new framework within the HOL Light proof assistant, designed for automated theorem proving and countermodel construction in modal logics.
-Building on our prior work focused on Gödel-Löb logic (GL), we generalise our approach to cover a broader range of normal modal systems, starting here with:
-- K: the minimal system;
-- K4: a system properly extended by GL;
-- GL: provability logic
-- T: a system that is not extended by GL or K4, nor is an extension of K4 or K4.
-  
-HOLMS provides a flexible mechanism for automating proof search and countermodel generation by leveraging labelled sequent calculi, interactive theorem proving, and formal completeness results.
+This repository presents a second version of HOLMS (HOL-Light Library for Modal Systems), a modular framework designed for implementing modal reasoning within the HOL Light proof assistant.  
+
+Extending our [previous work on Gödel-Löb logic (GL)](https://doi.org/10.1007/s10817-023-09677-z), we generalize our approach to formalize modal adequacy proofs for axiomatic calculi, thereby enabling the coverage of a broader range of normal modal systems. If the first version of HOLMS, [presented at Overlay 2024](), partially parametrized the completeness proof for GL and added the minimal system K, this second version of HOLMS fully generalizes our approach and, as a demonstration of the flexibility of our methodology, four modal system and their adequacy proofs are now implemented in HOLMS:
+- **K**: the minimal system is developed in `k_completeness.ml`;
+- **K4**: a system properly extended by GL is developed in `k4_completeness.ml`;
+- **GL**: provability logic is developed and fully parametrized in `gl_completeness.ml`;
+- **T**: a system that is not extended by GL or K4, nor is an extension of K4 or K4 is developed in `t_completeness.ml`.
+
+HOLMS lays the foundation for a comprehensive tool for modal reasoning in HOL, offering a high level of confidence and full automation by providing the essential mathematical components of principled decision algorithms for modal systems. The automated theorem prover and countermodel constructor for K and GL, already integrated into our library in `k_decid.ml` and `gl_decid.ml`, serve as evidence of the feasibility of this approach merging general purpose proof assistants, enriched sequent calculi, and formalised mathematics.`
 
 The top-level file is `make.ml`.
 
-To partially generalise and parametrize the proof of completeness for normal systems, we develop four main theorems in `gen_completeness.ml`:
+## Main Theorems
+
+For each normal system S, implemented in HOLMS in its file `S_completeness.ml`, we prove the following main theorems:
+1. **The Correspondence theorem for S** <br> proves that a certain set of finite frames C, distinguished by a certain accessibility relation, correspond to S (for each frame in the set if p follows from S, then p is valid in such a frame). <br>
+$C= CORR S$ and equivalently $\forall F \in C (S \vdash p \implies F \vDash p) \land \forall F((S \vdash p \implies F \vDash p) \implies F \in C)$ 
+(`APPRS_CORR_S`)
+2. **Soundness of S with respect to CORR S**  <br>
+proves that if something is a theorem of S then it is valid in its correspondent frame. <br>
+$\forall p (S \vdash p \implies CORR S \vDash p)$
+(`S_APPRS_VALID`)
+3. **Consistency of S** <br>
+proves that S cannot prove the false. <br>
+$S \not \vdash \bot$
+(`S_CONSISTENT`)
+5. **Completeness of S related to CORR S** <br>
+proves that if someting holds in the set correspondent to S, then it is a theorem of S. <br>
+$\forall p (CORR S \vDash p \implies S \vdash p)$
+(`S_COMPLETENESS_THM`)
+
+Moreover, for each of this systems, HOLMS presents a **simple decision procedure** to prove whether something is a theorem of S or not (`S_RULE`) and a fully automated theorem prover and countermodel constructor for K (`k_completeness.ml`) and GL (`gl_completeness.ml`).
+For example, in `t_completeness.ml` we prove: (1) `RF_CORR_T`; (2) `T_RF_VALID`; (3) `T_CONSISTENT`; (4) `T_COMPLETENESS_THM`; (5) `T_RULE`.
+
+To generalize and parametrize the proofs of completeness for normal systems as much as possible, we develop four main theorems in `gen_completeness.ml`:
 1. `GEN_TRUTH_LEMMA`;
 2. `GEN_ACCESSIBILITY_LEMMA`;
 3.  `GEN_COUNTERMODEL_ALT `
 4.  `GEN_LEMMA_FOR_GEN_COMPLETENESS`
-
-For each normal system L, implemented in HOLMS, we prove the following main theorems:
-1. **The Correspondence theorem for L** proves that a certain set of finite frames, distinguished by an accessibility relation with certain property, correspond (if p follows from L then p is valid in such a frame) to L. (`APPRL_CORR_L`)
-2. **The Validity theorem for L**  proves that if something is a theorem of L then it is valid in its appropriate frame. (`L_APPRL_VALID`)
-3. **Consistency for L** proves that L cannot prove the false. (`L_CONSISTENT`)
-4. **The completeness theorem for L** proves that if someting is valid in a frame that corresponds to L then it is a theorem of L. (`L_COMPLETENESS_THM`)
-5. **A simple rule of decision for L** that applies a simple decision procedure to prove whether something is a theorem of L or not. (`L_RULE`)
-
-For example, in `t_completeness.ml` we prove: (1) `RF_CORR_T`; (2) `T_RF_VALID`; (3) `T_CONSISTENT`; (4) `T_COMPLETENESS_THM`; (5) `T_RULE`.
+   
 
 # Usage guide and source code
 
