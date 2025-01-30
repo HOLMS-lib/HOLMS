@@ -241,9 +241,72 @@ let GL_consistent = prove
 
 ## Completeness theorems
 
-The proof is organized in three steps.
-We can observe that, by working with HOL, it is possible to identify all those lines of reasoning that are _parametric_ for P (the specific propriety of each frame of a logic) and S (the set of axioms of the logic)
-and develop each of of the three steps while avoiding code duplication as much as possible.
+### Proof Sketch (1)
+
+Given a modal system $S$, we want to prove that it is **complete with respect to the set of its correspondent frames**: $\forall p (CORRS \vDash p \implies S \vdash p)$
+
+```
+S_COMPLETNESS_THM
+|. `!p. ( CORR S |= p ==> [S. {} |~ p])`
+```
+**1. Rewriting `S_COMPLETNESS`'s statment** <br>
+By using some tautologies and rewriting, we can show that the completeness theorem is equivalent to a more handy sentence:  <br>
+$\forall p (S \not \vdash p \implies \exists \langle W,R\rangle_{S,p} \in CORR_S (\exists V_{S,p} \exists m_{S,p} \in W_{S,p} (\langle W_{S,p}, R_{S,p}, V_{S,p} \rangle, m_{S,p} \not \vDash p))$
+
+A. We rewrite the sentence by _contraposition_. <br>
+`e GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM];;` <br>
+
+B. We rewrite validity in a set of frames (`valid`) as validity in a certain world of a certain model (`holds`) and we exploit some _propositional tautologies_. <br>
+`e (REWRITE_TAC[valid; NOT_FORALL_THM; FORALL_PAIR_THM; holds_in; NOT_IMP]);;` <br>
+
+```
+S_COMPLETNESS_THM'
+|- `!p. ( `~[S . {} |~ p] ==>
+          (exists W R. W,R IN CORR S /\
+            (exists V m. m IN p1 /\
+              ~holds (p1,p2) V p w)))`
+```
+
+At this point, for each modal formula $p$ we need to construct a **_countermodel_** $𝓜_{S,p}$ and a "**_counterworld_**" $m_{S,p}$ in the domain of the countermodel.
+
+We can observe that, by working with HOL, it is possible to identify all those lines of reasoning that are _parametric_ with respect to $S$ (the axiom system) and to  $p$ (the formula we are analysing) and develop te proof while avoiding code duplication as much as possible.
+
+**2. Reducing a model theoretic-notion to a set/list-theoretic concept** 
+The canonical proof of completeness, illustrated in classical textbooks like George Boolos's "The Logic of Provability", exploit the idea of working in a context (_countermodel_) such that: $\forall w \in W_{S,p} (w \in p \iff 𝓜_{S,p},w \vDash p) $.
+
+Observe that, in such a context, the members of the domain $W_{S,p}$ are set (list in HOLMS) of modal formulas.
+If we are able to construct a countermodel with this constraints, we will easily construct a counterworld $m_{S,p}$ that is a set of formulas not including p.
+
+Then our subgoal would be to prove: <br> 
+```
+S_COMPLETNESS_THM''
+|- `!p. ( `~[S . {} |~ p] ==>
+          (exists W R. W,R IN CORR S /\
+            (exists M. M IN p1 /\
+              ~ MEM p M)))`
+```
+
+ This subgoal is much more manageable than the previous statement, indeed it reduces the **model-theoretic** notion of _validity_ (`holds (W,R) V p w`) to the **set-theoretic** concept (**list-theoretic** in HOLMS) of _membership_ (`MEM p w`).
+
+
+**3. What do we need to prove?** <br>
+Given our aim of proving $\forall p(S \not \vdash p \implies \exists \langle W,R \rangle_{S,p} \in CORR S(\exists m_{S,p} \in W_{S,p}(p \not \in m_{S,p})))$, we need a countermodel and counterworld following these constraints: 
+
+A. The Kripke's frame $\langle W,R \rangle_{S,p}$ must be **correspondent** to S. <br>
+$\langle W,R \rangle_{S,p} \in CORRS$ <br>
+
+B. The Kripke's model $𝓜_{S,p} = \langle W,R,V \rangle_{S,p}$ must allows us to **reduce validity to membership**. <br>
+Namely, for our model $𝓜_{S,p}$ holds $\forall w \in W_{S,p} (w \in p \iff 𝓜_{S,p},w \vDash p) $. 
+
+C. The counterworld $m_{S,p}$ must not contain p. <br>
+$p \not \in m_{S,p}$
+
+D. Consequently $W_{S,p}$ must be a **set of formula's lists** <br>
+`CORRS:(form list->bool)#(form list->form list->bool)->bool`. 
+
+### The Proof (1)
+
+The first part of the proof is organized in three steps.
 
 ### STEP 1
 Identification of a model <W,R,V> depending on a formula p and, in particular, of a non-empty set of possible worlds given by a subclass of maximal consistent sets of formulas.
