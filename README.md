@@ -11,7 +11,7 @@ Extending our [previous work on Gödel-Löb logic (GL)](https://doi.org/10.1007/
 - **K**: the minimal system is developed in `k_completeness.ml`;
 - **K4**: a system properly extended by GL is developed in `k4_completeness.ml`;
 - **GL**: provability logic is developed and fully parametrized in `gl_completeness.ml`;
-- **T**: a system that is not extended by GL or K4, nor is an extension of K4 or K4 is developed in `t_completeness.ml`.
+- **T**: a system that is not extended by GL or K4, nor is an extension of GL or K4 is developed in `t_completeness.ml`.
 
 HOLMS lays the foundation for a comprehensive tool for modal reasoning in HOL, offering a high level of confidence and full automation by providing the essential mathematical components of principled decision algorithms for modal systems. The automated theorem prover and countermodel constructor for K and GL, already integrated into our library in `k_decid.ml` and `gl_decid.ml`, serve as evidence of the feasibility of this approach merging general purpose proof assistants, enriched sequent calculi, and formalised mathematics.
 
@@ -36,8 +36,10 @@ proves that if someting holds in the set correspondent to S, then it is a theore
 $\forall p (CORR S \vDash p \implies S \vdash p)$
 (`S_COMPLETENESS_THM`)
 
-Moreover, for each of this systems, HOLMS presents a **simple decision procedure** to prove whether something is a theorem of S or not (`S_RULE`) and a fully automated theorem prover and countermodel constructor for K (`k_completeness.ml`) and GL (`gl_completeness.ml`).
 For example, in `t_completeness.ml` we prove: (1) `RF_CORR_T`; (2) `T_RF_VALID`; (3) `T_CONSISTENT`; (4) `T_COMPLETENESS_THM`; (5) `T_RULE`.
+
+Moreover, for each of this systems, HOLMS presents a **simple decision procedure** to prove whether something is a theorem of S or not (`S_RULE`) and a fully automated theorem prover and countermodel constructor for K (`k_completeness.ml`) and GL (`gl_completeness.ml`).
+
 
 To generalize and parametrize the proofs of completeness for normal systems as much as possible, we develop four main theorems in `gen_completeness.ml`:
 1. `GEN_TRUTH_LEMMA`;
@@ -67,6 +69,9 @@ MODPROVES_DEDUCTION_LEMMA
 
 ## Relational semantics
 Kripke's Semantics of formulae.
+
+We define, by induction on the complexity of a formula, that a certain formula $A$ **holds in a certain world $w$ of a certain model $\langle W, R, V\rangle$**. <br>
+$\langle W, R, V\rangle, w \vDash A$
 ```
 let holds =
   let pth = prove
@@ -84,40 +89,44 @@ let holds =
    (holds WR V (p <-> q) w <=> holds WR V p w <=> holds WR V q w) /\
    (holds WR V (Box p) w <=>
     !w'. w' IN FST WR /\ SND WR w w' ==> holds WR V p w')`;;
-
+```
+We say that a formula $p$ **holds in a certain frame** iff it holds in every world for every model of that frame. <br>
+$\langle W, R\rangle \vDash p \iff \forall w \in W (\forall V (\langle W, R, V\rangle, w \vDash p$))
+```
 let holds_in = new_definition
   `holds_in (W,R) p <=> !V w:W. w IN W ==> holds (W,R) V p w`;;
-
+```
+We say that a formula $p$ is **valid in a class of frames** iff it holds in every frame of this class. <br>
+$L \vDash p \iff \forall \langle W,R \rangle \in L (\langle W,R \rangle \vDash p)$
+```
 let valid = new_definition
   `L |= p <=> !f:(W->bool)#(W->W->bool). f IN L ==> holds_in f p`;;
-
+```
+The innovative definition of Kripke's model stands on the notion of **modal frame**, namely an ordered pair where the first object is a non-empty set (_domain of the possible worlds_) and the second one is a binary relation on the first set (_accessibility relation_).
+```
 let FRAME_DEF = new_definition
   `FRAME = {(W:W->bool,R:W->W->bool) | ~(W = {}) /\
                                        (!x y:W. R x y ==> x IN W /\ y IN W)}`;;
 ```
 ## Theory of Correspondence
-We define the set of correspondent frames.
+We define the **set of frames correspondent to S**, i.e. the set of all the finite frames such that if p is a theorem of S, then p holds in this frame. <br>
+{ $\langle W,R \rangle \in FINITE-FRAMES| \forall p (S \vdash p \implies \langle W,R \rangle \vDash p)$ }
 ```
 let CORR_DEF = new_definition
   `CORR S = {(W:W->bool,R:W->W->bool) |
              (((W,R) IN FINITE_FRAME ) /\
              (!p. [S. {} |~ p] ==> holds_in (W:W->bool,R:W->W->bool) (p)))}`;;
 ```
-We demonstrate that each frame that is correspondent to L is valid for L.
-```
-GEN_CORR_VALID
-|- `!S p. [S. {} |~ p] ==> CORR S:(W->bool)#(W->W->bool)->bool |= p`;;
-```
-For each one of the normal system L developed in HOLMS we prove what set of frames is correspondent to L.
+For each one of the normal system S developed in HOLMS we prove what set of frames is correspondent to S ($C= CORR S$), then we prove that every frame that is in C is correspondent to S ($\subseteq$: $\forall F \in C(S \vdash p \implies F \vDash p)$ ) and that every frame that is correspondent to S is in C ($\supseteq$: $\forall F((S \vdash p \implies F \vDash p) \implies F \in C)$  ).
 
-### K-FINITE FRAMES
-We prove that the set of finite frames is the correspond set to K.
+### K-Finite Frames 
+We prove that the set of finite frames is the one correspondent to K.
 ```
 FINITE_FRAME_CORR_K
  |-`FINITE_FRAME:(W->bool)#(W->W->bool)->bool = CORR {}`;; 
 ```
-### T-REFLEXIVE FRAMES
-We prove that the set of reflexive frames is the correspond set to T.
+### T-Finite Reflexive Frames (RF)
+We prove that the set of finite reflexive frames is the one correspondent to T.
 ```
 let RF_DEF = new_definition
  `RF =
@@ -130,8 +139,8 @@ let RF_DEF = new_definition
 RF_CORR_T
  |-`FINITE_FRAME:(W->bool)#(W->W->bool)->bool = CORR {}`;;
 ```
-### K4-TRANSITIVE FRAMES
-We prove that the set of transitive frames is the correspond set to K4.
+### K4-Finite Transitive Frames (TF)
+We prove that the set of finite transitive frames is the one correspondent to K4.
 ```
 let TF_DEF = new_definition
  `TF =
@@ -144,8 +153,8 @@ let TF_DEF = new_definition
 TF_CORR_K4
  |-`TF: (W->bool)#(W->W->bool)->bool = CORR K4_AX`;;
 ```
-### GL-IRREFLEXIVE AND TRANSITIVE FRAMES
-We prove that the set of transitive and irreflexive frames is the correspond set to GL.
+### GL-Finite Irreflexive and Transitive Frames (ITF)
+We prove that the set of finite transitive and irreflexive frames is the one correspondent to GL.
 ```
 let ITF_DEF = new_definition
   `ITF =
@@ -160,34 +169,37 @@ ITF_CORR_GL
  |-`ITF: (W->bool)#(W->W->bool)->bool = CORR GL_AX`;;
 ```
 
-
-## Soundness and consistency of K
-We prove the consistency of K by modus ponens on the converse of `K_FRAME_VALID`.
+## Soundness and Consistency
+We demonstrate the **soundness** of each S with respect to CORR S.
 ```
-K_FRAME_VALID
-|- !H p.
-     [{} . H |~ p]
-     ==> (!q. q IN H ==> K_FRAME:(W->bool)#(W->W->bool)->bool |= q)
-         ==> K_FRAME:(W->bool)#(W->W->bool)->bool |= p
+GEN_CORR_VALID
+|- `!S p. [S. {} |~ p] ==> CORR S:(W->bool)#(W->W->bool)->bool |= p`;;
+```
+
+Then, by specializing the proof of `GEN_CORR_VALID`, we prove the soundness of each normal system  S developed in HOLMS with respect to its correspondent frame.
+Moreover we prove its **consistency**, by modus ponens on the converse of `S_FRAME_VALID`.
+
+### Soundness and consistency of K
+```
+let K_FINITE_FRAME_VALID = prove
+(`!p. [{} . {} |~ p] ==> FINITE_FRAME:(W->bool)#(W->W->bool)->bool |= p`,
+ASM_MESON_TAC[GEN_CORR_VALID; FINITE_FRAME_CORR_K]);;
 
 let K_CONSISTENT = prove
  (`~ [{} . {} |~ False]`,
-  REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] K_FRAME_VALID)) THEN
+  REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] K_FINITE_FRAME_VALID)) THEN
   REWRITE_TAC[NOT_IN_EMPTY] THEN
-  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_K_FRAME; NOT_FORALL_THM] THEN
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_FINITE_FRAME; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. F`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 ```
 
-## Soundness and consistency of T
-To develop this proof of consistency we use modal correspondence theory for T and, by  `GEN_CORR_VALID `, we prove `T_RF_VALID`.
+### Soundness and consistency of T
 ```
-T_RF_VALID
-|- `!p. [T_AX . {} |~ p] ==> RF:(W->bool)#(W->W->bool)->bool |= p`
-```
+let T_RF_VALID = prove
+ (`!p. [T_AX . {} |~ p] ==> RF:(W->bool)#(W->W->bool)->bool |= p`,
+  MESON_TAC[GEN_CORR_VALID; RF_CORR_T]);;
 
-We prove the consistency of T by modus ponens on the converse of `T_FRAME_VALID`.
-```
 let T_CONSISTENT = prove
  (`~ [T_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] T_RF_VALID)) THEN
@@ -197,16 +209,12 @@ let T_CONSISTENT = prove
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 ```
 
-## Soundness and consistency of K4
-To develop this proof of consistency we use modal correspondence theory for K4 and, by  `GEN_CORR_VALID `, we prove `K4_TF_VALID`.
+### Soundness and consistency of K4
+```
+let K4_TF_VALID = prove
+ (`!p. [K4_AX . {} |~ p] ==> TF:(W->bool)#(W->W->bool)->bool |= p`,
+  MESON_TAC[GEN_CORR_VALID; TF_CORR_K4]);;
 
-```
-K4_TF_VALID
-|- `!p. [K4_AX . {} |~ p] ==> TF:(W->bool)#(W->W->bool)->bool |= p`
-```
-
-The consistency theorem for K4 is proved by modus ponens on the converse of `K4_TF_VALID`.
-```
 let K4_CONSISTENT = prove
  (`~ [K4_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] K4_TF_VALID)) THEN
@@ -216,16 +224,12 @@ let K4_CONSISTENT = prove
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 ```
 
-## Soundness and consistency of GL
-To develop this proof of consistency we use modal correspondence theory for GL and, by  `GEN_CORR_VALID `, we prove `GL_ITF_VALID`.
+### Soundness and consistency of GL
+```
+let GL_ITF_VALID = prove
+(`!p. [GL_AX . {} |~ p] ==> ITF:(W->bool)#(W->W->bool)->bool |= p`,
+ASM_MESON_TAC[GEN_CORR_VALID; ITF_CORR_GL]);;
 
-```
-GL_ITF_VALID
-|- !p. [GL_AX . {} |~ p] ==> ITF:(W->bool)#(W->W->bool)->bool |= p
-```
-
-The consistency theorem for GL is proved by modus ponens on the converse of `GL_ITF_VALID`.
-```
 let GL_consistent = prove
  (`~ [GL_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] GL_ITF_VALID)) THEN
@@ -472,14 +476,16 @@ GL_COMPLETENESS_THM
 ```
 
 ###  Modal completeness for models on a generic (infinite) domain.
-Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we quickly generalize the completeness theorem for models with infinite worlds for each normal sysrem.
-
+Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we quickly generalize for each normal system the completeness theorem for models with infinite worlds. <br>
+In `gen_completeness`.
 ```
 GEN_LEMMA_FOR_GEN_COMPLETENESS
 |- `!S. INFINITE (:A)
        ==> !p. CORR S:(A->bool)#(A->A->bool)->bool |= p
             ==> CORR S:(form list->bool)#(form list->form list->bool)->bool |= p`;;
-
+```
+As corollaries of `GEN_LEMMA_FOR_GEN_COMPLETENESS` in the specific files.
+```
 K_COMPLETENESS_THM_GEN
 |- `!p. INFINITE (:A) /\ FINITE_FRAME:(A->bool)#(A->A->bool)->bool |= p
        ==> [{} . {} |~ p]`
