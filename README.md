@@ -240,8 +240,9 @@ let GL_consistent = prove
 ```
 
 ## Completeness theorems
+We first sketch the idea behind the demonstration and, then, we will presnt a three-steps proof.
 
-### Proof Sketch (1)
+### The Idea behind the Proof
 
 Given a modal system $S$, we want to prove that it is **complete with respect to the set of its correspondent frames**: $\forall p (CORRS \vDash p \implies S \vdash p)$
 
@@ -249,16 +250,13 @@ Given a modal system $S$, we want to prove that it is **complete with respect to
 S_COMPLETNESS_THM
 |. `!p. ( CORR S |= p ==> [S. {} |~ p])`
 ```
-**1. Rewriting `S_COMPLETNESS`'s statment** <br>
+- **1. Rewriting `S_COMPLETNESS`'s statment** <br>
 By using some tautologies and rewriting, we can show that the completeness theorem is equivalent to a more handy sentence:  <br>
-$\forall p (S \not \vdash p \implies \exists \langle W,R\rangle_{S,p} \in CORR_S (\exists V_{S,p} \exists m_{S,p} \in W_{S,p} (\langle W_{S,p}, R_{S,p}, V_{S,p} \rangle, m_{S,p} \not \vDash p))$
-
-A. We rewrite the sentence by _contraposition_. <br>
-`e GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM];;` <br>
-
-B. We rewrite validity in a set of frames (`valid`) as validity in a certain world of a certain model (`holds`) and we exploit some _propositional tautologies_. <br>
-`e (REWRITE_TAC[valid; NOT_FORALL_THM; FORALL_PAIR_THM; holds_in; NOT_IMP]);;` <br>
-
+$\forall p (S \not \vdash p \implies \exists \langle W,R\rangle_{S,p} \in CORR_S (\exists V_{S,p} \exists m_{S,p} \in W_{S,p} (\langle W_{S,p}, R_{S,p}, V_{S,p} \rangle, m_{S,p} \not \vDash p))$ <br> <br>
+  - A. We rewrite the sentence by _contraposition_. <br>
+   `e GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM];;` <br> <br>
+  - B. We rewrite validity in a set of frames (`valid`) as validity in a certain world of a certain model (`holds`) and we exploit some _propositional tautologies_. <br>
+   `e (REWRITE_TAC[valid; NOT_FORALL_THM; FORALL_PAIR_THM; holds_in; NOT_IMP]);;` <br>
 ```
 S_COMPLETNESS_THM'
 |- `!p. ( `~[S . {} |~ p] ==>
@@ -266,17 +264,14 @@ S_COMPLETNESS_THM'
             (exists V m. m IN p1 /\
               ~holds (p1,p2) V p w)))`
 ```
-
-At this point, for each modal formula $p$ we need to construct a **_countermodel_** $𝓜_{S,p}$ and a "**_counterworld_**" $m_{S,p}$ in the domain of the countermodel.
-
-We can observe that, by working with HOL, it is possible to identify all those lines of reasoning that are _parametric_ with respect to $S$ (the axiom system) and to  $p$ (the formula we are analysing) and develop te proof while avoiding code duplication as much as possible.
-
-**2. Reducing a model theoretic-notion to a set/list-theoretic concept** 
-The canonical proof of completeness, illustrated in classical textbooks like George Boolos's "The Logic of Provability", exploit the idea of working in a context (_countermodel_) such that: $\forall w \in W_{S,p} (w \in p \iff 𝓜_{S,p},w \vDash p) $.
-
+At this point, for each modal formula $p$ we need to construct a **_countermodel_** $𝓜_{S,p}$ and a "**_counterworld_**" $m_{S,p}$ in the domain of the countermodel. <br> <br>
+We can observe that, by working with HOL, it is possible to identify all those lines of reasoning that are _parametric_ with respect to $S$ (the axiom system) and to  $p$ (the formula we are analysing) and develop te proof while avoiding code duplication as much as possible. <br>
+<br>
+- **2. Reducing a model theoretic-notion to a set/list-theoretic concept** 
+The canonical proof of completeness, illustrated in classical textbooks like George Boolos's "The Logic of Provability", exploit the idea of working in a context (_countermodel_) such that: $\forall w \in W_{S,p} (w \in p \iff 𝓜_{S,p},w \vDash p) $. <br> <br>
 Observe that, in such a context, the members of the domain $W_{S,p}$ are set (list in HOLMS) of modal formulas.
 If we are able to construct a countermodel with this constraints, we will easily construct a counterworld $m_{S,p}$ that is a set of formulas not including p.
-
+<br> <br>
 Then our subgoal would be to prove: <br> 
 ```
 S_COMPLETNESS_THM''
@@ -285,98 +280,98 @@ S_COMPLETNESS_THM''
             (exists M. M IN p1 /\
               ~ MEM p M)))`
 ```
+This subgoal is much more manageable than the previous statement, indeed it reduces the **model-theoretic** notion of _validity_ (`holds (W,R) V p w`) to the **set-theoretic** concept (**list-theoretic** in HOLMS) of _membership_ (`MEM p w`).
 
- This subgoal is much more manageable than the previous statement, indeed it reduces the **model-theoretic** notion of _validity_ (`holds (W,R) V p w`) to the **set-theoretic** concept (**list-theoretic** in HOLMS) of _membership_ (`MEM p w`).
+
+- **3. What do we need to prove?** <br>
+Given our aim of proving $\forall p(S \not \vdash p \implies \exists \langle W,R \rangle_{S,p} \in CORR S(\exists m_{S,p} \in W_{S,p}(p \not \in m_{S,p})))$, we need a countermodel and counterworld following these constraints: <br> <br>
+  - A. The Kripke's frame $\langle W,R \rangle_{S,p}$ must be **correspondent** to S. <br>
+    $\langle W,R \rangle_{S,p} \in CORRS$ <br> <br>
+  - B. The Kripke's model $𝓜_{S,p} = \langle W,R,V \rangle_{S,p}$ must allows us to **reduce validity to membership**. <br>
+    Namely, for our model $𝓜_{S,p}$ holds $\forall w \in W_{S,p} (w \in p \iff 𝓜_{S,p},w \vDash p) $. <br> <br>
+  - C. The counterworld $m_{S,p}$ must not contain p. <br>
+      $p \not \in m_{S,p}$ <br> <br>
+  - D. Consequently $W_{S,p}$ must be a **set of formula's lists** <br>
+   `CORRS:(form list->bool)#(form list->form list->bool)->bool`. 
 
 
-**3. What do we need to prove?** <br>
-Given our aim of proving $\forall p(S \not \vdash p \implies \exists \langle W,R \rangle_{S,p} \in CORR S(\exists m_{S,p} \in W_{S,p}(p \not \in m_{S,p})))$, we need a countermodel and counterworld following these constraints: 
+### STEP 1: Partial definition of a parametric Standard Model 
 
-A. The Kripke's frame $\langle W,R \rangle_{S,p}$ must be **correspondent** to S. <br>
-$\langle W,R \rangle_{S,p} \in CORRS$ <br>
+We partially identify the countermodel $𝓜_{S,p} = \langle W,R,V \rangle_{S,p}$ by defining $W_{S,p}$ as a set of maximal consistent lists, $V$as a particular binary relation over formulas' atoms and worlds and by requesting two constraints for $R_{S,p}$. The definition of 'STANDARD_MODEL` in step 1 is fully parametric.
 
-B. The Kripke's model $𝓜_{S,p} = \langle W,R,V \rangle_{S,p}$ must allows us to **reduce validity to membership**. <br>
-Namely, for our model $𝓜_{S,p}$ holds $\forall w \in W_{S,p} (w \in p \iff 𝓜_{S,p},w \vDash p) $. 
+Before this construction of the countermodel, we defined in `consistent.ml` some properties that hold for formulas' lists.
 
-C. The counterworld $m_{S,p}$ must not contain p. <br>
-$p \not \in m_{S,p}$
-
-D. Consequently $W_{S,p}$ must be a **set of formula's lists** <br>
-`CORRS:(form list->bool)#(form list->form list->bool)->bool`. 
-
-### The Proof (1)
-
-The first part of the proof is organized in three steps.
-
-### STEP 1
-Identification of a model <W,R,V> depending on a formula p and, in particular, of a non-empty set of possible worlds given by a subclass of maximal consistent sets of formulas.
-
-Parametric Definitions in `gen_completeness.ml` (parameters P, S)
+#### Consistent $S$ 
+A list of formulas $X$ is consistent to a set of axioms $S$ iff and only if $S \not \vdash \neg \bigwedge X$
 ```
-let FRAME_DEF = new_definition
-  `FRAME = {(W:W->bool,R:W->W->bool) | ~(W = {}) /\
-                                       (!x y:W. R x y ==> x IN W /\ y IN W)}`;;
+let CONSISTENT = new_definition
+  `CONSISTENT S (X:form list) <=> ~[S . {} |~ Not (CONJLIST X)]`;;
+```
 
+#### Maximal Consistent $S,p$ <br>
+A list of formulas $X$ is maximal-consistent to a set of axioms $S$ and modal formula $p$ iff X has no repetitions, X is consistent $_S$ and $\forall q (q \ subformula \ p \implies q \in X \lor \neg q \in l)$.
+```
+let MAXIMAL_CONSISTENT = new_definition
+  `MAXIMAL_CONSISTENT S p X <=>
+   CONSISTENT S X /\ NOREPETITION X /\
+   (!q. q SUBFORMULA p ==> MEM q X \/ MEM (Not q) X)`;;
+```
+
+#### Lemma of Extension of Maximal Consistent lists
+$X \ Consistent_S \implies \exists M (X \subseteq M \ \land \ M \ Maximal-Consistent_{S,p} )$
+```
+EXTEND_MAXIMAL_CONSISTENT 
+|- (`!S p X. CONSISTENT S X /\
+           (!q. MEM q X ==> q SUBSENTENCE p)
+           ==> ?M. MAXIMAL_CONSISTENT S p M /\
+                   (!q. MEM q M ==> q SUBSENTENCE p) /\
+                   X SUBLIST M`
+```
+
+Then we define a **standard model** such that:
+
+- **A: The Domain $W_{S,p}$  is $ { $X | Maximal-Consistent_{S,p} \ X $ }** <br> <br>
+  As requested the domain is a set of list of formulas and, in particular, it is a subclass of maximal consistent sets of formulas. <br>
+  Observe that, in principle, we can employ general **sets** of formulas in the formalisation. However, from the practical viewpoint, **lists without repetitions** are better
+suited since they are automatically finite and we can easily manipulate them by structural recursion. <br> <br>
+We prove, as requested for the domain of a frame, that $W_{S,p}$ is non-empty by using `NONEMPTY_MAXIMAL_CONSISTENT`, a corollary of the lemma of extension of maximal consistent lists.
+```
+NONEMPTY_MAXIMAL_CONSISTENT
+|- `!S p. ~ [S . {} |~ p]
+         ==> ?M. MAXIMAL_CONSISTENT S p M /\
+                 MEM (Not p) M /\
+                 (!q. MEM q M ==> q SUBSENTENCE p)`
+```
+
+- **B: The Accessibility Relation $R_{S,p}$** should meet two conditions
+   - R1: $\forall q \in Form_{\Box} (\Box q \ subformula \ p \implies \forall w \in W_{S,p}(\Box q \in w \iff \forall x (wRx \implies q \in x)))$. <br>
+     This condition ensures that my list-theoretic translation follows kripke's semantics.
+   - R2: $\langle W,R \rangle_{S,p} \in CORR S$. <br>
+    This second condition guarantees one of the four initial constraints.
+
+- **C: The Evaluation Relation $R_{S,p}$** is defined as follows <br>
+  $\forall m \in W_{S,p} \ \forall a \in Atom-Form_{\Box} (mVa \iff a \ subformula \ p \land a \in m)$
+
+
+In particular, in HOLMS `gen_completeness.ml` we develop a parametric (to S and p) definition  of `GEN_STANDARD_FRAME` and `GEN_STANDARD_MODEL` and then we specialize these definitions for each normal system. 
+
+```
 let GEN_STANDARD_FRAME_DEF = new_definition
-  `GEN_STANDARD_FRAME P S p =
-   FRAME INTER P INTER
+  `GEN_STANDARD_FRAME S p =
+   CORR S INTER
    {(W,R) | W = {w | MAXIMAL_CONSISTENT S p w /\
             (!q. MEM q w ==> q SUBSENTENCE p)} /\
             (!q w. Box q SUBFORMULA p /\ w IN W
                    ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))}`;;
 
 let GEN_STANDARD_MODEL_DEF = new_definition
-  `GEN_STANDARD_MODEL P S p (W,R) V <=>
-   (W,R) IN GEN_STANDARD_FRAME P S p /\
+  `GEN_STANDARD_MODEL S p (W,R) V <=>
+   (W,R) IN GEN_STANDARD_FRAME S p /\
    (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`;;
 ```
+Because the definitions of `K_STANDARD_MODEL`, `T_STANDARD_MODEL`, `K4_STANDARD_MODEL` and `GL_STANDARD_MODEL` are a simple specification of `GEN_STANDARD_FRAME` and `GEN_STANDARD_MODEL` with the parameters `{}`, `T_AX`, `K4_AX` and `GL_AX`, we present here just the definitions for $K4$.
 
-Definitions in `k_completeness.ml` (P=FINITE_FRAME, S={})
-```
-let K_STANDARD_FRAME_DEF = new_definition
-  `K_STANDARD_FRAME = GEN_STANDARD_FRAME {}`;;
-
-IN_K_STANDARD_FRAME
-|- `(W,R) IN K_STANDARD_FRAME p <=>
-W = {w | MAXIMAL_CONSISTENT {} p w /\
-         (!q. MEM q w ==> q SUBSENTENCE p)} /\
-(W,R) IN FINITE_FRAME /\
-(!q w. Box q SUBFORMULA p /\ w IN W
-       ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))`
-
-K_STANDARD_MODEL_CAR
-|- `K_STANDARD_MODEL p (W,R) V <=>
-   (W,R) IN K_STANDARD_FRAME p /\
-   (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`
-let K_STANDARD_MODEL_DEF = new_definition
-   `K_STANDARD_MODEL = GEN_STANDARD_MODEL {}`;;
-
-```
-
-Definitions in `t_completeness.ml` (P=FINITE_FRAME, S=T_AX})
-```
-let T_STANDARD_FRAME_DEF = new_definition
-`T_STANDARD_FRAME p = GEN_STANDARD_FRAME T_AX p`;;  
-
-IN_T_STANDARD_FRAME 
-|- `!p W R. (W,R) IN T_STANDARD_FRAME p <=>
-          W = {w | MAXIMAL_CONSISTENT T_AX p w /\
-                   (!q. MEM q w ==> q SUBSENTENCE p)} /\
-          (W,R) IN RF /\
-          (!q w. Box q SUBFORMULA p /\ w IN W
-                 ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))`
-
-let T_STANDARD_MODEL_DEF = new_definition
-   `T_STANDARD_MODEL = GEN_STANDARD_MODEL T_AX`;;
-
-T_STANDARD_MODEL_CAR
-|- `!W R p V.
-     T_STANDARD_MODEL p (W,R) V <=>
-     (W,R) IN T_STANDARD_FRAME p /\
-     (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`
-```
-
-Definitions in `k4_completeness.ml` (P=FINITE_FRAME, S=T_AX})
+Definitions in `k4_completeness.ml` (`S`=`K4_AX`)
 ```
 let K4_STANDARD_FRAME_DEF = new_definition
 `K4_STANDARD_FRAME p = GEN_STANDARD_FRAME K4_AX p`;;  
@@ -399,42 +394,21 @@ K4_STANDARD_MODEL_CAR
      (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`,
 ```
 
-Definitions in `gl_completeness.ml` (P=ITF, S=GL_AX)
-```
-let ITF_DEF = new_definition
-  `ITF =
-   {(W:W->bool,R:W->W->bool) |
-    ~(W = {}) /\
-    (!x y:W. R x y ==> x IN W /\ y IN W) /\
-    FINITE W /\
-    (!x. x IN W ==> ~R x x) /\
-    (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)}`;;
 
-let GL_STANDARD_FRAME_DEF = new_definition
-  `GL_STANDARD_FRAME p = GEN_STANDARD_FRAME ITF GL_AX p`;;
+### STEP 2: Definition of a standard accessibility relation for each S
+The definition of a standard acessibility relation cannot be fully parametrized, at least following the approach presented in classical textbook.
 
-IN_GL_STANDARD_FRAME
-|- !p W R. (W,R) IN GL_STANDARD_FRAME p <=>
-           W = {w | MAXIMAL_CONSISTENT GL_AX p w /\
-                    (!q. MEM q w ==> q SUBSENTENCE p)} /\
-           (W,R) IN ITF /\
-           (!q w. Box q SUBFORMULA p /\ w IN W
-                  ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))
+Consequently, to avoid code repetions in `gen_completeness.ml` we will define a `GEN_STANDARD_REL` that is parametric to $S$ and $p$, but then we will complete the definition of the standard relation for each normal system in the spefic file of each system `S_completeness.ml` in a way that guarantees that conditions R1 and R2 holds. 
 
-let GL_STANDARD_MODEL_DEF = new_definition
-  `GL_STANDARD_MODEL = GEN_STANDARD_MODEL ITF GL_AX`;;
+After we have defined the `S_STANDARD_REL` we will show:
+- The most difficult verse of R1's implication in `S_ACCESSIBILITY_LEMMA` <br>
+$\forall q \in Form_{\Box} (\Box q \ subformula \ p \implies \forall w \in W_{S,p}(\Box q \in w \Longleftarrow \forall x (wRx \implies q \in x)))$
+-   R2 holds for $\langle W_{S,p},$ _S_STANDARD_REL_ $\rangle$ in ` S_MAXIMAL_CONSISTENT`. <br>
+    $\langle W_{S,p},$ _S_STANDARD_REL_ $\rangle  \in CORRS$
+    
+Then `SF_IN_STANDARD_S_FRAME` follows as corollary and, given the hypotesis that $S \not \vdash p$,  $\langle W_{S,p},$ S_STANDARD_REL $, V_{S,p} \rangle$ is an `S_STANDARD_MODEL`.
 
-GL_STANDARD_MODEL_CAR
-|- !W R p V.
-     GL_STANDARD_MODEL p (W,R) V <=>
-     (W,R) IN GL_STANDARD_FRAME p /\
-     (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))
-```
-
-### STEP 2
-Definition of a “standard” accessibility relation depending on axiom set S between these worlds such that the frame is appropriate to S.
-
-Parametric definition of the standard relation in `gen_completeness.ml` (parameter S)
+#### Parametric definition of the standard relation in `gen_completeness`.
 ```
 let GEN_STANDARD_REL = new_definition
   `GEN_STANDARD_REL S p w x <=>
@@ -443,27 +417,161 @@ let GEN_STANDARD_REL = new_definition
    (!B. MEM (Box B) w ==> MEM B x)`;;
 ```
 
-Definitions in `k_completeness.ml` (S={}) and proof of the Accessibility Lemma for K.
+#### Definition of the standard relation for K in `k_completeness.ml`.
 ```
 let K_STANDARD_REL_DEF = new_definition
   `K_STANDARD_REL p = GEN_STANDARD_REL {} p`;;
 
 K_STANDARD_REL_CAR
-|- K_STANDARD_REL p w x <=>
+|- `K_STANDARD_REL p w x <=>
    MAXIMAL_CONSISTENT {} p w /\ (!q. MEM q w ==> q SUBSENTENCE p) /\
    MAXIMAL_CONSISTENT {} p x /\ (!q. MEM q x ==> q SUBSENTENCE p) /\
-   (!B. MEM (Box B) w ==> MEM B x)
-
-K_ACCESSIBILITY_LEMMA_1
-|- !p w q. ~ [{} . {} |~ p] /\
-           MAXIMAL_CONSISTENT {} p w /\
-           (!q. MEM q w ==> q SUBSENTENCE p) /\
-           Box q SUBFORMULA p /\
-           (!x. K_STANDARD_REL p w x ==> MEM q x)
-           ==> MEM (Box q) w
+   (!B. MEM (Box B) w ==> MEM B x)`
 ```
 
-Definitions in `gl_completeness.ml` (S=GL_AX) and proofs of the Accessibility Lemma for GL.
+**Accessibility Lemma for K** that ensures the most difficult verse of R1's implication.
+```
+K_ACCESSIBILITY_LEMMA
+|- `!p w q. ~ [{} . {} |~ p] /\
+         MAXIMAL_CONSISTENT {} p w /\
+         (!q. MEM q w ==> q SUBSENTENCE p) /\
+         Box q SUBFORMULA p /\
+         (!x. K_STANDARD_REL p w x ==> MEM q x)
+         ==> MEM (Box q) w`
+```
+**Maximal Consistent Lemma for K** that ensures R2.
+```
+K_MAXIMAL_CONSISTENT
+|- (`!p. ~ [{} . {} |~ p]
+     ==> ({M | MAXIMAL_CONSISTENT {} p M /\
+          (!q. MEM q M ==> q SUBSENTENCE p)},
+          K_STANDARD_REL p) IN FINITE_FRAME`,
+```
+Proof of the corollary that ensures that **our construction for K is a standard frame**.
+```
+g `!p. ~ [{} . {} |~ p]
+       ==> ({M | MAXIMAL_CONSISTENT {} p M /\ (!q. MEM q M ==> q SUBSENTENCE p)}, 
+             K_STANDARD_REL p) IN K_STANDARD_FRAME p`;;
+e (INTRO_TAC "!p; not_theor_p");;
+e (REWRITE_TAC [IN_K_STANDARD_FRAME]);;
+e CONJ_TAC;;
+e (MATCH_MP_TAC K_MAXIMAL_CONSISTENT);;
+e (ASM_REWRITE_TAC[]);;
+e (INTRO_TAC "!q w; subform w_in");;
+e EQ_TAC;;
+ e (ASM_MESON_TAC[K_STANDARD_REL_CAR]);;
+ e (INTRO_TAC "Implies_Mem_q");;
+   e (HYP_TAC "w_in" (REWRITE_RULE[IN_ELIM_THM]));;
+   e (MATCH_MP_TAC K_ACCESSIBILITY_LEMMA);;
+   e (EXISTS_TAC `p:form`);;
+   e (ASM_REWRITE_TAC[]);;
+let KF_IN_STANDARD_K_FRAME = top_thm();;
+```
+
+
+#### Definition of the standard relation for T in `t_completeness.ml`.
+```
+let T_STANDARD_REL_DEF = new_definition
+  `T_STANDARD_REL p w x <=>
+   GEN_STANDARD_REL T_AX p w x`;;
+
+T_STANDARD_REL_CAR
+|- `!p w x.
+     T_STANDARD_REL p w x <=>
+     MAXIMAL_CONSISTENT T_AX p w /\ (!q. MEM q w ==> q SUBSENTENCE p) /\
+     MAXIMAL_CONSISTENT T_AX p x /\ (!q. MEM q x ==> q SUBSENTENCE p) /\
+     (!B. MEM (Box B) w ==> MEM B x)`
+```
+
+**Accessibility Lemma for T** that ensures the most difficult verse of R1's implication.
+```
+T_ACCESSIBILITY_LEMMA
+|- `!p w q.
+   ~ [T_AX . {} |~ p] /\
+   MAXIMAL_CONSISTENT T_AX p w /\
+   (!q. MEM q w ==> q SUBSENTENCE p) /\
+   Box q SUBFORMULA p /\
+   (!x. T_STANDARD_REL p w x ==> MEM q x)
+     ==> MEM (Box q) w`
+```
+**Maximal Consistent Lemma for T** that ensures R2.
+```
+RF_MAXIMAL_CONSISTENT
+|- `!p. ~ [T_AX . {} |~ p]
+         ==> ({M | MAXIMAL_CONSISTENT T_AX p M /\
+                       (!q. MEM q M ==> q SUBSENTENCE p)},
+                   T_STANDARD_REL p) IN RF `
+```
+Proof of the corollary that ensures that **our construction for T is a standard frame**.
+```
+g `!p. ~ [T_AX . {} |~ p]
+       ==> ({M | MAXIMAL_CONSISTENT T_AX p M /\ (!q. MEM q M ==> q SUBSENTENCE p)}, 
+             T_STANDARD_REL p) IN T_STANDARD_FRAME p`;;
+e (INTRO_TAC "!p; not_theor_p");;
+e (REWRITE_TAC [IN_T_STANDARD_FRAME]);;
+e CONJ_TAC;;
+e (MATCH_MP_TAC RF_MAXIMAL_CONSISTENT);;
+e (ASM_REWRITE_TAC[]);;
+e (ASM_REWRITE_TAC[IN_ELIM_THM]);;
+e (INTRO_TAC "!q w; boxq maxw subw");;
+e EQ_TAC;;
+ e (ASM_MESON_TAC[T_STANDARD_REL_CAR]);;
+ e (ASM_MESON_TAC[T_ACCESSIBILITY_LEMMA]);;
+let RF_IN_T_STANDARD_FRAME = top_thm();;
+```
+#### Definition of the standard relation for K4 in `k4_completeness.ml`.
+```
+let K4_STANDARD_REL_DEF = new_definition
+  `K4_STANDARD_REL p w x <=>
+   GEN_STANDARD_REL K4_AX p w x /\
+   (!B. MEM (Box B) w ==> MEM (Box B) x)`;;
+
+K4_STANDARD_REL_CAR
+|- `!p w x.
+     K4_STANDARD_REL p w x <=>
+     MAXIMAL_CONSISTENT K4_AX p w /\ (!q. MEM q w ==> q SUBSENTENCE p) /\
+     MAXIMAL_CONSISTENT K4_AX p x /\ (!q. MEM q x ==> q SUBSENTENCE p) /\
+     (!B. MEM (Box B) w ==> MEM (Box B) x /\ MEM B x)`
+```
+
+**Accessibility Lemma for K4** that ensures the most difficult verse of R1's implication.
+```
+K4_ACCESSIBILITY_LEMMA
+|- `!p w q.
+    ~ [K4_AX . {} |~ p] /\
+    MAXIMAL_CONSISTENT K4_AX p w /\
+    (!q. MEM q w ==> q SUBSENTENCE p) /\
+    Box q SUBFORMULA p /\
+    (!x. K4_STANDARD_REL p w x ==> MEM q x)
+      ==> MEM (Box q) w`
+```
+**Maximal Consistent Lemma for K4** that ensures R2.
+```
+TF_MAXIMAL_CONSISTENT
+|- `!p. ~ [T_AX . {} |~ p]
+         ==> ({M | MAXIMAL_CONSISTENT T_AX p M /\
+                       (!q. MEM q M ==> q SUBSENTENCE p)},
+                   T_STANDARD_REL p) IN RF `
+```
+Proof of the corollary that ensures that **our construction for K4 is a standard frame**.
+```
+g `!p. ~ [K4_AX . {} |~ p]
+       ==> ({M | MAXIMAL_CONSISTENT K4_AX p M /\ (!q. MEM q M ==> q SUBSENTENCE p)}, 
+             K4_STANDARD_REL p) IN K4_STANDARD_FRAME p`;;
+e (INTRO_TAC "!p; not_theor_p");;
+e (REWRITE_TAC [IN_K4_STANDARD_FRAME]);;
+e CONJ_TAC;;
+e (MATCH_MP_TAC TF_MAXIMAL_CONSISTENT);;
+e (ASM_REWRITE_TAC[]);;
+e (ASM_REWRITE_TAC[IN_ELIM_THM]);;
+e (INTRO_TAC "!q w; boxq maxw subw");;
+e EQ_TAC;;
+ e (ASM_MESON_TAC[K4_STANDARD_REL_CAR]);;
+ e (ASM_MESON_TAC[K4_ACCESSIBILITY_LEMMA]);;
+let K4F_IN_K4_STANDARD_FRAME = top_thm();;
+```
+
+#### Definition of the standard relation for GL in `gl_completeness.ml`.
 ```
 let GL_STANDARD_REL_DEF = new_definition
   `GL_STANDARD_REL p w x <=>
@@ -471,75 +579,205 @@ let GL_STANDARD_REL_DEF = new_definition
    (!B. MEM (Box B) w ==> MEM (Box B) x) /\
    (?E. MEM (Box E) x /\ MEM (Not (Box E)) w)`;;
 
+GL_STANDARD_REL_CAR
+|- `!p w x.
+     GL_STANDARD_REL p w x <=>
+     MAXIMAL_CONSISTENT GL_AX p w /\ (!q. MEM q w ==> q SUBSENTENCE p) /\
+     MAXIMAL_CONSISTENT GL_AX p x /\ (!q. MEM q x ==> q SUBSENTENCE p) /\
+     (!B. MEM (Box B) w ==> MEM (Box B) x /\ MEM B x) /\
+     (?E. MEM (Box E) x /\ MEM (Not (Box E)) w)`
+```
+
+**Accessibility Lemma for GL** that ensures the most difficult verse of R1's implication.
+```
 GL_ACCESSIBILITY_LEMMA
-|- !p M w q.
+|- `!p w q.
      ~ [GL_AX . {} |~ p] /\
-     MAXIMAL_CONSISTENT GL_AX p M /\
-     (!q. MEM q M ==> q SUBSENTENCE p) /\
      MAXIMAL_CONSISTENT GL_AX p w /\
      (!q. MEM q w ==> q SUBSENTENCE p) /\
-     MEM (Not p) M /\
      Box q SUBFORMULA p /\
      (!x. GL_STANDARD_REL p w x ==> MEM q x)
-     ==> MEM (Box q) w
+     ==> MEM (Box q) w`
+```
+**Maximal Consistent Lemma for GL** that ensures R2.
+```
+ITF_MAXIMAL_CONSISTENT
+|- `!p. ~ [GL_AX . {} |~ p]
+         ==> ({M | MAXIMAL_CONSISTENT GL_AX p M /\
+                       (!q. MEM q M ==> q SUBSENTENCE p)},
+                   GL_STANDARD_REL p) IN ITF `
+```
+Proof of the corollary that ensures that **our construction for GL is a standard frame**.
+```
+g `!p. ~ [GL_AX . {} |~ p]
+       ==> ({M | MAXIMAL_CONSISTENT GL_AX p M /\ (!q. MEM q M ==> q SUBSENTENCE p)}, 
+             GL_STANDARD_REL p) IN GL_STANDARD_FRAME p`;;
+e (INTRO_TAC "!p; not_theor_p");;
+e (REWRITE_TAC [IN_GL_STANDARD_FRAME]);;
+e CONJ_TAC;;
+e (MATCH_MP_TAC ITF_MAXIMAL_CONSISTENT);;
+e (ASM_REWRITE_TAC[]);;
+e (ASM_REWRITE_TAC[IN_ELIM_THM]);;
+e (INTRO_TAC "!q w; subform max_cons_w implies_w");;
+e EQ_TAC;;
+ e (ASM_MESON_TAC[GL_STANDARD_REL_CAR]);;
+ e (ASM_MESON_TAC[GL_ACCESSIBILITY_LEMMA]);;
+let GLF_IN_GL_STANDARD_FRAME = top_thm();;
 ```
 
-### STEP 3
-The reduction of the notion of forcing `holds (W,R) V q w` to that of a set-theoretic (list-theoretic) membership MEM q w
-for every subformula q of p, through a specific atomic evaluation function on (W,R).
 
-Parametric truth lemma in `gen_completeness.ml` (parameters P, S)
+### STEP 3: Proving the truth lemma
+In this step we prove that, given a standard model and $S \not \vdash p$, the _desiderandum_ in the proof sketch holds, and indeed something stronger holds. <br>
+_For every subformula q of p_ we can reduce the notion of forcing `holds (W,R) V q w` to that of a set-theoretic (list-theoretic) membership `MEM q w`.
+
+Observe that we prove this foundamental lemma in a fully parametric way and, moreover, the proof of completness does not need to specify this lemma for our normal system in analysis. 
+
+#### Parametric truth lemma in `gen_completeness.ml` (parameters P, S)
 ```
 GEN_TRUTH_LEMMA
-|- !P S W R p V q.
+|- `!S W R p V q.
      ~ [S . {} |~ p] /\
-     GEN_STANDARD_MODEL P S p (W,R) V /\
+     GEN_STANDARD_MODEL S p (W,R) V /\
      q SUBFORMULA p
-     ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)
-```
-
-Truth lemma specified for K in `k_completeness.ml` (P=K_FRAME, S={})
-```
-let K_TRUTH_LEMMA = prove
- (`!W R p V q.
-     ~ [{} . {} |~ p] /\
-     K_STANDARD_MODEL p (W,R) V /\
-     q SUBFORMULA p
-     ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)`,
-  REWRITE_TAC[K_STANDARD_MODEL_DEF] THEN MESON_TAC[GEN_TRUTH_LEMMA]);;
-```
-
-Truth lemma specified for GL in `gl_completeness.ml` (P=ITF, S=GL_AX)
-```
-let GL_truth_lemma = prove
- (`!W R p V q.
-     ~ [GL_AX . {} |~ p] /\
-     GL_STANDARD_MODEL p (W,R) V /\
-     q SUBFORMULA p
-     ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)`,
-  REWRITE_TAC[GL_STANDARD_MODEL_DEF] THEN MESON_TAC[GEN_TRUTH_LEMMA]);;
+     ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)`
 ```
 
 ### The Theorems
 
-Completeness of K in `k_completeness.ml`.
-This proof uses the `K_TRUTH_LEMMA` that specifies the `GEN_TRUTH_LEMMA`, therefore the first part of the proof of the completeness theorem for K is completely parametrized.
+At this point we built up a _countermodel_ $\langle W,R,V \rangle_{S,p}$ that is a _standard model for S_ and we want to prove that a counterworld in this model exists: <br>
+ $\exist M_{S,p} \in W_{S,p} (p \not \in M_{S,p} )$ 
+
+ So we need an $M_{S,p}$ such that:
+ - A: $M_{S,p} \in W_{S,p}$ that is $Maximal_Consistent_{S,p} M$;
+ - B: $p \not \in M_{S,p}$
+
+But thanks to our theorem `NONEMPTY_MAXIMAL_CONSISTENT` $\forall p (S \vdash p \implies (\exists M (Maximal_Consistent_{S,p} M \land \neg p \in M))$, <br> we know that such an $M_{S,p}$ exists and we can prove `GEN_COUNTERMODEL_ALT`. Observe, indeed, that $Maximal_Consistent_{S,p} M \land \neg p \in M \implies p \not \in M_{S,p}$.
 ```
-K_COMPLETENESS_THM
-|- !p. K_FRAME:(form list->bool)#(form list->form list->bool)->bool |= p
-       ==> [{} . {} |~ p]
+NONEMPTY_MAXIMAL_CONSISTENT
+|- `!S p. ~ [S . {} |~ p]
+         ==> ?M. MAXIMAL_CONSISTENT S p M /\
+                 MEM (Not p) M /\
+                 (!q. MEM q M ==> q SUBSENTENCE p)`
+
+
+g `!S W R p. ~ [S . {} |~ p] /\
+             (W,R) IN GEN_STANDARD_FRAME S p
+             ==>
+             ~holds_in (W,R) p`;;
+e (INTRO_TAC "!S W R p; p_not_theor in_standard_frame");;
+e (REWRITE_TAC[holds_in; NOT_FORALL_THM; NOT_IMP; IN_ELIM_THM]);;
+e (EXISTS_TAC `\a M. Atom a SUBFORMULA p /\ MEM (Atom a) M`);;
+e (DESTRUCT_TAC "@M. max mem subf" (MATCH_MP NONEMPTY_MAXIMAL_CONSISTENT (ASSUME `~ [S . {} |~ p]`)));;
+e (EXISTS_TAC `M:form list` THEN ASM_REWRITE_TAC[]);;
+e (SUBGOAL_THEN `GEN_STANDARD_MODEL S p (W,R) (\a M. Atom a SUBFORMULA p /\ MEM (Atom a) M) ` MP_TAC);;
+e (ASM_MESON_TAC[GEN_STANDARD_MODEL_DEF]);;
+e (INTRO_TAC "standard_model");;
+e CONJ_TAC;;
+e (HYP_TAC "in_standard_frame" (REWRITE_RULE[IN_GEN_STANDARD_FRAME]));;
+e (ASM_REWRITE_TAC[IN_ELIM_THM]);;
+e (MP_TAC (ISPECL
+     [`S: form ->bool`;
+      `W: (form)list->bool`;
+      `R: (form)list-> (form)list ->bool`;
+      `p:form`;
+      `(\a M. Atom a SUBFORMULA p /\ MEM (Atom a) M):((char)list->(form)list->bool)`;
+      `p:form`] GEN_TRUTH_LEMMA));;
+e (ANTS_TAC );;
+e (ASM_REWRITE_TAC[SUBFORMULA_REFL]);;
+e (DISCH_THEN (MP_TAC o SPEC `M:form list`));;
+e ANTS_TAC;;
+e (HYP_TAC "standard_model" (REWRITE_RULE[GEN_STANDARD_MODEL_DEF; IN_GEN_STANDARD_FRAME]));;
+e (ASM_REWRITE_TAC[IN_ELIM_THM]);;
+e (DISCH_THEN (SUBST1_TAC o GSYM));;
+e (ASM_MESON_TAC[MAXIMAL_CONSISTENT; CONSISTENT_NC]);;
+let GEN_COUNTERMODEL_ALT = top_thm();;
 ```
 
-Completeness of GL in `gl_completeness.ml`
-This proof uses the `GL_TRUTH_LEMMA` that specifies the `GEN_TRUTH_LEMMA`, therefore the first part of the proof of the completeness theorem for GL is completely parametrized.
+Given the fully parametrized `GEN_COUNTERMODEL_ALT` and `SF_IN_STANDARD_S_FRAME`, the completeness theorems for each $S$ follow and their proofs are so short that we can present them here.
+
+#### Completeness of K in `k_completeness.ml`.
 ```
-GL_COMPLETENESS_THM
-|- !p. ITF:(form list->bool)#(form list->form list->bool)->bool |= p
-       ==> [GL_AX . {} |~ p]
+g `!p. FINITE_FRAME:(form list->bool)#(form list->form list->bool)->bool |= p
+       ==> [{} . {} |~ p]`;;
+e (GEN_TAC THEN GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM] );;
+e (INTRO_TAC "p_not_theor");;
+e (REWRITE_TAC[valid; NOT_FORALL_THM]);;
+e (EXISTS_TAC `({M | MAXIMAL_CONSISTENT {} p M /\ (!q. MEM q M ==> q SUBSENTENCE p)},
+                K_STANDARD_REL p)`);;
+e (REWRITE_TAC[NOT_IMP] THEN CONJ_TAC );;
+e (MATCH_MP_TAC K_MAXIMAL_CONSISTENT);;
+e (ASM_REWRITE_TAC[]);;
+e (SUBGOAL_THEN `({M | MAXIMAL_CONSISTENT {} p M /\ (!q. MEM q M ==> q SUBSENTENCE p)},
+                  K_STANDARD_REL p) IN GEN_STANDARD_FRAME {} p`
+                 MP_TAC);;
+e (ASM_MESON_TAC[KF_IN_STANDARD_K_FRAME; K_STANDARD_FRAME_DEF]);;
+e (ASM_MESON_TAC[GEN_COUNTERMODEL_ALT]);;
+let K_COMPLETENESS_THM = top_thm ();;
+```
+
+#### Completeness of T in `t_completeness.ml`
+```
+g `!p. RF:(form list->bool)#(form list->form list->bool)->bool |= p
+       ==> [T_AX . {} |~ p]`;;
+e (GEN_TAC THEN GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM] );;
+e (INTRO_TAC "p_not_theor");;
+e (REWRITE_TAC[valid; NOT_FORALL_THM]);;
+e (EXISTS_TAC `({M | MAXIMAL_CONSISTENT T_AX p M /\ (!q. MEM q M ==> q SUBSENTENCE p)},
+                T_STANDARD_REL p)`);;
+e (REWRITE_TAC[NOT_IMP] THEN CONJ_TAC );;
+e (MATCH_MP_TAC RF_MAXIMAL_CONSISTENT);;
+e (ASM_REWRITE_TAC[]);;
+e (SUBGOAL_THEN `({M | MAXIMAL_CONSISTENT T_AX p M /\ (!q. MEM q M ==> q SUBSENTENCE p)},
+                  T_STANDARD_REL p) IN GEN_STANDARD_FRAME T_AX p`
+                 MP_TAC);;
+e (ASM_MESON_TAC[RF_IN_T_STANDARD_FRAME; T_STANDARD_FRAME_DEF]);;
+e (ASM_MESON_TAC[GEN_COUNTERMODEL_ALT]);;
+let T_COMPLETENESS_THM = top_thm ();;
+```
+
+#### Completeness of K4 in `k4_completeness.ml`
+```
+g `!p. TF:(form list->bool)#(form list->form list->bool)->bool |= p
+       ==> [K4_AX . {} |~ p]`;;
+e (GEN_TAC THEN GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM] );;
+e (INTRO_TAC "p_not_theor");;
+e (REWRITE_TAC[valid; NOT_FORALL_THM]);;
+e (EXISTS_TAC `({M | MAXIMAL_CONSISTENT K4_AX p M /\ (!q. MEM q M ==> q SUBSENTENCE p)},
+                K4_STANDARD_REL p)`);;
+e (REWRITE_TAC[NOT_IMP] THEN CONJ_TAC );;
+e (MATCH_MP_TAC TF_MAXIMAL_CONSISTENT);;
+e (ASM_REWRITE_TAC[]);;
+e (SUBGOAL_THEN `({M | MAXIMAL_CONSISTENT K4_AX p M /\ (!q. MEM q M ==> q SUBSENTENCE p)},
+                  K4_STANDARD_REL p) IN GEN_STANDARD_FRAME K4_AX p`
+                 MP_TAC);;
+e (ASM_MESON_TAC[K4F_IN_K4_STANDARD_FRAME; K4_STANDARD_FRAME_DEF]);;
+e (ASM_MESON_TAC[GEN_COUNTERMODEL_ALT]);;
+let K4_COMPLETENESS_THM = top_thm ();;
+```
+
+#### Completeness of GL in `gl_completeness.ml`
+
+```
+ g `!p. ITF:(form list->bool)#(form list->form list->bool)->bool |= p
+        ==> [GL_AX . {} |~ p]`;;
+e (GEN_TAC THEN GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM] );;
+e (INTRO_TAC "p_not_theor");;
+e (REWRITE_TAC[valid; NOT_FORALL_THM]);;
+e (EXISTS_TAC `({M | MAXIMAL_CONSISTENT GL_AX p M /\ (!q. MEM q M ==> q SUBSENTENCE p)},
+               GL_STANDARD_REL p)`);;
+e (REWRITE_TAC[NOT_IMP] THEN CONJ_TAC );;
+e (MATCH_MP_TAC ITF_MAXIMAL_CONSISTENT);;
+e (ASM_REWRITE_TAC[]);;
+e (SUBGOAL_THEN `({M | MAXIMAL_CONSISTENT GL_AX p M /\ (!q. MEM q M ==> q SUBSENTENCE p)},
+                   GL_STANDARD_REL p) IN GEN_STANDARD_FRAME GL_AX p`
+                  MP_TAC);;
+e (ASM_MESON_TAC[GLF_IN_GL_STANDARD_FRAME; GL_STANDARD_FRAME_DEF]);;
+e (ASM_MESON_TAC[GEN_COUNTERMODEL_ALT]);;
+let GL_COMPLETENESS_THM = top_thm ();;
 ```
 
 ###  Modal completeness for models on a generic (infinite) domain.
-Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we quickly generalize for each normal system the completeness theorem for models with infinite worlds. <br>
+Observe that our proof of completness ha an issue, it requires that `CORR S` is not just a set of correspondent frames but that it is a set of correspondent frames that has domain that is finite  and that is a set formulas' lists. Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we quickly generalize for each normal system the completeness theorem for models with infinite worlds. <br>
 In `gen_completeness`.
 ```
 GEN_LEMMA_FOR_GEN_COMPLETENESS
@@ -588,6 +826,46 @@ k_COUNTERMODEL_FINITE_SETS
 |- !p. ~[{} . {} |~ p] ==> ~holds_in (K_STDWORLDS p, K_STDREL p) p
 ```
 
+### In T
+Construction of the countermodels.
+```
+let T_STDWORLDS_RULES,T_STDWORLDS_INDUCT,T_STDWORLDS_CASES =
+  new_inductive_set
+  `!M. MAXIMAL_CONSISTENT T_AX p M /\
+       (!q. MEM q M ==> q SUBSENTENCE p)
+       ==> set_of_list M IN T_STDWORLDS p`;;
+
+let T_STDREL_RULES,T_STDREL_INDUCT,T_STDREL_CASES = new_inductive_definition
+  `!w1 w2. T_STANDARD_REL p w1 w2
+           ==> T_STDREL p (set_of_list w1) (set_of_list w2)`;;
+```
+
+Theorem of existence of the finite countermodel.
+```
+T_COUNTERMODEL_FINITE_SETS
+|- `!p. ~ [T_AX . {} |~ p] ==> ~holds_in (T_STDWORLDS p, T_STDREL p) p`
+```
+
+### In K4
+Construction of the countermodels.
+```
+let K4_STDWORLDS_RULES,K4_STDWORLDS_INDUCT,K4_STDWORLDS_CASES =
+  new_inductive_set
+  `!M. MAXIMAL_CONSISTENT K4_AX p M /\
+       (!q. MEM q M ==> q SUBSENTENCE p)
+       ==> set_of_list M IN K4_STDWORLDS p`;;
+
+let K4_STDREL_RULES,K4_STDREL_INDUCT,K4_STDREL_CASES = new_inductive_definition
+  `!w1 w2. K4_STANDARD_REL p w1 w2
+           ==> K4_STDREL p (set_of_list w1) (set_of_list w2)`;;
+```
+
+Theorem of existence of the finite countermodel.
+```
+K4_COUNTERMODEL_FINITE_SETS
+|- `!p. ~ [K4_AX . {} |~ p] ==> ~holds_in (K4_STDWORLDS p, K4_STDREL p) p`
+```
+
 ### In GL
 Construction of the countermodels.
 ```
@@ -624,23 +902,12 @@ K_RULE `!a b. [{} . {} |~ Box a || Box b --> Box (a || b)]`;;
 
 ### In T
 
-Our tactic `T_TAC` and its associated rule `T_RULE` can automatically prove theorems in the modal logic T.
+Our tactic `T_TAC` and its associated rule `T_RULE` still are the naive ones, but what we did in `k_completeness.ml` and in `gl_completeness.ml` demonstrate that in future works we will automatically prove theorems in the modal logic T.
 
-Examples:
-```
-T_RULE `!a. [ T_AX . {} |~ a --> Diamond a ]`;;
-T_RULE `!a. [ T_AX . {} |~ Box a --> Diamond a ]`;;
-```
 
 ### In K4
 
-Our tactic `K4_TAC` and its associated rule `K4_RULE` can automatically prove theorems in the modal logic K4.
-
-### Example of a formula valid in K4 but not in K
-```
-time GL_RULE
-  `!a. [GL_AX . {} |~ Box Diam Box Diam a <-> Box Diam a]`;;
-```
+Our tactic `K4_TAC` and its associated rule `K4_RULE` still are the naive ones, but what we did in `k_completeness.ml` and in `gl_completeness.ml` demonstrate that in future works we will automatically prove theorems in the modal logic K4.
 
 
 ### In GL
