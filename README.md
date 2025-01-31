@@ -5,12 +5,12 @@
 
 See the [website](https://holms-lib.github.io/) for a brief overview of our [HOLMS library](https://github.com/HOLMS-lib/HOLMS) for the [HOL Light](https://hol-light.github.io/) theorem prover.
 
-This repository presents a second version of HOLMS (HOL-Light Library for Modal Systems), a modular framework designed for implementing modal reasoning within the HOL Light proof assistant.  
+This repository presents a second version of HOLMS (HOL-Light Library for Modal Systems), a modular framework designed to implement modal reasoning within the HOL Light proof assistant.  
 
-Extending our [previous work on Gödel-Löb logic (GL)](https://doi.org/10.1007/s10817-023-09677-z), we generalize our approach to formalize modal adequacy proofs for axiomatic calculi, thereby enabling the coverage of a broader range of normal modal systems. If the first version of HOLMS, [presented at Overlay 2024](https://ceur-ws.org/Vol-3904/paper5.pdf), partially parametrized the completeness proof for GL and added the minimal system K, this second version of HOLMS fully generalizes our approach and, as a demonstration of the flexibility of our methodology, four modal system and their adequacy proofs are now implemented in HOLMS:
+Extending our [previous work on Gödel-Löb logic (GL)](https://doi.org/10.1007/s10817-023-09677-z), we generalise our approach to formalise modal adequacy proofs for axiomatic calculi, thereby enabling the coverage of a broader range of normal modal systems. If the first version of HOLMS, [presented at Overlay 2024](https://ceur-ws.org/Vol-3904/paper5.pdf), partially parametrised the completeness proof for GL and added the minimal system K, this second version of HOLMS fully generalises our method and, as a demonstration of the flexibility of our methodology, four modal system and their adequacy proofs are now implemented in HOLMS:
 - **K**: the minimal system is developed in `k_completeness.ml`;
 - **K4**: a system properly extended by GL is developed in `k4_completeness.ml`;
-- **GL**: provability logic is developed and fully parametrized in `gl_completeness.ml`;
+- **GL**: provability logic is developed and fully parametrised in `gl_completeness.ml`;
 - **T**: a system that is not extended by GL or K4, nor is an extension of GL or K4 is developed in `t_completeness.ml`.
 
 HOLMS lays the foundation for a comprehensive tool for modal reasoning in HOL, offering a high level of confidence and full automation by providing the essential mathematical components of principled decision algorithms for modal systems. The automated theorem prover and countermodel constructor for K and GL, already integrated into our library in `k_decid.ml` and `gl_decid.ml`, serve as evidence of the feasibility of this approach merging general purpose proof assistants, enriched sequent calculi, and formalised mathematics.
@@ -19,29 +19,29 @@ The top-level file is `make.ml`.
 
 ## Main Theorems
 
-For each normal system S, implemented in HOLMS in its file `S_completeness.ml`, we prove the following main theorems:
-1. **The Correspondence theorem for S** <br> proves that a certain set of finite frames C, distinguished by a certain accessibility relation, correspond to S (for each frame in the set if p follows from S, then p is valid in such a frame). <br>
+For each normal system $S$, implemented in HOLMS in its file `S_completeness.ml`, we prove the following main theorems:
+- 1. **The Correspondence theorem for S** <br> proves that a certain set of finite frames $C$, distinguished by a certain accessibility relation, **correspond** to $S$ (for each frame in the set if $p$ follows from $S$, then $p$ is valid in such a frame). <br>
 $C= CORR S$ and equivalently $\forall F \in C (S \vdash p \implies F \vDash p) \land \forall F((S \vdash p \implies F \vDash p) \implies F \in C)$ 
-(`APPRS_CORR_S`)
-2. **Soundness of S with respect to CORR S**  <br>
-proves that if something is a theorem of S then it is valid in its correspondent frame. <br>
+(`CORRS_CORR_S`)
+- 2. **Soundness of S with respect to CORR S**  <br>
+proves that if something is a theorem of $S$ then it is valid in its set of correspondent frames. <br>
 $\forall p (S \vdash p \implies CORR S \vDash p)$
-(`S_APPRS_VALID`)
-3. **Consistency of S** <br>
-proves that S cannot prove the false. <br>
+(`S_CORRS_VALID`)
+- 3. **Consistency of S** <br>
+proves that $S$ cannot prove the false. <br>
 $S \not \vdash \bot$
 (`S_CONSISTENT`)
-5. **Completeness of S related to CORR S** <br>
-proves that if someting holds in the set correspondent to S, then it is a theorem of S. <br>
+- 4. **Completeness of S related to CORR S** <br>
+proves that if someting holds in the set correspondent to $S$, then it is a theorem of $S$. <br>
 $\forall p (CORR S \vDash p \implies S \vdash p)$
 (`S_COMPLETENESS_THM`)
 
-For example, in `t_completeness.ml` we prove: (1) `RF_CORR_T`; (2) `T_RF_VALID`; (3) `T_CONSISTENT`; (4) `T_COMPLETENESS_THM`; (5) `T_RULE`.
+For example, in `t_completeness.ml` we prove: (1) `RF_CORR_T`; (2) `T_RF_VALID`; (3) `T_CONSISTENT`; (4) `T_COMPLETENESS_THM`.
 
-Moreover, for each of this systems, HOLMS presents a **simple decision procedure** to prove whether something is a theorem of S or not (`S_RULE`) and a fully automated theorem prover and countermodel constructor for K (`k_completeness.ml`) and GL (`gl_completeness.ml`).
+Moreover, for each of this systems, HOLMS presents a **simple decision procedure** to prove whether something is a theorem of $S$ or not (`S_RULE`) and a fully automated theorem prover and countermodel constructor for $K$ (`k_completeness.ml`) and $GL$ (`gl_completeness.ml`).
 
 
-To generalize and parametrize the proofs of completeness for normal systems as much as possible, we develop four main theorems in `gen_completeness.ml`:
+To generalise and parametrise the proofs of completeness for normal systems as much as possible, we develop four main theorems in `gen_completeness.ml`:
 1. `GEN_TRUTH_LEMMA`;
 2. `GEN_ACCESSIBILITY_LEMMA`;
 3.  `GEN_COUNTERMODEL_ALT `
@@ -396,7 +396,7 @@ K4_STANDARD_MODEL_CAR
 
 
 ### STEP 2: Definition of a standard accessibility relation for each S
-The definition of a standard acessibility relation cannot be fully parametrized, at least following the approach presented in classical textbook.
+The definition of a standard acessibility relation cannot be fully parametrised, at least following the approach presented in classical textbook.
 
 Consequently, to avoid code repetions in `gen_completeness.ml` we will define a `GEN_STANDARD_REL` that is parametric to $S$ and $p$, but then we will complete the definition of the standard relation for each normal system in the spefic file of each system `S_completeness.ml` in a way that guarantees that conditions R1 and R2 holds. 
 
@@ -693,7 +693,7 @@ e (ASM_MESON_TAC[MAXIMAL_CONSISTENT; CONSISTENT_NC]);;
 let GEN_COUNTERMODEL_ALT = top_thm();;
 ```
 
-Given the fully parametrized `GEN_COUNTERMODEL_ALT` and `SF_IN_STANDARD_S_FRAME`, the completeness theorems for each $S$ follow and their proofs are so short that we can present them here.
+Given the fully parametrised `GEN_COUNTERMODEL_ALT` and `SF_IN_STANDARD_S_FRAME`, the completeness theorems for each $S$ follow and their proofs are so short that we can present them here.
 
 #### Completeness of K in `k_completeness.ml`.
 ```
@@ -777,7 +777,7 @@ let GL_COMPLETENESS_THM = top_thm ();;
 ```
 
 ###  Modal completeness for models on a generic (infinite) domain.
-Observe that our proof of completness ha an issue, it requires that `CORR S` is not just a set of correspondent frames but that it is a set of correspondent frames that has domain that is finite  and that is a set formulas' lists. Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we quickly generalize for each normal system the completeness theorem for models with infinite worlds. <br>
+Observe that our proof of completness ha an issue, it requires that `CORR S` is not just a set of correspondent frames but that it is a set of correspondent frames that has domain that is finite  and that is a set formulas' lists. Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we quickly generalise for each normal system the completeness theorem for models with infinite worlds. <br>
 In `gen_completeness`.
 ```
 GEN_LEMMA_FOR_GEN_COMPLETENESS
