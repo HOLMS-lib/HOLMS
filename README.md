@@ -412,19 +412,21 @@ K4_STANDARD_MODEL_CAR
 
 
 ### STEP 2: Definition of a standard accessibility relation for each S
-The definition of a standard acessibility relation cannot be fully parametrised, at least following the approach presented in classical textbook.
+The definition of a _standard acessibility relation_ cannot be fully parametrised, at least following the approach presented in classical textbook.
 
-Consequently, to avoid code repetions in `gen_completeness.ml` we will define a `GEN_STANDARD_REL` that is parametric to $S$ and $p$, but then we will complete the definition of the standard relation for each normal system in the spefic file of each system `S_completeness.ml` in a way that guarantees that conditions R1 and R2 holds. 
+Consequently, to avoid code repetions, we will:
 
-After we have defined the `S_STANDARD_REL` we will show:
-- The most difficult verse of R1's implication in `S_ACCESSIBILITY_LEMMA` <br>
+- A: Define a parametric `GEN_STANDARD_REL` in `gen_completeness.ml`, 
+- B: Complete the definition of `S_STANDARD_REL` in its spefic file `S_completeness.ml`, in a way that guarantees that conditions R1 and R2 holds.
+  In particular we will show:
+  - The most difficult verse of R1's implication in `S_ACCESSIBILITY_LEMMA` <br>
 $\forall q \in Form_{\Box} (\Box q \ subformula \ p \implies \forall w \in W_{S,p}(\Box q \in w \Longleftarrow \forall x (wRx \implies q \in x)))$
--   R2 holds for $\langle W_{S,p},$ _S_STANDARD_REL_ $\rangle$ in ` S_MAXIMAL_CONSISTENT`. <br>
+  -   R2 holds for $\langle W_{S,p},$ _S_STANDARD_REL_ $\rangle$ in ` S_MAXIMAL_CONSISTENT`. <br>
     $\langle W_{S,p},$ _S_STANDARD_REL_ $\rangle  \in CORRS$
     
-Then `SF_IN_STANDARD_S_FRAME` follows as corollary and, given the hypotesis that $S \not \vdash p$,  $\langle W_{S,p},$ S_STANDARD_REL $, V_{S,p} \rangle$ is an `S_STANDARD_MODEL`.
+Then `CORRS_IN_STANDARD_S_FRAME` follows as corollary and, given the hypotesis $S \not \vdash p$,  $\langle W_{S,p},$ S_STANDARD_REL $, V_{S,p} \rangle$ is an `S_STANDARD_MODEL`.
 
-#### Parametric definition of the standard relation in `gen_completeness`.
+#### A: Parametric definition of the standard relation in `gen_completeness`.
 ```
 let GEN_STANDARD_REL = new_definition
   `GEN_STANDARD_REL S p w x <=>
@@ -433,7 +435,7 @@ let GEN_STANDARD_REL = new_definition
    (!B. MEM (Box B) w ==> MEM B x)`;;
 ```
 
-#### Definition of the standard relation for K in `k_completeness.ml`.
+#### B: Definition of the standard relation for K in `k_completeness.ml`.
 ```
 let K_STANDARD_REL_DEF = new_definition
   `K_STANDARD_REL p = GEN_STANDARD_REL {} p`;;
@@ -445,7 +447,7 @@ K_STANDARD_REL_CAR
    (!B. MEM (Box B) w ==> MEM B x)`
 ```
 
-**Accessibility Lemma for K** that ensures the most difficult verse of R1's implication.
+**Accessibility lemma for K** that ensures the most difficult verse of R1's implication.
 ```
 K_ACCESSIBILITY_LEMMA
 |- `!p w q. ~ [{} . {} |~ p] /\
@@ -455,7 +457,7 @@ K_ACCESSIBILITY_LEMMA
          (!x. K_STANDARD_REL p w x ==> MEM q x)
          ==> MEM (Box q) w`
 ```
-**Maximal Consistent Lemma for K** that ensures R2.
+**Maximal consistent lemma for K** ensures R2.
 ```
 K_MAXIMAL_CONSISTENT
 |- (`!p. ~ [{} . {} |~ p]
@@ -485,7 +487,7 @@ let KF_IN_STANDARD_K_FRAME = top_thm();;
 ```
 
 
-#### Definition of the standard relation for T in `t_completeness.ml`.
+#### B: Definition of the standard relation for T in `t_completeness.ml`.
 ```
 let T_STANDARD_REL_DEF = new_definition
   `T_STANDARD_REL p w x <=>
@@ -499,7 +501,7 @@ T_STANDARD_REL_CAR
      (!B. MEM (Box B) w ==> MEM B x)`
 ```
 
-**Accessibility Lemma for T** that ensures the most difficult verse of R1's implication.
+**Accessibility lemma for T** that ensures the most difficult verse of R1's implication.
 ```
 T_ACCESSIBILITY_LEMMA
 |- `!p w q.
@@ -510,7 +512,7 @@ T_ACCESSIBILITY_LEMMA
    (!x. T_STANDARD_REL p w x ==> MEM q x)
      ==> MEM (Box q) w`
 ```
-**Maximal Consistent Lemma for T** that ensures R2.
+**Maximal consistent lemma for T** that ensures R2.
 ```
 RF_MAXIMAL_CONSISTENT
 |- `!p. ~ [T_AX . {} |~ p]
@@ -535,7 +537,7 @@ e EQ_TAC;;
  e (ASM_MESON_TAC[T_ACCESSIBILITY_LEMMA]);;
 let RF_IN_T_STANDARD_FRAME = top_thm();;
 ```
-#### Definition of the standard relation for K4 in `k4_completeness.ml`.
+#### B: Definition of the standard relation for K4 in `k4_completeness.ml`.
 ```
 let K4_STANDARD_REL_DEF = new_definition
   `K4_STANDARD_REL p w x <=>
@@ -550,7 +552,7 @@ K4_STANDARD_REL_CAR
      (!B. MEM (Box B) w ==> MEM (Box B) x /\ MEM B x)`
 ```
 
-**Accessibility Lemma for K4** that ensures the most difficult verse of R1's implication.
+**Accessibility lemma for K4** that ensures the most difficult verse of R1's implication.
 ```
 K4_ACCESSIBILITY_LEMMA
 |- `!p w q.
@@ -561,7 +563,7 @@ K4_ACCESSIBILITY_LEMMA
     (!x. K4_STANDARD_REL p w x ==> MEM q x)
       ==> MEM (Box q) w`
 ```
-**Maximal Consistent Lemma for K4** that ensures R2.
+**Maximal consistent lemma for K4** that ensures R2.
 ```
 TF_MAXIMAL_CONSISTENT
 |- `!p. ~ [T_AX . {} |~ p]
@@ -587,7 +589,7 @@ e EQ_TAC;;
 let K4F_IN_K4_STANDARD_FRAME = top_thm();;
 ```
 
-#### Definition of the standard relation for GL in `gl_completeness.ml`.
+#### B: Definition of the standard relation for GL in `gl_completeness.ml`.
 ```
 let GL_STANDARD_REL_DEF = new_definition
   `GL_STANDARD_REL p w x <=>
@@ -643,10 +645,10 @@ let GLF_IN_GL_STANDARD_FRAME = top_thm();;
 
 
 ### STEP 3: Proving the truth lemma
-In this step we prove that, given a standard model and $S \not \vdash p$, the _desiderandum_ in the proof sketch holds, and indeed something stronger holds. <br>
-_For every subformula q of p_ we can reduce the notion of forcing `holds (W,R) V q w` to that of a set-theoretic (list-theoretic) membership `MEM q w`.
+In this step we prove that, given a standard model and $S \not \vdash p$, the _desiderandum_ in the proof sketch holds, and indeed something stronger holds:
+_For every subformula q of p_ we can reduce the notion of `holds (W,R) V q w` to the list-theoretic one of membership `MEM q w`.
 
-Observe that we prove this foundamental lemma in a fully parametric way and, moreover, the proof of completness does not need to specify this lemma for our normal system in analysis. 
+Observe that we prove this foundamental lemma in a fully parametric way and, moreover, the proof of completness does not need to specify this lemma for the normal system in analysis. 
 
 #### Parametric truth lemma in `gen_completeness.ml` (parameters P, S)
 ```
@@ -660,14 +662,11 @@ GEN_TRUTH_LEMMA
 
 ### The Theorems
 
-At this point we built up a _countermodel_ $\langle W,R,V \rangle_{S,p}$ that is a _standard model for S_ and we want to prove that a counterworld in this model exists: <br>
- $\exist M_{S,p} \in W_{S,p} (p \not \in M_{S,p} )$ 
+We built up a _countermodel_ $\langle W,R,V \rangle_{S,p}$ that is a _standard model for S_, and now we want to prove that a _counterworld_ in this model exists:  $\exists m_{S,p} \in W_{S,p} (p \not \in m_{S,p} )$. So we need an $m_{S,p}$ such that:
+ - A: $m_{S,p} \in W_{S,p}$ that is to say $Maximal-Consistent_{S,p} \ m$;
+ - B: $p \not \in m_{S,p}$
 
- So we need an $M_{S,p}$ such that:
- - A: $M_{S,p} \in W_{S,p}$ that is $Maximal_Consistent_{S,p} M$;
- - B: $p \not \in M_{S,p}$
-
-But thanks to our theorem `NONEMPTY_MAXIMAL_CONSISTENT` $\forall p (S \vdash p \implies (\exists M (Maximal_Consistent_{S,p} M \land \neg p \in M))$, <br> we know that such an $M_{S,p}$ exists and we can prove `GEN_COUNTERMODEL_ALT`. Observe, indeed, that $Maximal_Consistent_{S,p} M \land \neg p \in M \implies p \not \in M_{S,p}$.
+Thanks to our theorem `NONEMPTY_MAXIMAL_CONSISTENT` $\forall p (S \vdash p \implies (\exists m (Maximal-Consistent_{S,p} \ m \ \land \ \neg p \in M))$, we know that such an $m_{S,p}$ exists and we can prove `GEN_COUNTERMODEL_ALT`. Observe, indeed, that $Maximal-Consistent_{S,p} \ m \ \land \ \neg p \in m_{S,p} \implies p \not \in m_{S,p}$.
 ```
 NONEMPTY_MAXIMAL_CONSISTENT
 |- `!S p. ~ [S . {} |~ p]
@@ -709,7 +708,7 @@ e (ASM_MESON_TAC[MAXIMAL_CONSISTENT; CONSISTENT_NC]);;
 let GEN_COUNTERMODEL_ALT = top_thm();;
 ```
 
-Given the fully parametrised `GEN_COUNTERMODEL_ALT` and `SF_IN_STANDARD_S_FRAME`, the completeness theorems for each $S$ follow and their proofs are so short that we can present them here.
+Given the fully parametrised `GEN_COUNTERMODEL_ALT` and `SF_IN_STANDARD_S_FRAME`, the completeness theorems for every $S$ follow and their proofs are so brief that we can present them here.
 
 #### Completeness of K in `k_completeness.ml`.
 ```
@@ -793,7 +792,9 @@ let GL_COMPLETENESS_THM = top_thm ();;
 ```
 
 ###  Modal completeness for models on a generic (infinite) domain.
-Observe that our proof of completness ha an issue, it requires that `CORR S` is not just a set of correspondent frames but that it is a set of correspondent frames that has domain that is finite  and that is a set formulas' lists. Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we quickly generalise for each normal system the completeness theorem for models with infinite worlds. <br>
+Observe that our proof of completness has an issue: it requires that `CORR S` is not just a set of correspondent frames but a set of correspondent frames with has a **finite** domain that is **a set formulas' lists**. Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we can quickly generalise each completeness theorem for models with infinite worlds. 
+
+
 In `gen_completeness`.
 ```
 GEN_LEMMA_FOR_GEN_COMPLETENESS
@@ -801,7 +802,7 @@ GEN_LEMMA_FOR_GEN_COMPLETENESS
        ==> !p. CORR S:(A->bool)#(A->A->bool)->bool |= p
             ==> CORR S:(form list->bool)#(form list->form list->bool)->bool |= p`;;
 ```
-As corollaries of `GEN_LEMMA_FOR_GEN_COMPLETENESS` in the specific files.
+As corollaries of `GEN_LEMMA_FOR_GEN_COMPLETENESS`, in the specific files.
 ```
 K_COMPLETENESS_THM_GEN
 |- `!p. INFINITE (:A) /\ FINITE_FRAME:(A->bool)#(A->A->bool)->bool |= p
@@ -918,12 +919,12 @@ K_RULE `!a b. [{} . {} |~ Box a || Box b --> Box (a || b)]`;;
 
 ### In T
 
-Our tactic `T_TAC` and its associated rule `T_RULE` still are the naive ones, but what we did in `k_completeness.ml` and in `gl_completeness.ml` demonstrate that in future works we will automatically prove theorems in the modal logic T.
+Our tactic `T_TAC` and its associated rule `T_RULE` still are the naive ones, but what we did in `k_completeness.ml` and in `gl_completeness.ml` demonstrates that in future works we will be able to automatically prove theorems in the modal logic T.
 
 
 ### In K4
 
-Our tactic `K4_TAC` and its associated rule `K4_RULE` still are the naive ones, but what we did in `k_completeness.ml` and in `gl_completeness.ml` demonstrate that in future works we will automatically prove theorems in the modal logic K4.
+Our tactic `K4_TAC` and its associated rule `K4_RULE` still are the naive ones, but what we did in `k_completeness.ml` and in `gl_completeness.ml` demonstrates that in future works we will be able to  automatically prove theorems in the modal logic K4.
 
 
 ### In GL
