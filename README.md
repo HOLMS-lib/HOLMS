@@ -38,7 +38,7 @@ $\forall p (CORR S \vDash p \implies S \vdash p)$
 
 For example, in `t_completeness.ml` we prove: (1) `RF_CORR_T`; (2) `T_RF_VALID`; (3) `T_CONSISTENT`; (4) `T_COMPLETENESS_THM`.
 
-Moreover, for each of this systems, HOLMS presents a **simple decision procedure** to prove whether something is a theorem of $S$ or not (`S_RULE`) and a fully automated theorem prover and countermodel constructor for $K$ (`k_completeness.ml`) and $GL$ (`gl_completeness.ml`).
+Moreover, for each of this systems, HOLMS presents a **simple decision procedure** to prove whether something is a theorem of $S$ or not (`S_RULE`) and a **fully automated theorem prover and countermodel constructor** for $K$ (`k_completeness.ml`) and $GL$ (`gl_completeness.ml`).
 
 
 To generalise and parametrise the proofs of completeness for normal systems as much as possible, we develop four main theorems in `gen_completeness.ml`:
@@ -50,7 +50,23 @@ To generalise and parametrise the proofs of completeness for normal systems as m
 
 # Usage guide and source code
 
-## Calcus Definition
+## Axiomatic Calcus 
+We inductively define the **axioms** of our modal calculus (`K_AXIOMS`).
+```
+let KAXIOM_RULES,KAXIOM_INDUCT,KAXIOM_CASES = new_inductive_definition
+  `(!p q. KAXIOM (p --> (q --> p))) /\
+   (!p q r. KAXIOM ((p --> q --> r) --> (p --> q) --> (p --> r))) /\
+   (!p. KAXIOM (((p --> False) --> False) --> p)) /\
+   (!p q. KAXIOM ((p <-> q) --> p --> q)) /\
+   (!p q. KAXIOM ((p <-> q) --> q --> p)) /\
+   (!p q. KAXIOM ((p --> q) --> (q --> p) --> (p <-> q))) /\
+   KAXIOM (True <-> False --> False) /\
+   (!p. KAXIOM (Not p <-> p --> False)) /\
+   (!p q. KAXIOM (p && q <-> (p --> q --> False) --> False)) /\
+   (!p q. KAXIOM (p || q <-> Not(Not p && Not q))) /\
+   (!p q. KAXIOM (Box (p --> q) --> Box p --> Box q))`;;
+```
+Then, we inductively introduce the **rules of inference** of our calculus (`MODPROVES`).
 ```
 let MODPROVES_RULES,MODPROVES_INDUCT,MODPROVES_CASES =
   new_inductive_definition
@@ -67,8 +83,7 @@ MODPROVES_DEDUCTION_LEMMA
 |- !S H p q. [S . H |~ p --> q] <=> [S . p INSERT H |~ q]
 ```
 
-## Relational semantics
-Kripke's Semantics of formulae.
+## Kripke's Semantics of formulae
 
 We define, by induction on the complexity of a formula, that a certain formula $A$ **holds in a certain world $w$ of a certain model $\langle W, R, V\rangle$**. <br>
 $\langle W, R, V\rangle, w \vDash A$
@@ -90,8 +105,8 @@ let holds =
    (holds WR V (Box p) w <=>
     !w'. w' IN FST WR /\ SND WR w w' ==> holds WR V p w')`;;
 ```
-We say that a formula $p$ **holds in a certain frame** iff it holds in every world for every model of that frame. <br>
-$\langle W, R\rangle \vDash p \iff \forall w \in W (\forall V (\langle W, R, V\rangle, w \vDash p$))
+We say that a formula $p$ **holds in a certain frame** iff it holds for every model in every world  of that frame. <br>
+$\langle W, R\rangle \vDash p \iff \forall V (\forall w \in W (\langle W, R, V\rangle, w \vDash p$))
 ```
 let holds_in = new_definition
   `holds_in (W,R) p <=> !V w:W. w IN W ==> holds (W,R) V p w`;;
@@ -117,16 +132,16 @@ let CORR_DEF = new_definition
              (((W,R) IN FINITE_FRAME ) /\
              (!p. [S. {} |~ p] ==> holds_in (W:W->bool,R:W->W->bool) (p)))}`;;
 ```
-For each one of the normal system S developed in HOLMS we prove what set of frames is correspondent to S ($C= CORR S$), then we prove that every frame that is in C is correspondent to S ($\subseteq$: $\forall F \in C(S \vdash p \implies F \vDash p)$ ) and that every frame that is correspondent to S is in C ($\supseteq$: $\forall F((S \vdash p \implies F \vDash p) \implies F \in C)$  ).
+For each one of the normal system S developed in HOLMS we prove what set of frames is correspondent to S ($C= CORR S$), i.e. we prove that every frame that is in C is correspondent to S ($\subseteq$: $\forall F \in C(S \vdash p \implies F \vDash p)$ ) and that every frame that is correspondent to S is in C ($\supseteq$: $\forall F((S \vdash p \implies F \vDash p) \implies F \in C)$  ).
 
 ### K-Finite Frames 
-We prove that the set of finite frames is the one correspondent to K.
+We prove that the set of **finite frames** is the one correspondent to **$K$**.
 ```
 FINITE_FRAME_CORR_K
  |-`FINITE_FRAME:(W->bool)#(W->W->bool)->bool = CORR {}`;; 
 ```
 ### T-Finite Reflexive Frames (RF)
-We prove that the set of finite reflexive frames is the one correspondent to T.
+We prove that the set of **finite reflexive frames** is the one correspondent to **$T$**.
 ```
 let RF_DEF = new_definition
  `RF =
@@ -140,7 +155,7 @@ RF_CORR_T
  |-`FINITE_FRAME:(W->bool)#(W->W->bool)->bool = CORR {}`;;
 ```
 ### K4-Finite Transitive Frames (TF)
-We prove that the set of finite transitive frames is the one correspondent to K4.
+We prove that the set of **finite transitive frames** is the one correspondent to **$K4$**.
 ```
 let TF_DEF = new_definition
  `TF =
@@ -154,7 +169,7 @@ TF_CORR_K4
  |-`TF: (W->bool)#(W->W->bool)->bool = CORR K4_AX`;;
 ```
 ### GL-Finite Irreflexive and Transitive Frames (ITF)
-We prove that the set of finite transitive and irreflexive frames is the one correspondent to GL.
+We prove that the set of **finite transitive and irreflexive frames** is the one correspondent to **$GL$**.
 ```
 let ITF_DEF = new_definition
   `ITF =
@@ -170,14 +185,14 @@ ITF_CORR_GL
 ```
 
 ## Soundness and Consistency
-We demonstrate the **soundness** of each S with respect to CORR S.
+We parametrically demonstrate the **soundness** of each $S$ with respect to $CORR S$.
 ```
 GEN_CORR_VALID
 |- `!S p. [S. {} |~ p] ==> CORR S:(W->bool)#(W->W->bool)->bool |= p`;;
 ```
 
-Then, by specializing the proof of `GEN_CORR_VALID`, we prove the soundness of each normal system  S developed in HOLMS with respect to its correspondent frame.
-Moreover we prove its **consistency**, by modus ponens on the converse of `S_FRAME_VALID`.
+Then, by specializing the proof of `GEN_CORR_VALID`, we prove the soundness of each normal system  $S$ developed in HOLMS with respect to its correspondent frame.
+Moreover we prove its **consistency**, by modus ponens on the converse of `S_CORRS_VALID`.
 
 ### Soundness and consistency of K
 ```
@@ -239,8 +254,8 @@ let GL_consistent = prove
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 ```
 
-## Completeness theorems
-We first sketch the idea behind the demonstration and, then, we will presnt a three-steps proof.
+## Completeness Theorems
+We first sketch the idea behind the demonstration and, then, we will present a three-step proof.
 
 ### The Idea behind the Proof
 
@@ -251,24 +266,24 @@ S_COMPLETNESS_THM
 |. `!p. ( CORR S |= p ==> [S. {} |~ p])`
 ```
 - **1. Rewriting `S_COMPLETNESS`'s statment** <br>
-By using some tautologies and rewriting, we can show that the completeness theorem is equivalent to a more handy sentence:  <br>
+By using some tautologies and rewritings, we can show that the completeness theorem is equivalent to a more handy sentence:  <br>
 $\forall p (S \not \vdash p \implies \exists \langle W,R\rangle_{S,p} \in CORR_S (\exists V_{S,p} \exists m_{S,p} \in W_{S,p} (\langle W_{S,p}, R_{S,p}, V_{S,p} \rangle, m_{S,p} \not \vDash p))$ <br> <br>
-  - A. We rewrite the sentence by _contraposition_. <br>
+  - A. We rewrote the sentence by _contraposition_. <br>
    `e GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM];;` <br> <br>
-  - B. We rewrite validity in a set of frames (`valid`) as validity in a certain world of a certain model (`holds`) and we exploit some _propositional tautologies_. <br>
+  - B. We rewrote validity in a set of frames (`valid`) as validity in a certain world of a certain model (`holds`) and we exploited some _propositional tautologies_. <br>
    `e (REWRITE_TAC[valid; NOT_FORALL_THM; FORALL_PAIR_THM; holds_in; NOT_IMP]);;` <br>
 ```
 S_COMPLETNESS_THM'
 |- `!p. ( `~[S . {} |~ p] ==>
-          (exists W R. W,R IN CORR S /\
-            (exists V m. m IN p1 /\
-              ~holds (p1,p2) V p w)))`
+          (? W R. W,R IN CORR S /\
+            (? V m. m IN W /\
+              ~holds (W,R) V p w)))`
 ```
-At this point, for each modal formula $p$ we need to construct a **_countermodel_** $𝓜_{S,p}$ and a "**_counterworld_**" $m_{S,p}$ in the domain of the countermodel. <br> <br>
-We can observe that, by working with HOL, it is possible to identify all those lines of reasoning that are _parametric_ with respect to $S$ (the axiom system) and to  $p$ (the formula we are analysing) and develop te proof while avoiding code duplication as much as possible. <br>
+To prove this rewritten statment, we need to construct a **_countermodel_** $𝓜_{S,p}$ and a "**_counterworld_**" $m_{S,p}$ in the domain of the countermodel for each modal formula $p$. <br> <br>
+We can observe that, by working with HOL, we identify all those lines of reasoning that are **_parametric_** with respect to $S$ (the axiom system) and to  $p$ (the formula we are analysing) and we develop the completness proof while **avoiding code duplication as much as possible**. <br>
 <br>
-- **2. Reducing a model theoretic-notion to a set/list-theoretic concept** 
-The canonical proof of completeness, illustrated in classical textbooks like George Boolos's "The Logic of Provability", exploit the idea of working in a context (_countermodel_) such that: $\forall w \in W_{S,p} (w \in p \iff 𝓜_{S,p},w \vDash p) $. <br> <br>
+- **2. Reducing a model theoretic-notion to a set/list-theoretic concept** <br>
+The canonical proof of completeness, illustrated in classical textbooks like [George Boolos's "The Logic of Provability"](https://www.cambridge.org/core/books/logic-of-provability/F1549530F91505462083CE2FEB6444AA), exploits the idea of working in a context (_countermodel_) such that: $\forall w \in W_{S,p} (w \in p \iff 𝓜_{S,p},w \vDash p) $. <br> <br>
 Observe that, in such a context, the members of the domain $W_{S,p}$ are set (list in HOLMS) of modal formulas.
 If we are able to construct a countermodel with this constraints, we will easily construct a counterworld $m_{S,p}$ that is a set of formulas not including p.
 <br> <br>
@@ -276,11 +291,11 @@ Then our subgoal would be to prove: <br>
 ```
 S_COMPLETNESS_THM''
 |- `!p. ( `~[S . {} |~ p] ==>
-          (exists W R. W,R IN CORR S /\
-            (exists M. M IN p1 /\
+          (? W R. W,R IN CORR S /\
+            (? M. M IN W /\
               ~ MEM p M)))`
 ```
-This subgoal is much more manageable than the previous statement, indeed it reduces the **model-theoretic** notion of _validity_ (`holds (W,R) V p w`) to the **set-theoretic** concept (**list-theoretic** in HOLMS) of _membership_ (`MEM p w`).
+This subgoal is much more manageable than the previous one, indeed it reduces the **model-theoretic** notion of _validity_ (`holds (W,R) V p w`) to the **set-theoretic** concept (**list-theoretic** in HOLMS) of _membership_ (`MEM p w`).
 
 
 - **3. What do we need to prove?** <br>
@@ -291,15 +306,16 @@ Given our aim of proving $\forall p(S \not \vdash p \implies \exists \langle W,R
     Namely, for our model $𝓜_{S,p}$ holds $\forall w \in W_{S,p} (w \in p \iff 𝓜_{S,p},w \vDash p) $. <br> <br>
   - C. The counterworld $m_{S,p}$ must not contain p. <br>
       $p \not \in m_{S,p}$ <br> <br>
-  - D. Consequently $W_{S,p}$ must be a **set of formula's lists** <br>
+  - D. $W_{S,p}$ must be a **set of formulas' lists** <br>
    `CORRS:(form list->bool)#(form list->form list->bool)->bool`. 
 
 
 ### STEP 1: Partial definition of a parametric Standard Model 
 
-We partially identify the countermodel $𝓜_{S,p} = \langle W,R,V \rangle_{S,p}$ by defining $W_{S,p}$ as a set of maximal consistent lists, $V$as a particular binary relation over formulas' atoms and worlds and by requesting two constraints for $R_{S,p}$. The definition of 'STANDARD_MODEL` in step 1 is fully parametric.
+We partially identify the countermodel $𝓜_{S,p} = \langle W,R,V \rangle_{S,p}$ by defining $W_{S,p}$ as a set of maximal consistent lists, $V$ as a particular binary relation over formulas' atoms and worlds and by requesting two constraints for $R_{S,p}$. The definition of `S_STANDARD_MODEL` in step 1 is fully parametric and does not involve any peculiarities of the modal system $S$.
 
-Before this construction of the countermodel, we defined in `consistent.ml` some properties that hold for formulas' lists.
+### Consistency and Maximal Consistency
+Before we build up the countermodel, we define in `consistent.ml` some properties that hold for formulas' lists and that will be usefull to define the domain of the countermodel.
 
 #### Consistent $S$ 
 A list of formulas $X$ is consistent to a set of axioms $S$ iff and only if $S \not \vdash \neg \bigwedge X$
@@ -309,7 +325,7 @@ let CONSISTENT = new_definition
 ```
 
 #### Maximal Consistent $S,p$ <br>
-A list of formulas $X$ is maximal-consistent to a set of axioms $S$ and modal formula $p$ iff X has no repetitions, X is consistent $_S$ and $\forall q (q \ subformula \ p \implies q \in X \lor \neg q \in l)$.
+A list of formulas $X$ is maximal-consistent to a set of axioms $S$ and modal formula $p$ iff $X \ has \ no \ repetitions$, $X \ is \ consistent_S$ and $\forall q (q \ subformula \ p \implies q \in X \lor \neg q \in l)$.
 ```
 let MAXIMAL_CONSISTENT = new_definition
   `MAXIMAL_CONSISTENT S p X <=>
@@ -328,13 +344,13 @@ EXTEND_MAXIMAL_CONSISTENT
                    X SUBLIST M`
 ```
 
-Then we define a **standard model** such that:
+### Definition of the parametric Countermodel
+We define a **standard model** such that:
 
-- **A: The Domain $W_{S,p}$  is $ { $X | Maximal-Consistent_{S,p} \ X $ }** <br> <br>
-  As requested the domain is a set of list of formulas and, in particular, it is a subclass of maximal consistent sets of formulas. <br>
-  Observe that, in principle, we can employ general **sets** of formulas in the formalisation. However, from the practical viewpoint, **lists without repetitions** are better
-suited since they are automatically finite and we can easily manipulate them by structural recursion. <br> <br>
-We prove, as requested for the domain of a frame, that $W_{S,p}$ is non-empty by using `NONEMPTY_MAXIMAL_CONSISTENT`, a corollary of the lemma of extension of maximal consistent lists.
+- **A: The Domain $W_{S,p}$  is { $X | Maximal-Consistent_{S,p} \ X$ }** <br> <br>
+As requested, the domain is a set of lists of formulas and, in particular, it is a **subclass of maximal consistent sets of formulas**. <br>
+  Observe that, in principle, we can employ general **sets** of formulas in the formalisation. However, from the practical viewpoint, **lists without repetitions** are better suited in HOL since they are automatically finite and we can easily manipulate them by structural recursion. <br> <br>
+We prove, as requested for the domain of a frame, that $W_{S,p}$ is **non-empty** by using `NONEMPTY_MAXIMAL_CONSISTENT`, a corollary of the lemma of extension of maximal consistent lists.
 ```
 NONEMPTY_MAXIMAL_CONSISTENT
 |- `!S p. ~ [S . {} |~ p]
@@ -349,11 +365,11 @@ NONEMPTY_MAXIMAL_CONSISTENT
    - R2: $\langle W,R \rangle_{S,p} \in CORR S$. <br>
     This second condition guarantees one of the four initial constraints.
 
-- **C: The Evaluation Relation $R_{S,p}$** is defined as follows <br>
+- **C: The Evaluation Relation $V_{S,p}$** is defined as follows <br>
   $\forall m \in W_{S,p} \ \forall a \in Atom-Form_{\Box} (mVa \iff a \ subformula \ p \land a \in m)$
 
 
-In particular, in HOLMS `gen_completeness.ml` we develop a parametric (to S and p) definition  of `GEN_STANDARD_FRAME` and `GEN_STANDARD_MODEL` and then we specialize these definitions for each normal system. 
+In particular, in HOLMS's `gen_completeness.ml` we develop a parametric (to $S$ and $p$) definition  of `GEN_STANDARD_FRAME` and `GEN_STANDARD_MODEL` and then we specialize these definitions for each normal system. 
 
 ```
 let GEN_STANDARD_FRAME_DEF = new_definition
@@ -369,7 +385,7 @@ let GEN_STANDARD_MODEL_DEF = new_definition
    (W,R) IN GEN_STANDARD_FRAME S p /\
    (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`;;
 ```
-Because the definitions of `K_STANDARD_MODEL`, `T_STANDARD_MODEL`, `K4_STANDARD_MODEL` and `GL_STANDARD_MODEL` are a simple specification of `GEN_STANDARD_FRAME` and `GEN_STANDARD_MODEL` with the parameters `{}`, `T_AX`, `K4_AX` and `GL_AX`, we present here just the definitions for $K4$.
+Because the definitions of `K_STANDARD_MODEL`, `T_STANDARD_MODEL`, `K4_STANDARD_MODEL` and `GL_STANDARD_MODEL` are just instances of `GEN_STANDARD_FRAME` and `GEN_STANDARD_MODEL` with the parameters `{}`, `T_AX`, `K4_AX` and `GL_AX`, here we present only the definitions for $K4$.
 
 Definitions in `k4_completeness.ml` (`S`=`K4_AX`)
 ```
