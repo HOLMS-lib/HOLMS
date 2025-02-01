@@ -262,10 +262,10 @@ We first sketch the idea behind the demonstration and, then, we will present a t
 Given a modal system $S$, we want to prove that it is **complete with respect to the set of its correspondent frames**: $\forall p (CORRS \vDash p \implies S \vdash p)$
 
 ```
-S_COMPLETNESS_THM
+S_COMPLETENESS_THM
 |. `!p. ( CORR S |= p ==> [S. {} |~ p])`
 ```
-- **1. Rewriting `S_COMPLETNESS`'s statment** <br>
+- **1. Rewriting `S_COMPLETENESS`'s statment** <br>
 By using some tautologies and rewritings, we can show that the completeness theorem is equivalent to a more handy sentence:  <br>
 $\forall p (S \not \vdash p \implies \exists \langle W,R\rangle_{S,p} \in CORR_S (\exists V_{S,p} \exists m_{S,p} \in W_{S,p} (\langle W_{S,p}, R_{S,p}, V_{S,p} \rangle, m_{S,p} \not \vDash p))$ <br> <br>
   - A. We rewrote the sentence by _contraposition_. <br>
@@ -273,14 +273,14 @@ $\forall p (S \not \vdash p \implies \exists \langle W,R\rangle_{S,p} \in CORR_S
   - B. We rewrote validity in a set of frames (`valid`) as validity in a certain world of a certain model (`holds`) and we exploited some _propositional tautologies_. <br>
    `e (REWRITE_TAC[valid; NOT_FORALL_THM; FORALL_PAIR_THM; holds_in; NOT_IMP]);;` <br>
 ```
-S_COMPLETNESS_THM'
+S_COMPLETENESS_THM'
 |- `!p. ( `~[S . {} |~ p] ==>
           (? W R. W,R IN CORR S /\
             (? V m. m IN W /\
               ~holds (W,R) V p w)))`
 ```
 To prove this rewritten statment, we need to construct a **_countermodel_** $𝓜_{S,p}$ and a "**_counterworld_**" $m_{S,p}$ in the domain of the countermodel for each modal formula $p$. <br> <br>
-We can observe that, by working with HOL, we identify all those lines of reasoning that are **_parametric_** with respect to $S$ (the axiom system) and to  $p$ (the formula we are analysing) and we develop the completness proof while **avoiding code duplication as much as possible**. <br>
+We can observe that, by working with HOL, we identify all those lines of reasoning that are **_parametric_** with respect to $S$ (the axiom system) and to  $p$ (the formula we are analysing) and we develop the completeness proof while **avoiding code duplication as much as possible**. <br>
 <br>
 - **2. Reducing a model theoretic-notion to a set/list-theoretic concept** <br>
 The canonical proof of completeness, illustrated in classical textbooks like [George Boolos's "The Logic of Provability"](https://www.cambridge.org/core/books/logic-of-provability/F1549530F91505462083CE2FEB6444AA), exploits the idea of working in a context (_countermodel_) such that: $\forall w \in W_{S,p} (w \in p \iff 𝓜_{S,p},w \vDash p) $. <br> <br>
@@ -289,7 +289,7 @@ If we are able to construct a countermodel with this constraints, we will easily
 <br> <br>
 Then our subgoal would be to prove: <br> 
 ```
-S_COMPLETNESS_THM''
+S_COMPLETENESS_THM''
 |- `!p. ( `~[S . {} |~ p] ==>
           (? W R. W,R IN CORR S /\
             (? M. M IN W /\
@@ -648,7 +648,7 @@ let GLF_IN_GL_STANDARD_FRAME = top_thm();;
 In this step we prove that, given a standard model and $S \not \vdash p$, the _desiderandum_ in the proof sketch holds, and indeed something stronger holds:
 _For every subformula q of p_ we can reduce the notion of `holds (W,R) V q w` to the list-theoretic one of membership `MEM q w`.
 
-Observe that we prove this foundamental lemma in a fully parametric way and, moreover, the proof of completness does not need to specify this lemma for the normal system in analysis. 
+Observe that we prove this foundamental lemma in a fully parametric way and, moreover, the proof of completeness does not need to specify this lemma for the normal system in analysis. 
 
 #### Parametric truth lemma in `gen_completeness.ml` (parameters P, S)
 ```
@@ -792,7 +792,7 @@ let GL_COMPLETENESS_THM = top_thm ();;
 ```
 
 ###  Modal completeness for models on a generic (infinite) domain.
-Observe that our proof of completness has an issue: it requires that `CORR S` is not just a set of correspondent frames but a set of correspondent frames with has a **finite** domain that is **a set formulas' lists**. Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we can quickly generalise each completeness theorem for models with infinite worlds. 
+Observe that our proof of completeness has an issue: it requires that `CORR S` is not just a set of correspondent frames but a set of correspondent frames with has a **finite** domain that is **a set formulas' lists**. Thanks to the parametric lemma `GEN_LEMMA_FOR_GEN_COMPLETENESS`, we can quickly generalise each completeness theorem for models with infinite worlds. 
 
 
 In `gen_completeness`.
