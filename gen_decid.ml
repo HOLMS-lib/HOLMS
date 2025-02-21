@@ -3,6 +3,8 @@
 (*                                                                           *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
+(* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
+(*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
@@ -140,3 +142,54 @@ let STEP_BOXL2_TCL : thm_tactical = fun k hth ->
 let rec HOLDS_TAC:thm_tactic = fun th ->
   ASSUME_HOLDS_LITERAL_TAC th THEN
   TRY (STEP_BOXL2_TCL HOLDS_TAC th);;
+
+(* ------------------------------------------------------------------------- *)
+(* Dispatch mechanism.                                                       *)
+(* Define HOLMS_TAC, HOLMS_RULE and HOLMS_BUILD_COUNTERMODEL.                *)
+(* ------------------------------------------------------------------------- *)
+
+let holms_decid_tactics : (term * tactic) list ref = ref [];;
+(*
+  [`{}:form->bool`,K_TAC;
+   `T_AX`,T_TAC;
+   `K4_AX`,K4_TAC;
+   `GL_AX`,GL_TAC];;
+*)
+
+let holms_register_tactic (tm : term) (tac : tactic) : unit =
+  holms_decid_tactics := (tm,tac) :: !holms_decid_tactics;;
+
+let get_holms_tactic (tm : term) : tactic =
+  assoc tm !holms_decid_tactics;;
+
+let holms_dispatch_tac : term -> tactic =
+  let ptm = `[S . H |~ p]` in
+  let _,[tmS;_;_] = strip_comb ptm in
+  fun tm ->
+    let inst = term_match [] ptm tm in
+    let tm_ax = instantiate inst tmS in
+    get_holms_tactic tm_ax ;;
+
+(* Example: *)
+(* holms_dispatch `[K4_AX . {} |~ Box a --> a]`;; *)
+
+let HOLMS_DISPATCH_TAC : tactic =
+  fun (asl,w) as gl -> holms_dispatch_tac w gl;;
+
+let HOLMS_TAC : tactic =
+  REPEAT (GEN_TAC ORELSE CONV_TAC (CHANGED_CONV let_CONV)) THEN
+  REWRITE_TAC[diam_DEF; dotbox_DEF] THEN HOLMS_DISPATCH_TAC;;
+
+let HOLMS_RULE (tm : term) : thm =
+  prove(tm,HOLMS_TAC);;
+
+let the_HOLMS_countermodel : term ref = ref `no_countermodel:bool`;;
+
+let HOLMS_BUILD_COUNTERMODEL tm =
+  try ignore (HOLMS_RULE tm);
+      failwith "There is no countermodel."
+  with Failure _ ->
+    report "Countermodel found:";
+    let th = REWRITE_CONV [] !the_HOLMS_countermodel in
+    print_term (rhs (concl th));
+    report "";;

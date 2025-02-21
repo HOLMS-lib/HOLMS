@@ -1,17 +1,168 @@
 (* ========================================================================= *)
 (* Some tests.                                                               *)
 (*                                                                           *)
-(* (c) Copyright, Marco Maggesi, Cosimo Perini Brogi 2020-2022.              *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
+(*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+(* ------------------------------------------------------------------------- *)
+(* Tests and examples for the modal logic K.                                 *)
+(* ------------------------------------------------------------------------- *)
 
-let SORT_BOX_TAC     = Rule_gl.SORT_BOX_TAC;;
-let BOX_RIGHT_TAC    = Rule_gl.BOX_RIGHT_TAC;;
-let GL_RIGHT_TAC     = Rule_gl.GL_RIGHT_TAC;;
-let GL_STEP_TAC      = Rule_gl.GL_STEP_TAC;;
-let INNER_GL_TAC     = Rule_gl.INNER_GL_TAC;;
+time HOLMS_RULE `[{} . {} |~ Box (a && b) <-> Box a && Box b]`;;
+
+time HOLMS_RULE `[{} . {} |~ Box a || Box b --> Box (a || b)]`;;
+
+time HOLMS_BUILD_COUNTERMODEL `[{} . {} |~ Box a --> a]`;;
+
+time HOLMS_BUILD_COUNTERMODEL `[{} . {} |~ Box (a || b) --> Box a || Box b]`;;
+
+time HOLMS_BUILD_COUNTERMODEL `[{} . {} |~ Box (Box a --> Diam a)]`;;
+
+(* Löb schema. *)
+time HOLMS_BUILD_COUNTERMODEL `[{} . {} |~ Box (Box a --> a) --> Box a]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* Tests and examples for the modal logic T.                                 *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_RULE `[T_AX . {} |~ Box (a && b) <-> Box a && Box b]`;;
+
+time HOLMS_RULE `[T_AX . {} |~ Box a || Box b --> Box (a || b)]`;;
+
+time HOLMS_RULE `[T_AX . {} |~ Box a --> a]`;;
+
+time HOLMS_RULE `[T_AX . {} |~ Box Box a --> Diam a]`;;
+
+time HOLMS_RULE `[T_AX . {} |~ Box (Box a --> Diam a)]`;;
+
+time HOLMS_RULE `[T_AX . {} |~ a --> Diam a]`;;
+
+time HOLMS_RULE `[T_AX . {} |~ Box a --> Diam a]`;;
+
+time HOLMS_BUILD_COUNTERMODEL `[T_AX . {} |~ Diam a --> a]`;;
+
+time HOLMS_BUILD_COUNTERMODEL `[T_AX . {} |~ Box a --> Box Box a]`;;
+
+(* Löb schema. *)
+time HOLMS_BUILD_COUNTERMODEL `[T_AX . {} |~ Box (Box a --> a) --> Box a]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* Tests and examples for the modal logic K4.                                *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_RULE `[K4_AX . {} |~ Box (a && b) <-> Box a && Box b]`;;
+
+time HOLMS_RULE `[K4_AX . {} |~ Box a || Box b --> Box (a || b)]`;;
+
+time HOLMS_RULE `[K4_AX . {} |~ Box a --> Box Box a]`;;
+
+time HOLMS_RULE `[K4_AX . {} |~ Dotbox (Box a) <-> Box a]`;;
+
+time HOLMS_RULE `[K4_AX . {} |~ Dotbox (Dotbox a) <-> Dotbox a]`;;
+
+time HOLMS_BUILD_COUNTERMODEL `[K4_AX . {} |~ Box a --> a]`;;
+
+(* Löb schema.  Diverges! *)
+(* HOLMS_BUILD_COUNTERMODEL
+     `[K4_AX . {} |~ Box (Box a --> a) --> Box a]`;; *)
+
+(* ------------------------------------------------------------------------- *)
+(* Tests and examples for the modal logic GL.                                *)
+(* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
+(* Some arithmetical principles investigated via provability in GL           *)
+(*                                                                           *)
+(* Modal formulas can be realised as sentences (i.e. closed formulas) of     *)
+(* Peano Arithmetic (PA). The Box is thus interpreted as the predicate of    *)
+(* formal provability in PA, Bew(x).                                         *)
+(*                                                                           *)
+(* Under this interpretation, we will read modal formulas as follows:        *)
+(* - Box p = p is provable in PA;                                            *)
+(* - Not (Box (Not p)) = p is consistent with PA                             *)
+(* - Not (Box p) = p is unprovable in PA                                     *)
+(* - Box (Not p) = p is refutable in PA                                      *)
+(* - (Box p) || (Box (Not p)) = p is decidable in PA                         *)
+(* - Not (Box p) && Not (Box (Not p)) = p is undecidable in PA               *)
+(* - Box (p <-> q) = p and q are equivalent over PA                          *)
+(* - Box (False) = PA is inconsistent                                        *)
+(* - Not (Box False) = Diam True = PA is consistent                          *)
+(* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
+(* Löb schema.                                                               *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_RULE `!a. [GL_AX . {} |~ Box (Box a --> a) --> Box a]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* Formalised Second Incompleteness Theorem:                                 *)
+(* In PA, the following is provable: If PA is consistent, it cannot prove    *)
+(* its own consistency                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_RULE
+  `[GL_AX . {} |~ Not (Box False) --> Not (Box (Diam True))]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* PA ignores unprovability statements.                                      *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_RULE
+  `!p. [GL_AX . {} |~ Box False <-> Box Diam p]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* If PA does not prove its inconsistency, then its consistency is           *)
+(* undecidable.                                                              *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_RULE
+  `[GL_AX . {} |~ Not (Box (Box False))
+                  --> Not (Box (Not (Box False))) &&
+                      Not (Box (Not (Not (Box False))))]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* If a sentence is equivalent to its own unprovability, and if PA does not  *)
+(* prove its inconsistency, then that sentence is undecidable.               *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_RULE
+  `!p. [GL_AX . {} |~ Box (p <-> Not (Box p)) && Not (Box (Box False))
+                      --> Not (Box p) && Not (Box (Not p))]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* If a reflection principle implies the second iterated consistency         *)
+(*   assertion, then the converse implication holds too.                     *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_RULE
+  `!p. [GL_AX . {} |~ Box ((Box p --> p) --> Diam (Diam True))
+                      --> (Diam (Diam True) --> (Box p --> p))]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* A Godel sentence is equiconsistent with a consistency statement           *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_RULE
+  `!p. [GL_AX . {} |~ Box (p <-> Not (Box p)) <->
+                      Box (p <-> Not (Box False))]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* For any arithmetical sentences p q, p is equivalent to unprovability      *)
+(* of q --> p iff p is equivalent to consistency of q                        *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_RULE
+  `!p q. [GL_AX . {} |~ Dotbox (p <-> Not Box (q --> p)) <->
+                        Dotbox (p <-> Diam q)]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* Valid in GL but not in K.                                                 *)
+(* ------------------------------------------------------------------------- *)
+
+time HOLMS_BUILD_COUNTERMODEL
+  `!a. [GL_AX . {} |~ Box Diam Box Diam a <-> Box Diam a]`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Example of countermodel.                                                  *)
@@ -19,40 +170,45 @@ let INNER_GL_TAC     = Rule_gl.INNER_GL_TAC;;
 (* that both p is undecidable and it is provable that p is decidable         *)
 (* ------------------------------------------------------------------------- *)
 
-g `!p . |-- (Box (Box p || Box (Not p)) --> (Box p || Box (Not p)))`;;
-e GL_TAC;;
-!the_gl_countermodel;;
+time HOLMS_BUILD_COUNTERMODEL
+  `[GL_AX . {} |~ Box (Box p || Box Not p) --> Box p || Box Not p]`;;
 
-(* CPU time (user): 2.80908 *)
+(* ------------------------------------------------------------------------- *)
+(* Basic tests.                                                              *)
+(* ------------------------------------------------------------------------- *)
+
+(* CPU time (user): 7.413296 *)
 let test_prove tm =
-  try prove(tm,GL_TAC) with Failure _ -> failwith (string_of_term tm)
+  try prove(tm,HOLMS_TAC) with Failure _ -> failwith (string_of_term tm)
 in
 time (map test_prove)
- [`!p. |-- (Not (Box p) && Box (Box p --> p)
-            --> Diam (Not p && Box p && (Box p --> p) && Box (Box p --> p)))`;
-  `!p q. |-- (Box (q <-> (Box q --> p)) --> (Box (Box p --> p) --> Box p))`;
-  `!p. |-- (Box (Box p --> p) <-> Box p)`;
-  `!p. |-- (Dotbox (Box p) <-> Box p)`;
-  `!p. |-- (Dotbox (Box p) <-> Box (Dotbox p))`;
-  `!p. |-- (Dotbox p <-> (Dotbox (Dotbox p)))`;
-  `!p q. |-- (Diam p && Box q --> Diam (p && q))`;
-  `!p q. |-- (Box (p && q) --> Box p && Box q)`;
-  `!p. |-- (Box (Box p --> p) <-> Box (Box p && p))`;
-  `|-- (Box (Diam False) --> Box False)`;
-  `!p. |-- (Box (p <-> Box p) <-> Box (p <-> True))`;
-  `!p. |-- (Box (p <-> Box p) --> Box (p <-> True))`;
-  `!p. |-- (Box (p <-> True) --> Box (p <-> Box p))`;
-  `!p. |-- (Box (p <-> Not (Box p)) <-> Box (p <-> Not (Box False)))`;
-  `!p. |-- (Box (p <-> Box (Not p)) <-> Box (p <-> (Box False)))`;
-  `!p. |-- (Box (p <-> Not (Box (Not p))) <-> Box (p <-> False))`;
-  `!p. |-- (Box ((Box p --> p) --> Not (Box (Box False)))
-            -->  Box (Box False))`];;
+ [`[GL_AX . {}
+    |~ Not Box p && Box (Box p --> p)
+       --> Diam (Not p && Box p && (Box p --> p) && Box (Box p --> p))]`;
+  `[GL_AX . {}
+    |~ Box (q <-> (Box q --> p)) --> Box (Box p --> p) --> Box p]`;
+  `[GL_AX . {} |~ Box (Box p --> p) <-> Box p]`;
+  `[GL_AX . {} |~ Dotbox Box p <-> Box p]`;
+  `[GL_AX . {} |~ Dotbox Box p <-> Box Dotbox p]`;
+  `[GL_AX . {} |~ Dotbox p <-> Dotbox Dotbox p]`;
+  `[GL_AX . {} |~ Diam p && Box q --> Diam (p && q)]`;
+  `[GL_AX . {} |~ Box (p && q) --> Box p && Box q]`;
+  `[GL_AX . {} |~ Box (Box p --> p) <-> Box (Box p && p)]`;
+  `[GL_AX . {} |~ Box Diam False --> Box False]`;
+  `[GL_AX . {} |~ Box (p <-> Box p) <-> Box (p <-> True)]`;
+  `[GL_AX . {} |~ Box (p <-> Box p) --> Box (p <-> True)]`;
+  `[GL_AX . {} |~ Box (p <-> True) --> Box (p <-> Box p)]`;
+  `[GL_AX . {} |~ Box (p <-> Not (Box p)) <-> Box (p <-> Not (Box False))]`;
+  `[GL_AX . {} |~ Box (p <-> Box (Not p)) <-> Box (p <-> (Box False))]`;
+  `[GL_AX . {} |~ Box (p <-> Not (Box (Not p))) <-> Box (p <-> False)]`;
+  `[GL_AX . {}
+    |~ Box ((Box p --> p) --> Not Box Box False) -->  Box Box False]`];;
 
 (* ------------------------------------------------------------------------- *)
 (* Further tests.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
-(* CPU time (user): 7.212676 *)
+(* CPU time (user): 19.381427 *)
 let gl_theorems =
  [("GL_Godel_sentence_equiconsistent_consistency",
    `Box (p <-> Not Box p) <-> Box (p <-> Not Box False)`);
@@ -128,25 +284,24 @@ let gl_theorems =
    `Box (p <-> Not Box p) && Not Box Box False -->
     Not Box p && Not Box Not p`)] in
 let test_prove (s,tm) =
-  let th = try GL_RULE (mk_comb(`|--`,tm))
+  let th = try GL_RULE (mk_comb(`MODPROVES GL_AX {}`,tm))
            with Failure _ -> failwith s in
   s,th in
 time (map test_prove) gl_theorems;;
 
 (* ------------------------------------------------------------------------- *)
-(* Further tests.                                                            *)
+(* Further examples of countermodels.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-(* CPU time (user): 20.190578 *)
-g `!p q. |-- ( Dotbox (p <-> (q && (Box (p --> q) --> Box Not p))) <->
-               Dotbox (p <-> (q && Box Not q)) )`;;
-time e GL_TAC;;
-top_thm();;
+(* CPU time (user): 47.994603 *)
+time HOLMS_BUILD_COUNTERMODEL
+  `[GL_AX . {}
+    |~ Dotbox (p <-> (q && (Box (p --> q) --> Box Not p))) <->
+       Dotbox (p <-> (q && Box Not q))]`;;
 
-(* CPU time (user): 279.073357 *)
-(* About 5 min. *)
-g `!p q.
-     |-- ( Dotbox (p <-> (Diam p --> q && Not Box (p --> q))) <->
-           Dotbox (p <-> (Diam True --> q && Not Box (Box False --> q))) )`;;
-time e GL_TAC;;
-top_thm();;
+(* CPU time (user): 896.120732 *)
+(* About 15 min. *)
+time HOLMS_BUILD_COUNTERMODEL
+  `[GL_AX . {}
+    |~ Dotbox (p <-> (Diam p --> q && Not Box (p --> q))) <->
+       Dotbox (p <-> (Diam True --> q && Not Box (Box False --> q)))]`;;

@@ -4,6 +4,8 @@
 (* (c) Copyright, Marco Maggesi, Cosimo Perini Brogi 2020-2022.              *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
+(* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
+(*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
 let CONSISTENT = new_definition

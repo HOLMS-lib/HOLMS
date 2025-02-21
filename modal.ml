@@ -4,6 +4,8 @@
 (* (c) Copyright, Marco Maggesi, Cosimo Perini Brogi 2020-2022.              *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
+(* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
+(*                Cosimo Perini Brogi 2025.                                  *)
 (*                                                                           *)
 (* Part of this code is copied or adapted from                               *)
 (*   John Harrison (2017) The HOL Light Tutorial.                            *)
