@@ -415,6 +415,33 @@ e (FIRST_X_ASSUM(SUBST1_TAC));;
 e (REWRITE_TAC[MEM]);;
 let MEM_FLATMAP_LEMMA = top_thm();;
 
+g `!p l. MEM (Box p) l ==>
+        MEM p  (FLATMAP (\x. match x with Box c -> [c] | _ -> []) l)`;;
+e GEN_TAC;;
+e LIST_INDUCT_TAC;;
+ e (REWRITE_TAC[MEM; FLATMAP]);;
+e (PURE_REWRITE_TAC[FLATMAP]);;
+e (PURE_REWRITE_TAC[MEM_APPEND]);;
+e (REWRITE_TAC[MEM]);;
+ e STRIP_TAC;;
+  e DISJ1_TAC;;
+   e (CONV_TAC (ONCE_DEPTH_CONV MATCH_CONV));;
+   e (CLAIM_TAC "ex" `?p. Box p = h`);;
+     e (ASM_MESON_TAC[]);;
+   e (ASM_REWRITE_TAC[]);;
+   e (CLAIM_TAC "sym" `h = Box p`);;
+     e (ASM_MESON_TAC[]);;
+   e (UNDISCH_TAC `Box p = h`);;
+   e (ASM_REWRITE_TAC[MEM]);;
+  e DISJ2_TAC;;
+   e (ASM_MESON_TAC[]);;
+let MEM_FLATMAP_LEMMA_1 = top_thm();;
+
+g `!p l. MEM p  (FLATMAP (\x. match x with Box c -> [c] | _ -> []) l) <=>
+         MEM (Box p) l`;;
+e (ASM_MESON_TAC[MEM_FLATMAP_LEMMA_1; MEM_FLATMAP_LEMMA]);;
+let MEM_FLATMAP_LEMMA_A = top_thm();;
+
 let MEM_FLATMAP_LEMMA_2 = prove
  (`!p l. MEM p (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) l) <=>
          (?q. p = Box q /\ MEM p l)`,
@@ -430,6 +457,88 @@ let MEM_FLATMAP_LEMMA_2 = prove
    MESON_TAC[];
    ALL_TAC] THEN
   POP_ASSUM (fun th -> MESON_TAC[th]));;
+
+g `!p l. MEM p (FLATMAP (\x. match x with Not Box e -> [Not Box e] | _ -> []) l) <=>
+         (?q. p = Not Box q /\ MEM (Not Box q) l)`;;  
+e (GEN_TAC THEN LIST_INDUCT_TAC );;
+e (REWRITE_TAC[MEM; FLATMAP]);;
+e (REWRITE_TAC[MEM; FLATMAP]);;
+e (REWRITE_TAC[MEM_APPEND]);;
+e (ASM_CASES_TAC `?e. h = Not  Box e`);;
+e (POP_ASSUM (CHOOSE_THEN SUBST_VAR_TAC) THEN ASM_REWRITE_TAC[MEM]);;
+e (MESON_TAC[]);;
+e (SUBGOAL_THEN `~ MEM p (match h with Not Box e -> [Not Box e] | _ -> [])`
+    (fun th -> ASM_REWRITE_TAC[th]));;
+e (POP_ASSUM MP_TAC);;
+e (STRUCT_CASES_TAC (SPEC `h:form` (cases "form")));;
+e (ASM_REWRITE_TAC[MEM; distinctness "form"; injectivity "form"]);;
+e (ASM_REWRITE_TAC[MEM; distinctness "form"; injectivity "form"]);;
+e (ASM_REWRITE_TAC[MEM; distinctness "form"; injectivity "form"]);;
+e (CONV_TAC (ONCE_DEPTH_CONV MATCH_CONV));;
+e (ASM_REWRITE_TAC [ injectivity "form"]);;
+e DISCH_TAC;;
+e DISCH_TAC;;
+e (SUBGOAL_THEN `MEM (p:form) []` MP_TAC);;
+  e  (ASM_MESON_TAC []);;
+e  (ASM_MESON_TAC [MEM]);;
+e (ASM_REWRITE_TAC[MEM; distinctness "form"; injectivity "form"]);;
+e (ASM_REWRITE_TAC[MEM; distinctness "form"; injectivity "form"]);;
+e (ASM_REWRITE_TAC[MEM; distinctness "form"; injectivity "form"]);;
+e (ASM_REWRITE_TAC[MEM; distinctness "form"; injectivity "form"]);;
+e (ASM_REWRITE_TAC[MEM; distinctness "form"; injectivity "form"]);;
+e (POP_ASSUM (fun th -> MESON_TAC[th]));;
+let MEM_FLATMAP_LEMMA_3 = top_thm();;
+
+
+g `!q p l. MEM p (FLATMAP (\x. match x with
+                               | Not e ->
+                                   if Box e SUBSENTENCE q
+                                   then [Not e]
+                                   else []
+                               | _ -> [])
+                          l) <=>
+           (?r. p = Not r /\ Box r SUBSENTENCE q /\ MEM (Not r) l)`;;
+e (REPEAT GEN_TAC THEN REWRITE_TAC[MEM_FLATMAP] THEN EQ_TAC);;
+e (STRIP_TAC THEN POP_ASSUM_LIST (MP_TAC o end_itlist CONJ));;
+e (STRUCT_CASES_TAC (SPEC `y:form` form_CASES) THEN REWRITE_TAC[MEM]);;
+e (COND_CASES_TAC THEN REWRITE_TAC[MEM] THEN STRIP_TAC THEN
+   EXISTS_TAC `a:form` THEN ASM_REWRITE_TAC[]);;
+e (STRIP_TAC THEN EXISTS_TAC `Not r` THEN ASM_REWRITE_TAC[MEM]);;
+let MEM_FLATMAP_LEMMA_4 = top_thm();;
+
+g `!q p l. MEM p (FLATMAP (\x. match x with
+                               | Not e ->
+                                   if Box e SUBSENTENCE q
+                                   then [Box Not Box e]
+                                   else []
+                               | _ -> []) l) <=>
+         (?r. p = Box Not Box r /\ Box r SUBSENTENCE q /\ MEM (Not r) l)`;;
+e (REPEAT GEN_TAC THEN REWRITE_TAC[MEM_FLATMAP] THEN EQ_TAC);;
+e (STRIP_TAC THEN POP_ASSUM_LIST (MP_TAC o end_itlist CONJ));;
+e (STRUCT_CASES_TAC (SPEC `y:form` form_CASES) THEN REWRITE_TAC[MEM]);;
+e (COND_CASES_TAC THEN REWRITE_TAC[MEM] THEN STRIP_TAC THEN
+   EXISTS_TAC `a:form` THEN ASM_REWRITE_TAC[]);;
+e (STRIP_TAC THEN EXISTS_TAC `Not r` THEN ASM_REWRITE_TAC[MEM]);;
+let MEM_FLATMAP_LEMMA_5 = top_thm();;
+
+let MEM_FLATMAP_LEMMA_6 = prove
+ (`!q p l. MEM p (FLATMAP (\x. match x with
+                               | Not e ->
+                                   if Box e SUBSENTENCE q
+                                   then [Not Box e]
+                                   else []
+                               | _ -> [])
+                          l) <=>
+         (?r. p = Not Box r /\ Box r SUBSENTENCE q /\ MEM (Not r) l)`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[MEM_FLATMAP] THEN
+  EQ_TAC THENL
+  [STRIP_TAC THEN
+   POP_ASSUM_LIST (MP_TAC o end_itlist CONJ) THEN
+   STRUCT_CASES_TAC (SPEC `y:form` form_CASES) THEN REWRITE_TAC[MEM] THEN
+   COND_CASES_TAC THEN REWRITE_TAC[MEM] THEN STRIP_TAC THEN
+   EXISTS_TAC `a:form` THEN ASM_REWRITE_TAC[];
+   ALL_TAC] THEN
+  STRIP_TAC THEN EXISTS_TAC `Not r` THEN ASM_REWRITE_TAC[MEM]);;
 
 g `!S p w q.
      ~ [S . {} |~ p] /\
@@ -541,6 +650,20 @@ e (ASM_MESON_TAC[SUBFORMULA_TRANS; SUBFORMULA_INVERSION; SUBFORMULA_REFL]);;
 r 1;;
 e (REMOVE_THEN "" MATCH_MP_TAC THEN REWRITE_TAC[MEM]);;
 let GEN_ACCESSIBILITY_LEMMA = top_thm ();;
+
+let XK_SUBLIST_XK4 = prove
+ (`!q. CONS (Not q) (FLATMAP (\x. match x with Box c -> [c] | _ -> []) w)
+       SUBLIST
+       CONS (Not q)
+            (FLATMAP (\x. match x with Box c -> [c; Box c] | _ -> []) w)`,
+  GEN_TAC THEN REWRITE_TAC[CONS_SUBLIST] THEN
+  CONJ_TAC THENL [ASM_REWRITE_TAC[MEM] ; ALL_TAC] THEN
+  REWRITE_TAC[SUBLIST] THEN INTRO_TAC "!x; a" THEN
+  SUBGOAL_THEN `MEM (Box x) w` MP_TAC THENL
+  [MATCH_MP_TAC MEM_FLATMAP_LEMMA THEN ASM_MESON_TAC[]; ALL_TAC] THEN
+  INTRO_TAC "memw" THEN ASM_REWRITE_TAC[MEM] THEN DISJ2_TAC THEN
+  ASM_REWRITE_TAC[MEM_FLATMAP] THEN  EXISTS_TAC `Box x:form` THEN
+  ASM_REWRITE_TAC[MEM]);;
 
 (* ------------------------------------------------------------------------- *)
 (* General Lemmata for Completeness Theorems.                                *)

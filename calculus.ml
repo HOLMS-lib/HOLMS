@@ -588,6 +588,12 @@ let MLK_not_subst = prove
  (`!p q. [S . H |~ p <-> q] ==> [S . H |~ Not p <-> Not q]`,
   MESON_TAC[MLK_iff_def; MLK_iff_imp2; MLK_contrapos]);;
 
+let MLK_not_subst_th = prove
+ (`!p q. [S . H |~ p <-> q] /\ [S . H |~ Not p]  ==> [S . H |~ Not q]`,
+  REPEAT STRIP_TAC THEN
+   CLAIM_TAC "not_eq" `[S . H |~ Not p <-> Not q]` THENL [MATCH_MP_TAC MLK_not_subst; ALL_TAC] THENL
+   [ASM_MESON_TAC[]; ALL_TAC] THEN ASM_MESON_TAC [MLK_iff_mp]);;
+
 let MLK_and_rigth_true_th = prove
  (`!p. [S . H |~ p && True <-> p]`,
   GEN_TAC THEN REWRITE_TAC[MLK_iff_def] THEN CONJ_TAC THENL
@@ -919,6 +925,20 @@ let MLK_iff_subst = prove
   CONJ_TAC THENL [ASM_MESON_TAC[MLK_iff_imp2]; ALL_TAC] THEN
   MATCH_MP_TAC MLK_imp_swap THEN MATCH_MP_TAC MLK_imp_add_assum THEN
   ASM_MESON_TAC[MLK_iff_imp1]);;
+
+let MLK_iff_mp_subst= prove
+(`!p p' q q'. [S . H |~ p <-> p'] /\ [S . H |~ q <-> q'] /\
+                [S . H |~ p <-> q] ==> [S . H |~ p' <-> q']`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC MLK_iff_mp THEN
+  EXISTS_TAC `p <-> q` THEN ASM_REWRITE_TAC[] THEN
+  ASM_MESON_TAC[MLK_iff_subst; MLK_imp_subst]);;
+
+let MLK_imp_mp_subst = prove
+ (`!p p' q q'. [S . H |~ p <-> p'] /\ [S . H |~ q <-> q'] /\
+                [S . H |~ p --> q] ==> [S . H |~ p' --> q']`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC MLK_iff_mp THEN
+  EXISTS_TAC `p --> q` THEN ASM_REWRITE_TAC[] THEN
+  ASM_MESON_TAC[MLK_iff_subst; MLK_imp_subst]);;
 
 let MLK_box_iff_th = prove
  (`!p q. [S . H |~ Box (p <-> q) --> (Box p <-> Box q)]`,

@@ -122,6 +122,13 @@ let CONJLIST_APPEND = prove
   MATCH_MP_TAC MLK_and_subst_th THEN REWRITE_TAC[MLK_iff_refl_th] THEN
   ONCE_REWRITE_TAC[MLK_iff_sym] THEN MATCH_ACCEPT_TAC CONJLIST_CONS);;
 
+let CONJLIST_APPEND_SYM = prove
+ (`!l m. [S . H |~ (CONJLIST (APPEND l m) <-> (CONJLIST (APPEND m l)))]`,
+  REPEAT GEN_TAC THEN 
+  CLAIM_TAC "eq" `[S . H |~ CONJLIST l && CONJLIST m <-> CONJLIST m && CONJLIST l]`THENL
+   [ASM_MESON_TAC [MLK_and_comm_th]; ALL_TAC] THEN
+  ASM_MESON_TAC[CONJLIST_APPEND; MLK_iff_mp_subst; MLK_iff_sym]);;
+
 let FALSE_NOT_CONJLIST = prove
  (`!X. MEM False X ==> [S . H |~ (Not (CONJLIST X))]`,
   INTRO_TAC "!X; X" THEN REWRITE_TAC[MLK_not_def] THEN
@@ -150,6 +157,12 @@ let CONJLIST_MAP_BOX = prove
    ALL_TAC] THEN
   MATCH_MP_TAC MLK_box_iff THEN MATCH_MP_TAC MLK_necessitation THEN
   ONCE_REWRITE_TAC[MLK_iff_sym] THEN MATCH_ACCEPT_TAC CONJLIST_CONS);;
+
+g `!l m. [S . H |~ (CONJLIST (MAP (Box) (APPEND l m)) <-> (CONJLIST (APPEND (MAP (Box) l) (MAP (Box) m))))]`;;
+e LIST_INDUCT_TAC;;
+e ( ASM_REWRITE_TAC[MLK_iff_refl_th; MAP_APPEND]);;
+e ( ASM_REWRITE_TAC[MLK_iff_refl_th; MAP_APPEND]);;
+let APPEND_MAP_BOX = top_thm();;
 
 let MODPROVES_DEDUCTION_LEMMA_CONJLIST = prove
  (`!S H K p. [S . H |~ CONJLIST K --> p] <=>
