@@ -12,142 +12,167 @@
 (* Lemmata.                                                                  *)
 (* ------------------------------------------------------------------------- *)
 
-let COMPLETENESS_NUM =
-  let COMPLETENESS_THEOREM_NUM =
-    REWRITE_RULE[num_INFINITE]
-      (INST_TYPE [`:num`,`:A`] GL_COMPLETENESS_THM_GEN)
-  and HOLDS_BOX_EQ = prove
-   (`!W R p w:A.
-       (W,R) IN ITF /\ w IN W
-       ==> (holds (W,R) V (Box p) w <=>
-            (!y. y IN W /\ R w y ==> holds (W,R) V (Box p --> p) y))`,
-    INTRO_TAC "!W R p w; WR w" THEN REWRITE_TAC[holds] THEN
-    EQ_TAC THENL [MESON_TAC[]; ALL_TAC] THEN
-    CLAIM_TAC "tnt" `(W:A->bool,R) IN TRANSNT` THENL
-    [MATCH_MP_TAC (REWRITE_RULE [SUBSET] ITF_SUBSET_TRANSNT) THEN
-     ASM_REWRITE_TAC[];
-     ALL_TAC] THEN
-    REPEAT STRIP_TAC THEN
-    MATCH_MP_TAC (REWRITE_RULE [holds_in; holds; RIGHT_IMP_FORALL_THM; IMP_IMP]
-                               TRANSNT_IMP_LOB) THEN
-    EXISTS_TAC `w:A` THEN HYP_TAC "tnt" (REWRITE_RULE[IN_TRANSNT]) THEN
-    ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]) in
- prove
- (`!p. (!W R V w:num.
-          (!x y z:num. R y z ==> R x y ==> R x z) /\
-          (!p w. w IN W /\
+let HOLDS_BOX_EQ = prove
+ (`!W R p w:A.
+     (W,R) IN ITF /\ w IN W
+     ==> (holds (W,R) V (Box p) w <=>
+          (!y. y IN W /\ R w y ==> holds (W,R) V (Box p --> p) y))`,
+  INTRO_TAC "!W R p w; WR w" THEN REWRITE_TAC[holds] THEN
+  EQ_TAC THENL [MESON_TAC[]; ALL_TAC] THEN
+  CLAIM_TAC "tnt" `(W:A->bool,R) IN TRANSNT` THENL
+  [MATCH_MP_TAC (REWRITE_RULE [SUBSET] ITF_SUBSET_TRANSNT) THEN
+   ASM_REWRITE_TAC[];
+   ALL_TAC] THEN
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC
+    (REWRITE_RULE [valid; FORALL_PAIR_THM; IN_TRANSNT_DEF; TRANSITIVE;
+                   IN_FRAME; holds_in; holds; RIGHT_IMP_FORALL_THM; IMP_IMP]
+                  LOB_THM_TRANSNT) THEN
+  EXISTS_TAC `w:A` THEN
+  HYP_TAC "tnt" (REWRITE_RULE[IN_TRANSNT_DEF; TRANSITIVE; IN_FRAME]) THEN
+  ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
+
+let MATCH_BOX_RIGHT_MODIFIED_TAC : tactic =
+  let HOLDS_RIGHT_BOX_MODIFIED = prove
+   (`!W:W->bool R.
+       (W,R) IN ITF
+       ==> !p w. w IN W /\
                  (!y. y IN W /\ R w y /\ holds (W,R) V (Box p) y
                       ==> holds (W,R) V p y)
-                 ==> holds (W,R) V (Box p) w) /\
-          (!Q p w. w IN W /\
+                 ==> holds (W,R) V (Box p) w`,
+    REPEAT GEN_TAC THEN DISCH_TAC THEN ASM_SIMP_TAC[HOLDS_BOX_EQ] THEN
+    REWRITE_TAC[holds] THEN MESON_TAC[]) in
+  let HOLDS_RIGHT_BOX_MODIFIED_ALT = prove
+   (`!W:W->bool R.
+       (W,R) IN ITF
+       ==> !Q p w. w IN W /\
                    (!y. y IN W /\ R w y /\ holds (W,R) V (Box p) y
                         ==> holds (W,R) V p y \/ Q)
-                   ==> holds (W,R) V (Box p) w \/ Q) /\
-          (!w w'. R w w'
-                  ==> !p. holds (W,R) V (Box p) w ==> holds (W,R) V p w') /\
-          (!p w. holds (W,R) V (Box p) w
-                 ==> !w'. R w w' ==> holds (W,R) V p w') /\
-          w IN W
-          ==> holds (W,R) V p w)
+                   ==> holds (W,R) V (Box p) w \/ Q`,
+    MESON_TAC[HOLDS_RIGHT_BOX_MODIFIED]) in
+  let itf_inst = C MATCH_MP (ASSUME `(W:num->bool,R) IN ITF`) in
+  let HOLDS_RIGHT_BOX_MODIFIED = itf_inst HOLDS_RIGHT_BOX_MODIFIED
+  and HOLDS_RIGHT_BOX_MODIFIED_ALT = itf_inst HOLDS_RIGHT_BOX_MODIFIED_ALT in
+  (MATCH_MP_TAC HOLDS_RIGHT_BOX_MODIFIED ORELSE
+   MATCH_MP_TAC HOLDS_RIGHT_BOX_MODIFIED_ALT) THEN
+  CONJ_TAC THENL [FIRST_ASSUM MATCH_ACCEPT_TAC; GEN_TAC];;
+
+let IN_ITF_CLAUSES = prove
+ (`!W:W->bool R.
+     (W,R) IN ITF
+     ==> (!x y z. R y z ==> R x y ==> R x z) /\
+         (!w w'. R w w'
+                 ==> !p. holds (W,R) V (Box p) w ==> holds (W,R) V p w') /\
+         (!w p. holds (W,R) V (Box p) w
+                 ==> !w'. R w w' ==> holds (W,R) V p w')`,
+  REWRITE_TAC[IN_ITF_DEF; IN_FINITE_FRAME; TRANSITIVE] THEN
+  MESON_TAC[HOLDS_LEFT_BOX]);;
+
+let GL_COMPLETENESS_NUM =
+ let GL_COMPLETENESS_THEOREM_NUM =
+   REWRITE_RULE[num_INFINITE]
+     (INST_TYPE [`:num`,`:A`] GL_COMPLETENESS_THM_GEN) in
+ prove
+ (`!p. (!W:num->bool R.
+          (W,R) IN ITF
+          ==> !V w. w IN W ==> holds (W,R) V p w)
        ==> [GL_AX . {} |~ p]`,
-  GEN_TAC THEN REWRITE_TAC[IMP_IMP] THEN DISCH_TAC THEN
-  MATCH_MP_TAC COMPLETENESS_THEOREM_NUM THEN
+  GEN_TAC THEN DISCH_TAC THEN MATCH_MP_TAC GL_COMPLETENESS_THEOREM_NUM THEN
   REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in] THEN
-  REPEAT GEN_TAC THEN INTRO_TAC "itf" THEN REPEAT STRIP_TAC THEN
-  FIRST_X_ASSUM MATCH_MP_TAC THEN
-  ASM_REWRITE_TAC[] THEN CONJ_TAC THENL
-  [ASM_MESON_TAC[IN_ITF]; ALL_TAC] THEN
-  MATCH_MP_TAC (MESON [] `P /\ (P ==> Q) ==> P /\ Q`) THEN
-  CONJ_TAC THENL
-  [REPEAT STRIP_TAC THEN ASM_SIMP_TAC[HOLDS_BOX_EQ] THEN
-   ONCE_REWRITE_TAC[holds] THEN ASM_MESON_TAC[];
-   ALL_TAC] THEN
-  DISCH_TAC THEN
-  CONJ_TAC THENL [POP_ASSUM MP_TAC THEN MESON_TAC[]; ALL_TAC] THEN
-  ONCE_REWRITE_TAC[holds] THEN ASM_MESON_TAC[IN_ITF]);;
-
-(* ------------------------------------------------------------------------- *)
-(* The work horse of the tactic.                                             *)
-(* ------------------------------------------------------------------------- *)
-
-module Rule_gl = struct
-
-  (* Non-recursive building block tactics. *)
-
-  let GEN_BOX_RIGHT_TAC (kacc:thm_tactic) (kholds:thm_tactic): tactic =
-    let ptac =
-      CONJ_TAC THENL
-      [FIRST_ASSUM MATCH_ACCEPT_TAC;
-       GEN_TAC THEN
-       DISCH_THEN (CONJUNCTS_THEN2 ASSUME_TAC
-                                   (CONJUNCTS_THEN2 kacc kholds))] in
-    let ttac th = (MATCH_MP_TAC th THEN ptac) in
-    USE_THEN "boxr1" ttac ORELSE USE_THEN "boxr2" ttac
-
-  (* Non-recursive building box theorem-tacticals. *)
-
-  let ACC_TCL:thm_tactical = fun k acc ->
-    USE_THEN "trans" (fun trans ->
-      let f = MATCH_MP (MATCH_MP trans acc) in
-      ASSUM_LIST (MAP_EVERY k o mapfilter f))
-
-  (* Recursive theorem-tacticals. *)
-
-  let rec SATURATE_ACC_TCL:thm_tactical = fun ttac th ->
-    LABEL_TAC "acc" th THEN
-    STEP_BOXL1_TCL ttac th THEN
-    ACC_TCL (SATURATE_ACC_TCL ttac) th
-
-  let SATURATE_ACC_TAC:thm_tactic = fun th g ->
-    (STEP_BOXL1_TCL HOLDS_TAC th THEN
-    SATURATE_ACC_TCL HOLDS_TAC th)
-    g
-
-  let BOX_RIGHT_TAC = GEN_BOX_RIGHT_TAC SATURATE_ACC_TAC HOLDS_TAC
-
-  (* Main tactic. *)
-
-  let GL_RIGHT_TAC : tactic =
-    CONV_TAC HOLDS_NNFC_UNFOLD_CONV THEN
-    PURE_ASM_REWRITE_TAC[AND_CLAUSES; OR_CLAUSES; NOT_CLAUSES] THEN
-    CONV_TAC CNF_CONV THEN
-    REPEAT CONJ_TAC THEN
-    TRY (NEG_RIGHT_TAC HOLDS_TAC)
-
-  let GL_STEP_TAC : tactic =
-    (FIRST o map CHANGED_TAC)
-      [GL_RIGHT_TAC;
-       SORT_BOX_TAC THEN BOX_RIGHT_TAC]
-
-  let INNER_GL_TAC : tactic = REPEAT GL_STEP_TAC
-
-end;;
-
-(* ------------------------------------------------------------------------- *)
-(* Generate a countermodel.                                                  *)
-(* ------------------------------------------------------------------------- *)
-
-let GL_BUILD_COUNTERMODEL : tactic =
-  let drop_labels =
-    ["trans"; "boxr1"; "boxr2"; "boxl1"; "boxl2"] in
-  let drop_assumption s = mem s drop_labels in
-  let filter_asl =
-    mapfilter (fun s,t -> if drop_assumption s then fail() else concl t ) in
-  fun asl,w ->
-    let l = filter_asl asl in
-    the_HOLMS_countermodel :=
-      end_itlist (curry mk_conj) (l @ map mk_neg (striplist dest_disj w));
-    failwith
-      "Contermodel stored in reference the_HOLMS_countermodel.";;
+  INTRO_TAC "![W] [R]; rf" THEN REPEAT STRIP_TAC THEN
+  ASM_MESON_TAC[IN_ITF_CLAUSES]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Top-level invocation.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
+let IN_ITF_RULES =
+  let tm = `(W:num->bool,R) IN ITF` in
+  let th = MATCH_MP IN_ITF_CLAUSES (ASSUME tm) in
+  CONJUNCTS th;;
+
 let GL_TAC : tactic =
-  REPEAT GEN_TAC THEN REPEAT (CONV_TAC let_CONV) THEN REPEAT GEN_TAC THEN
-  REWRITE_TAC[diam_DEF; dotbox_DEF] THEN MATCH_MP_TAC COMPLETENESS_NUM THEN
-  REPEAT GEN_TAC THEN INTRO_TAC "trans boxr1 boxr2 boxl1 boxl2 w" THEN
-  REPEAT GEN_TAC THEN Rule_gl.INNER_GL_TAC THEN GL_BUILD_COUNTERMODEL;;
+  GEN_HOLMS_TAC MATCH_BOX_RIGHT_MODIFIED_TAC GL_COMPLETENESS_NUM IN_ITF_RULES;;
 
 holms_register_tactic `GL_AX` GL_TAC;;
+
+(* ------------------------------------------------------------------------- *)
+(* Tests.                                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+(*
+let PREPARE_TAC = HOLMS_PREPARE_TAC GL_COMPLETENESS_NUM;;
+let SATURATE_TAC = HOLMS_SATURATE_TAC IN_ITF_RULES;;
+let STEP_TAC = HOLMS_STEP_TAC (MATCH_BOX_RIGHT_MODIFIED_TAC,SATURATE_TAC);;
+let INNER_TAC = INNER_HOLMS_TAC (MATCH_BOX_RIGHT_MODIFIED_TAC,SATURATE_TAC);;
+let box_right_tac = BOX_RIGHT_THEN (MATCH_BOX_RIGHT_MODIFIED_TAC,SATURATE_TAC);;
+let right_tac = HOLMS_RIGHT_TAC SATURATE_TAC;;
+*)
+
+(* g `[GL_AX . {} |~ Box (Box p --> p) --> Box p]`;; *)
+g `!a. [GL_AX . {} |~ Box a --> Box Box a]`;;
+e GL_TAC;;
+top_thm();;
+
+(* ------------------------------------------------------------------------- *)
+(* Countermodels.                                                            *)
+(* ------------------------------------------------------------------------- *)
+
+let GL_HOLMS_CERTIFY_COUNTERMODEL : term -> term -> thm =
+  let ltm = `ITF:(num->bool)#(num->num->bool)->bool` in
+  fun ctm tm ->
+    let fm = rand (snd (strip_forall tm))
+    and eth = mk_countermodel_existence_thm ctm in
+    prove (mk_not_valid_ptm ltm fm,
+           CERTIFY_COUNTERMODEL_TAC eth);;
+
+(* ------------------------------------------------------------------------- *)
+(* Löb axiom.                                                                *)
+(* ------------------------------------------------------------------------- *)
+
+HOLMS_RULE `[GL_AX . {} |~ Box (Box p --> p) --> Box p]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* Non-axiom examples.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+(* T_AX *)
+let tm = `!a. [GL_AX . {} |~ Box a --> a]`;;
+let ctm = HOLMS_BUILD_COUNTERMODEL tm;;
+GL_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
+
+(* K4_AX *)
+HOLMS_RULE `!a. [GL_AX . {} |~ Box a --> Box Box a]`;;
+
+(* GL_AX *)
+let tm = `!a. [GL_AX . {} |~ a --> Box Diam a]`;;
+let ctm = HOLMS_BUILD_COUNTERMODEL tm;;
+GL_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
+
+(* S5_AX *)
+let tm = `!a. [GL_AX . {} |~ Diam a --> Box Diam  a]`;;
+let ctm = HOLMS_BUILD_COUNTERMODEL tm;;
+GL_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
+
+(* GL_AX *)
+HOLMS_RULE `!a. [GL_AX . {} |~ Box (Box a --> a) --> Box a]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* Furter examples.                                                          *)
+(* ------------------------------------------------------------------------- *)
+
+let tm = `!a. [GL_AX . {} |~ a --> Box a]`;;
+let ctm = HOLMS_BUILD_COUNTERMODEL tm;;
+GL_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
+
+let tm = `!a. [GL_AX . {} |~ a --> Box Box a]`;;
+let ctm = HOLMS_BUILD_COUNTERMODEL tm;;
+GL_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
+
+needs "Library/iter.ml";;
+
+let run_conv conv tm = rhs (concl (conv tm));;
+let tm = `!a. [GL_AX . {} |~ a --> ITER 5 (Box) a]`;;
+let tm = run_conv (TOP_SWEEP_CONV num_CONV THENC REWRITE_CONV [ITER]) tm;;
+let ctm = HOLMS_BUILD_COUNTERMODEL tm;;
+time (GL_HOLMS_CERTIFY_COUNTERMODEL ctm) tm;;   (* CPU time (user): 0.93915 *)

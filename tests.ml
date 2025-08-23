@@ -63,9 +63,8 @@ time HOLMS_RULE `[K4_AX . {} |~ Dotbox (Dotbox a) <-> Dotbox a]`;;
 
 time HOLMS_BUILD_COUNTERMODEL `[K4_AX . {} |~ Box a --> a]`;;
 
-(* Löb schema.  Diverges! *)
-(* HOLMS_BUILD_COUNTERMODEL
-     `[K4_AX . {} |~ Box (Box a --> a) --> Box a]`;; *)
+(* Löb schema. *)
+(* HOLMS_BUILD_COUNTERMODEL `[K4_AX . {} |~ Box (Box a --> a) --> Box a]`;; *)
 
 (* ------------------------------------------------------------------------- *)
 (* Tests and examples for the modal logic GL.                                *)
@@ -161,8 +160,12 @@ time HOLMS_RULE
 (* Valid in GL but not in K.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-time HOLMS_BUILD_COUNTERMODEL
+time HOLMS_RULE
   `!a. [GL_AX . {} |~ Box Diam Box Diam a <-> Box Diam a]`;;
+
+(* Countermodel is not tree-like. *)
+(* time HOLMS_BUILD_COUNTERMODEL
+  `!a. [K4_AX . {} |~ Box Diam Box Diam a <-> Box Diam a]`;; *)
 
 (* ------------------------------------------------------------------------- *)
 (* Example of countermodel.                                                  *)
@@ -177,7 +180,7 @@ time HOLMS_BUILD_COUNTERMODEL
 (* Basic tests.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-(* CPU time (user): 7.413296 *)
+(* CPU time (user): 1.41848.  Was 7.413296 *)
 let test_prove tm =
   try prove(tm,HOLMS_TAC) with Failure _ -> failwith (string_of_term tm)
 in
@@ -208,7 +211,7 @@ time (map test_prove)
 (* Further tests.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
-(* CPU time (user): 19.381427 *)
+(* CPU time (user): 3.642329.  Was 19.381427 *)
 let gl_theorems =
  [("GL_Godel_sentence_equiconsistent_consistency",
    `Box (p <-> Not Box p) <-> Box (p <-> Not Box False)`);
@@ -284,24 +287,29 @@ let gl_theorems =
    `Box (p <-> Not Box p) && Not Box Box False -->
     Not Box p && Not Box Not p`)] in
 let test_prove (s,tm) =
-  let th = try GL_RULE (mk_comb(`MODPROVES GL_AX {}`,tm))
+  let th = try HOLMS_RULE (mk_comb(`MODPROVES GL_AX {}`,tm))
            with Failure _ -> failwith s in
   s,th in
 time (map test_prove) gl_theorems;;
+
+(* CPU time (user): 7.117629.  Was 47.994603. *)
+time HOLMS_RULE
+  `[GL_AX . {}
+    |~ Dotbox (p <-> (q && (Box (p --> q) --> Box Not p))) <->
+       Dotbox (p <-> (q && Box Not q))]`;;
+
+(* CPU time (user): 166.020036 (about 3min).  Was 896.120732 (about 15 min). *)
+time HOLMS_RULE
+  `[GL_AX . {}
+    |~ Dotbox (p <-> (Diam p --> q && Not Box (p --> q))) <->
+       Dotbox (p <-> (Diam True --> q && Not Box (Box False --> q)))]`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Further examples of countermodels.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-(* CPU time (user): 47.994603 *)
-time HOLMS_BUILD_COUNTERMODEL
-  `[GL_AX . {}
+(* Countermodel is not tree-like. *)
+(* time HOLMS_BUILD_COUNTERMODEL
+  `[K4_AX . {}
     |~ Dotbox (p <-> (q && (Box (p --> q) --> Box Not p))) <->
-       Dotbox (p <-> (q && Box Not q))]`;;
-
-(* CPU time (user): 896.120732 *)
-(* About 15 min. *)
-time HOLMS_BUILD_COUNTERMODEL
-  `[GL_AX . {}
-    |~ Dotbox (p <-> (Diam p --> q && Not Box (p --> q))) <->
-       Dotbox (p <-> (Diam True --> q && Not Box (Box False --> q)))]`;;
+       Dotbox (p <-> (q && Box Not q))]`;; *)

@@ -7,21 +7,138 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
+(* Additional OCaml functions.                                               *)
+(* ------------------------------------------------------------------------- *)
+
+(* Power for integer numbers in OCaml. *)
+let int_pow a b =
+  if b < 0 then failwith "int_pow" else
+  let rec int_pow a b =
+    if b = 0 then 1 else
+    if b mod 2 = 0 then
+      let half = int_pow a (b / 2) in
+      half * half
+    else
+      a * int_pow a (b - 1) in
+  int_pow a b;;
+
+(* ------------------------------------------------------------------------- *)
+(* Handy tactics.                                                            *)
+(* ------------------------------------------------------------------------- *)
+
+let LABEL_ASM_CASES_TAC (s : string) (tm : term) : tactic =
+  ASM_CASES_TAC tm THEN POP_ASSUM (LABEL_TAC s);;
+
+let RELABEL_TAC (s : string) : thm_tactic =
+  fun th -> UNDISCH_THEN (concl th) (LABEL_TAC s) ORELSE LABEL_TAC s th;;
+
+(* Compare with MAP_FIRST. *)
+let MAPFILTER_FIRST tacf lst =
+  FIRST (mapfilter tacf lst);;
+
+(* ------------------------------------------------------------------------- *)
+(* Tactics for debugging.                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+let REPORT_TAC (s : string) : tactic =
+  ignore (report s);
+  ALL_TAC;;
+
+let TRACE_TAC (s : string) (tac : tactic) : tactic =
+  fun gl ->
+    ignore (report ("Starting tactic: "^s));
+    try let ret = tac gl in
+        ignore (report ("Endind tactic: "^s));
+        ret
+    with Failure s ->
+      ignore (report ("Failing tactic: "^s));
+      failwith s;;
+
+let TRACE_TTAC (s : string) : thm_tactical =
+  fun ttac th ->
+    ignore(report("Starting ttac "^s^" thm "^string_of_term (concl th)));
+    let tac = try let ret = ttac th in
+                  ignore(report("Ending ttac: "^s^" thm "^string_of_term (concl th)));
+                  ret
+              with Failure _ -> ignore(report("Failing ttac: "^s^" thm "^string_of_term (concl th)));
+                                failwith s in
+    TRACE_TAC s tac;;
+
+let TRACE_TCL (s : string) : thm_tactical -> thm_tactical =
+  fun tcl ttac ->
+    ignore(report("Starting tcl "^s));
+    let ttac = try let ret = tcl ttac in
+                   ignore(report("Ending tcl: "^s));
+                   ret
+               with Failure _ -> ignore(report("Failing tcl: "^s));
+                                 failwith s in
+    TRACE_TTAC s ttac;;
+
+let TRACE_HTCL (s : string) : (thm_tactical -> thm_tactical) -> (thm_tactical -> thm_tactical) =
+  fun htcl tcl ->
+    ignore(report("Starting htcl: "^s));
+    let tcl = try let ret = htcl tcl in
+                  ignore(report("Ending htcl: "^s));
+                  ret
+              with Failure _ -> ignore(report("Failing htcl: "^s));
+                                failwith s in
+    TRACE_TCL s tcl;;
+
+(* ------------------------------------------------------------------------- *)
 (* Theorem-tacticals.                                                        *)
 (* ------------------------------------------------------------------------- *)
 
-let THEN_GTCL (ttcl1:thm_tactical) (ttcl2:thm_tactical) : thm_tactical =
-  fun ttac th -> ttcl1 ttac th THEN ttcl2 ttac th;;
+(* Generalizations of ANTE_RES_THEN' and IMP_RES_THEN'.
+   Does not use assumptions, takes a list of theorems.
+   Does not fail when it gets an empty list of tactics. *)
 
-let ORELSE_GTCL (ttcl1:thm_tactical) (ttcl2:thm_tactical) : thm_tactical =
-  fun ttac th -> ttcl1 ttac th ORELSE ttcl2 ttac th;;
+let LIST_ANTE_RES_THEN thl : thm_tactical =
+  let imps = mapfilter MATCH_MP thl in
+  fun ttac ante -> EVERY (mapfilter (fun imp -> ttac (imp ante)) imps);;
 
-(* Già definita nella standard library. *)
-let rec REPEAT_GTCL (ttcl:thm_tactical) : thm_tactical = fun ttac th g ->
-    try ttcl (REPEAT_GTCL ttcl ttac) th g with Failure _ -> ttac th g;;
+let LIST_IMP_RES_THEN : thm -> thm list -> thm_tactic -> tactic =
+  fun imp ->
+    let m = try MATCH_MP imp
+            with Failure _ -> failwith "LIST_IMP_RES_THEN: not implicative" in
+    fun athl -> let thl = mapfilter m athl in
+                fun ttac -> EVERY (mapfilter ttac thl);;
 
-let LABEL_ASM_CASES_TAC s tm =
-  ASM_CASES_TAC tm THEN POP_ASSUM (LABEL_TAC s);;
+(* Variants of ANTE_RES_THEN and IMP_RES_THEN.
+   Does not fail when it gets an empty list of tactics.
+   Uses both assumptions and an additional list of theorems. *)
+
+let ASM_ANTE_RES_THEN (thl : thm list) : thm_tactical = fun ttac th ->
+  ASSUM_LIST (fun asl -> LIST_ANTE_RES_THEN (thl @ asl) ttac th);;
+
+let ASM_IMP_RES_THEN (thl : thm list) : thm_tactical = fun ttac imp ->
+  let m = try MATCH_MP imp
+          with Failure _ -> failwith "ASM_IMP_RES_THEN: not implicative" in
+  ASSUM_LIST (fun asl -> EVERY (mapfilter (ttac o m) (thl @ asl)));;
+
+(* Variant of ANTE_RES_THEN.
+   Does not fail when it gets an empty list of tactics. *)
+let ANTE_RES_THEN' : thm_tactical =
+  fun ttac ante -> ASSUM_LIST (fun asl -> LIST_ANTE_RES_THEN asl ttac ante);;
+
+(* Variant of IMP_RES_THEN that fails whan called on the theorem
+   only if the theorem is not implicative. *)
+let IMP_RES_THEN' : thm_tactical =
+  fun ttac imp ->
+    let res_then = LIST_IMP_RES_THEN imp in
+    ASSUM_LIST (fun asl -> res_then asl ttac);;
+
+(* ------------------------------------------------------------------------- *)
+(* Further lemmas on lists.                                                  *)
+(* ------------------------------------------------------------------------- *)
+
+let NOT_MEM_NIL = prove
+ (`!x:A. ~MEM x []`,
+  REWRITE_TAC[MEM]);;
+
+let FORALL_MEM_INSERT = prove
+ (`!P h:A l. (!x. MEM x (CONS h l) ==> P x) <=>
+             P h /\ (!x. MEM x l ==> P x)`,
+  REWRITE_TAC[MEM] THEN MESON_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Monadic bind for lists.                                                   *)

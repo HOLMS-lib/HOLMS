@@ -13,7 +13,7 @@
 (* ------------------------------------------------------------------------- *)
 
 let FRAME_CHAR_K = prove
- (`FRAME:(W->bool)#(W->W->bool)->bool  = CHAR {}`,
+ (`FRAME:(W->bool)#(W->W->bool)->bool = CHAR {}`,
   REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN
   REWRITE_TAC[IN_CHAR; IN_FRAME] THEN
   ASM_REWRITE_TAC[NOT_IN_EMPTY]);;
@@ -26,15 +26,7 @@ ASM_MESON_TAC[GEN_CHAR_VALID; FRAME_CHAR_K]);;
 
 g `FINITE_FRAME:(W->bool)#(W->W->bool)->bool = APPR {}`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REPEAT GEN_TAC);;
-e EQ_TAC;;
- e (INTRO_TAC "In_Finite_Frame");;
- e (SUBGOAL_THEN `(p1:W->bool, p2:W->W->bool) IN CHAR {}` MP_TAC);;
-  e (ASM_MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET; FRAME_CHAR_K]);;
- e (HYP_TAC "In_Finite_Frame" (REWRITE_RULE[IN_FINITE_FRAME]));;
- e (ASM_REWRITE_TAC[IN_APPR; IN_FINITE_FRAME; IN_FRAME]);;
- e (ASM_MESON_TAC[CHAR_CAR]);;
-e (MESON_TAC[IN_APPR]);;
+e (REWRITE_TAC[APPR_CAR; FRAME_CHAR_K; IN_FINITE_FRAME_INTER]);;
 let FINITE_FRAME_APPR_K = top_thm();;
 
 let K_FINITE_FRAME_VALID = prove
@@ -46,7 +38,8 @@ ASM_MESON_TAC[GEN_APPR_VALID; FINITE_FRAME_APPR_K]);;
 (* ------------------------------------------------------------------------- *)
 
 g `~ [{} . {} |~ False]`;;
-e (REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] K_FINITE_FRAME_VALID)));;
+e (REFUTE_THEN (MP_TAC o MATCH_MP
+    (INST_TYPE [`:num`,`:W`] K_FINITE_FRAME_VALID)));;
 e (REWRITE_TAC[NOT_IN_EMPTY]);;
 e (REWRITE_TAC[valid; holds; holds_in;
                FORALL_PAIR_THM; IN_FINITE_FRAME; NOT_FORALL_THM]);;

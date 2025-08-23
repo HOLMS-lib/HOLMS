@@ -9,147 +9,6 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Frame.                                                                    *)
-(* ------------------------------------------------------------------------- *)
-
-let FRAME_DEF = new_definition
-  `FRAME = {(W:W->bool,R:W->W->bool) | ~(W = {}) /\
-                                       (!x y:W. R x y ==> x IN W /\ y IN W)}`;;
-
-let IN_FRAME = prove
- (`!W:W->bool R:W->W->bool. (W,R) IN FRAME <=>
-   ~(W = {}) /\ (!x y:W. R x y ==> x IN W /\ y IN W)`,
-  REWRITE_TAC[FRAME_DEF; IN_ELIM_THM; PAIR_EQ] THEN MESON_TAC[]);;
-
-let FINITE_FRAME_DEF = new_definition
-  `FINITE_FRAME = {(W:W->bool,R:W->W->bool) | (W,R) IN FRAME /\ FINITE W}`;;
-
-let IN_FINITE_FRAME = prove
- (`!W:W->bool R:W->W->bool. (W,R) IN FINITE_FRAME <=>
-   ~(W = {}) /\ (!x y:W. R x y ==> x IN W /\ y IN W) /\ FINITE W`,
-  REWRITE_TAC[FINITE_FRAME_DEF; IN_FRAME; IN_ELIM_THM; PAIR_EQ] THEN
-  MESON_TAC[]);;
-
-let FINITE_FRAME_SUBSET_FRAME = prove
- (`FINITE_FRAME:(W->bool)#(W->W->bool)->bool SUBSET FRAME`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_FINITE_FRAME; IN_FRAME] THEN
-  MESON_TAC[]);;
-
-(* ------------------------------------------------------------------------- *)
-(* Correspondence Theory and General Validity.                               *)
-(* ------------------------------------------------------------------------- *)
-
-(* Frames characteristic to certain axioms schemata S: CHAR S.               *)
-
-let CHAR_DEF = new_definition
-  `CHAR S = {(W:W->bool,R:W->W->bool) |
-                    (W,R) IN FRAME /\
-                    (!p. p IN S ==> holds_in (W:W->bool,R:W->W->bool) p)}`;;
-
-let IN_CHAR = prove
- (`!S. (W:W->bool,R:W->W->bool) IN CHAR S <=>
-       (W,R) IN FRAME /\
-       !p. p IN S ==> holds_in (W:W->bool,R:W->W->bool) p`,
-  REWRITE_TAC[CHAR_DEF; IN_ELIM_PAIR_THM]);;
-
-let GEN_KAXIOM_CHAR_VALID = prove
- (`!S p. KAXIOM p ==> CHAR S:(W->bool)#(W->W->bool)->bool |= p`,
-  GEN_TAC THEN MATCH_MP_TAC KAXIOM_INDUCT THEN REWRITE_TAC[valid] THEN
-  FIX_TAC "f" THEN REWRITE_TAC[RIGHT_FORALL_IMP_THM] THEN
-  SPEC_TAC (`f:(W->bool)#(W->W->bool)`,`f:(W->bool)#(W->W->bool)`) THEN
-  MATCH_MP_TAC (MESON[PAIR_SURJECTIVE]
-    `(!W:W->bool R:W->W->bool. P (W,R)) ==> (!f. P f)`) THEN
-  REWRITE_TAC[IN_CHAR; IN_FRAME] THEN REPEAT GEN_TAC THEN
-  REPEAT CONJ_TAC THEN MODAL_TAC);;
-
-let GEN_AX_CHAR_VALID = prove
- (`!S p. p IN S ==> CHAR S:(W->bool)#(W->W->bool)->bool |= p`,
-  INTRO_TAC "!S p; in_S" THEN REWRITE_TAC[valid; FORALL_PAIR_THM] THEN
-  REWRITE_TAC[IN_CHAR] THEN INTRO_TAC "!p1 p2; in_frame char" THEN
-  ASM_MESON_TAC[]);;
-
-let GEN_CHAR_VALID = prove
- (`!S H p. [S . H |~ p] /\
-           (!q. q IN H ==> CHAR S:(W->bool)#(W->W->bool)->bool |= q)
-           ==> CHAR S:(W->bool)#(W->W->bool)->bool |= p`,
-  GEN_TAC THEN REWRITE_TAC[IMP_CONJ] THEN MATCH_MP_TAC MODPROVES_INDUCT THEN
-  CONJ_TAC THENL [SIMP_TAC[GEN_KAXIOM_CHAR_VALID]; ALL_TAC] THEN
-  CONJ_TAC THENL [SIMP_TAC[GEN_AX_CHAR_VALID]; ALL_TAC] THEN
-  CONJ_TAC THENL [MESON_TAC[GEN_KAXIOM_CHAR_VALID]; ALL_TAC] THEN
-  CONJ_TAC THENL [MODAL_TAC; ALL_TAC] THEN
-  REWRITE_TAC[NOT_IN_EMPTY] THEN MODAL_TAC);;
-
-g `!S:form->bool W:(W->bool) R:(W->W->bool).
-    ((W,R) IN FRAME /\ !p. [S . {} |~ p] ==> holds_in (W,R) p) <=>
-    (W,R) IN CHAR S`;;
-e (REPEAT GEN_TAC);;
-e (REWRITE_TAC[IN_CHAR]);;
-e EQ_TAC;;
- e (INTRO_TAC "In_Frame char");;
- e (ASM_REWRITE_TAC[]);;
- e (INTRO_TAC "!p; p_in_S");;
- e (SUBGOAL_THEN `[S . {} |~ p]` MP_TAC);;
- e (ASM_MESON_TAC[MODPROVES_RULES]);;
- e (ASM_MESON_TAC[]);;
-e (INTRO_TAC "In_Frame char");;
-e (ASM_REWRITE_TAC[]);;
-e (INTRO_TAC "!p; p_teor_S");;
-e (SUBGOAL_THEN `CHAR S:(W->bool)#(W->W->bool)->bool |= p` MP_TAC);;
- e (MATCH_MP_TAC GEN_CHAR_VALID);;
- e (ASM_MESON_TAC[NOT_IN_EMPTY]);;
- e (REWRITE_TAC[valid; FORALL_PAIR_THM]);;
- e (INTRO_TAC "char_valid");;
-e (SUBGOAL_THEN `(W:W->bool,R:W->W->bool) IN CHAR S` MP_TAC);;
- e (ASM_REWRITE_TAC[IN_CHAR]);;
-e (ASM_MESON_TAC[]);;
-let CHAR_CAR = top_thm ();;
-
-(* ------------------------------------------------------------------------- *)
-(* Frames appropriate to certain axioms sets S: APPR S.                      *)
-(* ------------------------------------------------------------------------- *)
-
-let APPR_DEF = new_definition
-  `APPR S = {(W:W->bool,R:W->W->bool) |
-             (W,R) IN FINITE_FRAME  /\
-             !p. [S. {} |~ p] ==> holds_in (W:W->bool,R:W->W->bool) p}`;;
-
-let IN_APPR = prove
- (`!S. (W:W->bool,R:W->W->bool) IN APPR S <=>
-       (W,R) IN FINITE_FRAME /\
-       !p. [S. {} |~ p] ==> holds_in (W:W->bool,R:W->W->bool) p`,
-  REWRITE_TAC[APPR_DEF; IN_ELIM_PAIR_THM]);;
-
-let APPR_CAR = prove
-  (`!S:form->bool W:(W->bool) R:(W->W->bool).
-     (W,R) IN APPR S <=>
-     (W,R) IN CHAR S /\ FINITE W`,
-    ASM_REWRITE_TAC[IN_APPR] THEN
-    ASM_MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET; CHAR_CAR;
-                  IN_FINITE_FRAME; IN_CHAR; IN_FRAME]);;
-
-let APPR_EQ_CHAR_FINITE = prove
-  (`!S. APPR S : (W->bool)#(W->W->bool)->bool = CHAR S INTER FINITE_FRAME`,
-   GEN_TAC THEN
-   REWRITE_TAC[EXTENSION; FORALL_PAIR_THM; APPR_CAR; IN_INTER;
-               IN_FINITE_FRAME; IN_CHAR; IN_FRAME; NOT_IN_EMPTY] THEN
-   REPEAT GEN_TAC THEN EQ_TAC THEN STRIP_TAC THEN ASM_REWRITE_TAC[]);;
-
-g `!S:form->bool. APPR S:(W->bool)#(W->W->bool)->bool SUBSET CHAR S`;;
-e (REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_APPR]);;
-e (INTRO_TAC "!S p1 p2; In_Fin_Frame Appr");;
-e (CLAIM_TAC "In_Frame" `(p1:W->bool, p2:W->W->bool) IN FRAME`);;
-  e (ASM_MESON_TAC[SUBSET; FINITE_FRAME_SUBSET_FRAME]);;
-e (MP_TAC CHAR_CAR);;
-e (DISCH_TAC);;
-e (ASM_MESON_TAC[CHAR_CAR]);;
-let APPR_SUBSET_CHAR = top_thm();;
-
-let GEN_APPR_VALID = prove
-  (`!S p. [S. {} |~ p] ==> APPR S:(W->bool)#(W->W->bool)->bool |= p`,
-   INTRO_TAC "!S p; Steor_p" THEN REWRITE_TAC[valid; FORALL_PAIR_THM;] THEN
-   REPEAT GEN_TAC THEN ASM_REWRITE_TAC[IN_APPR] THEN ASM_MESON_TAC[]);;
-
-(* ------------------------------------------------------------------------- *)
 (* Standard Frame.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
@@ -195,61 +54,60 @@ let GEN_TRUTH_LEMMA = prove
   REPEAT GEN_TAC THEN
   REWRITE_TAC[GEN_STANDARD_MODEL_DEF; IN_GEN_STANDARD_FRAME;
               SUBSENTENCE_CASES; IN_APPR] THEN
-  INTRO_TAC "np ((W (2 Appr) 1) val) q" THEN REMOVE_THEN "W" SUBST_VAR_TAC THEN
-  REWRITE_TAC[FORALL_IN_GSPEC] THEN REMOVE_THEN "q" MP_TAC THEN
+  INTRO_TAC "np ((W (2 Appr) 1) val) q" THEN
+  REMOVE_THEN "W" SUBST_VAR_TAC THEN
+  REWRITE_TAC[FORALL_IN_GSPEC] THEN
+  REMOVE_THEN "q" MP_TAC THEN
   HYP_TAC "1" (REWRITE_RULE[IN_ELIM_THM]) THEN
   HYP_TAC "val" (REWRITE_RULE[FORALL_IN_GSPEC]) THEN
-  SPEC_TAC (`q:form`,`q:form`) THEN MATCH_MP_TAC form_INDUCT THEN
-  REWRITE_TAC[holds] THEN
-  CONJ_TAC THENL
-  [INTRO_TAC "sub; !w; w" THEN
+  GEN_FORM_INDUCT_TAC `q:form` THEN  REWRITE_TAC[holds] THEN
+  INTRO_TAC "sub; !w; w" THEN
+  TRY
+    (
+     REMOVE_THEN "q1_hpind" MP_TAC THEN
+     MATCH_MP_TAC (MESON[] `P /\ (P /\ Q ==> R) ==> ((P ==> Q) ==> R)`) THEN
+     CONJ_TAC THENL
+     [ASM_MESON_TAC[SUBFORMULA_TRANS; SUBFORMULA_INVERSION; SUBFORMULA_REFL];
+      INTRO_TAC "sub1 +" THEN DISCH_THEN (MP_TAC o SPEC `w:form list`)] THEN
+     REMOVE_THEN "q2_hpind" MP_TAC THEN
+     MATCH_MP_TAC (MESON[] `P /\ (P /\ Q ==> R) ==> ((P ==> Q) ==> R)`) THEN
+     CONJ_TAC THENL
+     [ASM_MESON_TAC[SUBFORMULA_TRANS; SUBFORMULA_INVERSION; SUBFORMULA_REFL];
+      INTRO_TAC "sub2 +" THEN DISCH_THEN (MP_TAC o SPEC `w:form list`)] THEN
+     HYP REWRITE_TAC "w" [] THEN
+     DISCH_THEN (SUBST1_TAC o GSYM) THEN
+     DISCH_THEN (SUBST1_TAC o GSYM) THEN
+     CLAIM_TAC "rmk"
+       `!q. q SUBFORMULA p ==> (MEM q w <=> [S. {} |~ CONJLIST w --> q])` THENL
+     [ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE];
+      ALL_TAC]) THENL
+  [
+   (* q = False *)
    HYP_TAC "w -> cons memq" (REWRITE_RULE[MAXIMAL_CONSISTENT]) THEN
-   ASM_MESON_TAC[FALSE_IMP_NOT_CONSISTENT];
-   ALL_TAC] THEN
-  CONJ_TAC THENL
-  [REWRITE_TAC[MAXIMAL_CONSISTENT] THEN
-   INTRO_TAC "p; !w; (cons (norep mem)) subf" THEN
+   ASM_MESON_TAC[FALSE_IMP_NOT_CONSISTENT]
+  ;
+   (* q = True *)
+   HYP_TAC "w: (cons (norep mem)) subf" (REWRITE_RULE[MAXIMAL_CONSISTENT]) THEN
    HYP_TAC "mem: t | nt" (C MATCH_MP (ASSUME `True SUBFORMULA p`)) THEN
-   ASM_REWRITE_TAC[] THEN
-   REFUTE_THEN (K ALL_TAC) THEN
-   REMOVE_THEN "cons" MP_TAC THEN REWRITE_TAC[CONSISTENT] THEN
-   REWRITE_TAC[MLK_not_def] THEN MATCH_MP_TAC MLK_imp_trans THEN
-   EXISTS_TAC `Not True` THEN ASM_SIMP_TAC[CONJLIST_IMP_MEM] THEN
-   MATCH_MP_TAC MLK_iff_imp1 THEN MATCH_ACCEPT_TAC MLK_not_true_th;
-   ALL_TAC] THEN
-  CONJ_TAC THENL [ASM_SIMP_TAC[]; ALL_TAC] THEN
-  CONJ_TAC THENL
-  [INTRO_TAC "![q/a]; q; sub; !w; w" THEN REMOVE_THEN "q" MP_TAC THEN
+   ASM_REWRITE_TAC[] THEN REFUTE_THEN (K ALL_TAC) THEN
+   HYP MESON_TAC "cons nt" [NOT_CONSISTENT_1; MLK_DOUBLENEG; MLK_truth_th]
+  ;
+   (* q = Atom *)
+   ASM_SIMP_TAC[]
+  ;
+   (* q = Not a *)
+   REMOVE_THEN "q_hpind" MP_TAC THEN
    MATCH_MP_TAC (MESON[] `P /\ (P /\ Q ==> R) ==> ((P ==> Q) ==> R)`) THEN
    CONJ_TAC THENL
    [ASM_MESON_TAC[SUBFORMULA_TRANS; SUBFORMULA_INVERSION; SUBFORMULA_REFL];
-    INTRO_TAC "sub1 q"] THEN EQ_TAC THENL
-    [HYP MESON_TAC "w sub1 q" [MAXIMAL_CONSISTENT_MEM_NOT];
-     REMOVE_THEN "q" (MP_TAC o SPEC `w: form list`) THEN
-     ANTS_TAC THEN ASM_REWRITE_TAC[] THEN
-     ASM_MESON_TAC[MAXIMAL_CONSISTENT_MEM_NOT]];
-     ALL_TAC] THEN
-  REPEAT CONJ_TAC THEN TRY
-  (INTRO_TAC "![q1] [q2]; q1 q2; sub; !w; w" THEN
-   REMOVE_THEN "q1" MP_TAC THEN
-   MATCH_MP_TAC (MESON[] `P /\ (P /\ Q ==> R) ==> ((P ==> Q) ==> R)`) THEN
-   CONJ_TAC THENL
-   [ASM_MESON_TAC[SUBFORMULA_TRANS; SUBFORMULA_INVERSION; SUBFORMULA_REFL];
-    INTRO_TAC "sub1 +" THEN DISCH_THEN (MP_TAC o SPEC `w:form list`)] THEN
-   REMOVE_THEN "q2" MP_TAC THEN
-   MATCH_MP_TAC (MESON[] `P /\ (P /\ Q ==> R) ==> ((P ==> Q) ==> R)`) THEN
-   CONJ_TAC THENL
-   [ASM_MESON_TAC[SUBFORMULA_TRANS; SUBFORMULA_INVERSION; SUBFORMULA_REFL];
-    INTRO_TAC "sub2 +" THEN DISCH_THEN (MP_TAC o SPEC `w:form list`)] THEN
-   HYP REWRITE_TAC "w" [] THEN
-   DISCH_THEN (SUBST1_TAC o GSYM) THEN
-   DISCH_THEN (SUBST1_TAC o GSYM) THEN
-   CLAIM_TAC "rmk"
-     `!q. q SUBFORMULA p ==> (MEM q w <=> [S. {} |~ CONJLIST w --> q])` THENL
-   [ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE];
-    ALL_TAC]) THENL [
-
-   (* Case && *)
+    INTRO_TAC "sub1 q"] THEN
+   EQ_TAC THENL
+   [HYP MESON_TAC "w sub1 q" [MAXIMAL_CONSISTENT_MEM_NOT];
+    REMOVE_THEN "q" (MP_TAC o SPEC `w: form list`) THEN
+    ANTS_TAC THEN ASM_REWRITE_TAC[] THEN
+    ASM_MESON_TAC[MAXIMAL_CONSISTENT_MEM_NOT]]
+  ;
+   (* q = q1 && q2 *)
    ASM_SIMP_TAC[] THEN
    ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE;
     MLK_and_intro; MLK_and_left_th; MLK_and_right_th; MLK_imp_trans]
@@ -319,32 +177,32 @@ let GEN_TRUTH_LEMMA = prove
                  MLK_ex_falso_th; MLK_imp_swap; MLK_shunt]
   ;
    (* Case Box *)
-   INTRO_TAC "!a; a; sub; !w; w" THEN REWRITE_TAC[holds; IN_ELIM_THM] THEN
-   CLAIM_TAC "suba" `a SUBFORMULA p` THENL
+   REWRITE_TAC[holds; IN_ELIM_THM] THEN
+   CLAIM_TAC "suba" `q SUBFORMULA p` THENL
    [MATCH_MP_TAC SUBFORMULA_TRANS THEN
-    EXISTS_TAC `Box a` THEN
+    EXISTS_TAC `Box q` THEN
     ASM_REWRITE_TAC[SUBFORMULA_INVERSION; SUBFORMULA_REFL];
     ALL_TAC] THEN
    HYP_TAC "2" (REWRITE_RULE[IN_FINITE_FRAME; IN_ELIM_THM]) THEN
    EQ_TAC THENL
-   [INTRO_TAC "boxa; !w'; (maxw' subw') r" THEN
-    HYP_TAC "a" (C MATCH_MP (ASSUME `a SUBFORMULA p`)) THEN
-    HYP_TAC "a: +" (SPEC `w':form list`) THEN
+   [INTRO_TAC "boxq; !w'; (maxw' subw') r" THEN
+    HYP_TAC "q_hpind" (C MATCH_MP (ASSUME `q SUBFORMULA p`)) THEN
+    HYP_TAC "q_hpind: +" (SPEC `w':form list`) THEN
     ANTS_TAC THENL [ASM_REWRITE_TAC[]; ALL_TAC] THEN
     DISCH_THEN (SUBST1_TAC o GSYM) THEN
-    REMOVE_THEN "1" (MP_TAC o SPECL [`a: form`;`w: form list`]) THEN
+    REMOVE_THEN "1" (MP_TAC o SPECL [`q:form`;`w:form list`]) THEN
     ANTS_TAC THENL [ASM_REWRITE_TAC[]; ALL_TAC] THEN
     ASM_REWRITE_TAC[] THEN DISCH_THEN MATCH_MP_TAC THEN
     ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[];
     ALL_TAC] THEN
    INTRO_TAC "3" THEN
-   REMOVE_THEN  "1" (MP_TAC o SPECL [`a:form`; `w:form list`]) THEN
+   REMOVE_THEN  "1" (MP_TAC o SPECL [`q:form`; `w:form list`]) THEN
    ANTS_TAC THENL [ASM_REWRITE_TAC[]; ALL_TAC] THEN
    DISCH_THEN SUBST1_TAC THEN INTRO_TAC "![w']; w'" THEN
    REMOVE_THEN "3" (MP_TAC o SPEC `w':form list`) THEN
    ANTS_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
-   HYP_TAC "a" (C MATCH_MP (ASSUME `a SUBFORMULA p`)) THEN
-   HYP_TAC "a: +" (SPEC `w':form list`) THEN
+   HYP_TAC "q_hpind" (C MATCH_MP (ASSUME `q SUBFORMULA p`)) THEN
+   HYP_TAC "q_hpind: +" (SPEC `w':form list`) THEN
    ANTS_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
    DISCH_THEN (SUBST1_TAC o GSYM) THEN REWRITE_TAC[]
   ]);;
@@ -459,7 +317,7 @@ let MEM_FLATMAP_LEMMA_2 = prove
   POP_ASSUM (fun th -> MESON_TAC[th]));;
 
 g `!p l. MEM p (FLATMAP (\x. match x with Not Box e -> [Not Box e] | _ -> []) l) <=>
-         (?q. p = Not Box q /\ MEM (Not Box q) l)`;;  
+         (?q. p = Not Box q /\ MEM (Not Box q) l)`;;
 e (GEN_TAC THEN LIST_INDUCT_TAC );;
 e (REWRITE_TAC[MEM; FLATMAP]);;
 e (REWRITE_TAC[MEM; FLATMAP]);;
@@ -488,7 +346,6 @@ e (ASM_REWRITE_TAC[MEM; distinctness "form"; injectivity "form"]);;
 e (ASM_REWRITE_TAC[MEM; distinctness "form"; injectivity "form"]);;
 e (POP_ASSUM (fun th -> MESON_TAC[th]));;
 let MEM_FLATMAP_LEMMA_3 = top_thm();;
-
 
 g `!q p l. MEM p (FLATMAP (\x. match x with
                                | Not e ->

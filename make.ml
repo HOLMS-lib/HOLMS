@@ -24,6 +24,13 @@ loadt "HOLMS/modal.ml";;               (* Syntax and semantics               *)
 loadt "HOLMS/calculus.ml";;            (* Axiomatic calculus                 *)
 
 (* ------------------------------------------------------------------------- *)
+(* Correspondence Theory.                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+loadt "HOLMS/ad_hoc_correspondence.ml";;       (* Ad hoc polimorphic code    *)
+loadt "HOLMS/parametric_correspondence.ml";;   (* Parametric code            *)
+
+(* ------------------------------------------------------------------------- *)
 (* Meta-theory.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
@@ -37,8 +44,17 @@ loadt "HOLMS/s4_completeness.ml";;     (* Completeness of S4                 *)
 loadt "HOLMS/b_completeness.ml";;      (* Completeness of B                  *)
 loadt "HOLMS/s5_completeness.ml";;     (* Completeness of S5                 *)
 loadt "HOLMS/gl_completeness.ml";;     (* Completeness of GL                 *)
-loadt "HOLMS/gen_decid.ml";;           (* Lemmata about decidability         *)
+
+(* ------------------------------------------------------------------------- *)
+(* Decision procedures.                                                      *)
+(* ------------------------------------------------------------------------- *)
+
+loadt "HOLMS/gen_decid.ml";;           (* Tools for decidability             *)
+loadt "HOLMS/gen_countermodel.ml";;    (* Tools for countermodels            *)
 loadt "HOLMS/k_decid.ml";;             (* Semidecision procedure for K       *)
 loadt "HOLMS/t_decid.ml";;             (* Semidecision procedure for T       *)
 loadt "HOLMS/k4_decid.ml";;            (* Semidecision procedure for K4      *)
+loadt "HOLMS/s4_decid.ml";;            (* Semidecision procedure for S4      *)
+loadt "HOLMS/b_decid.ml";;             (* Semidecision procedure for B       *)
+loadt "HOLMS/s5_decid.ml";;            (* Semidecision procedure for S5      *)
 loadt "HOLMS/gl_decid.ml";;            (* Semidecision procedure for GL      *)

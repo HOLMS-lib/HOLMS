@@ -456,6 +456,10 @@ let MLK_not_def = prove
  (`!p. [S . H |~ Not p] <=> [S . H |~ (p --> False)]`,
    MESON_TAC[MLK_axiom_not; MLK_modusponens; MLK_iff_imp1; MLK_iff_imp2]);;
 
+let MLK_not_false = prove
+ (`!S. [S . {} |~ Not False]`,
+  REWRITE_TAC[MLK_not_def; MLK_imp_refl_th]);;
+
 let MLK_NC = prove
  (`!p. [S . H |~ p  && Not p] <=> [S . H |~ False]`,
   MESON_TAC[MLK_not_def; MLK_modusponens; MLK_and; MLK_ex_falso]);;

@@ -6,20 +6,19 @@
 (* ========================================================================= *)
 
 let B_AX = new_definition
-  `B_AX = {p -->  Box Diam p | p IN (:form)} UNION {Box p --> p |p IN (:form)}`;;
-
-let B_UNION = prove
- (`B_AX = T_AX UNION {p -->  Box Diam p | p IN (:form)}`,
-  REWRITE_TAC[B_AX;T_AX;EXTENSION] THEN
-  REWRITE_TAC[UNION;IN_ELIM_THM; IN_UNIV] THEN MESON_TAC[]);;   
+  `B_AX = {B_SCHEMA p | p IN (:form)} UNION {T_SCHEMA p |p IN (:form)}`;;
 
 let B_IN_B_AX = prove
  (`!q. p -->  Box Diam p IN B_AX`,
-  REWRITE_TAC[B_AX; IN_ELIM_THM; IN_UNIV; IN_UNION] THEN MESON_TAC[]);;
+  REWRITE_TAC[B_AX; B_SCHEMA_DEF; T_SCHEMA_DEF; IN_ELIM_THM;
+              IN_UNIV; IN_UNION] THEN
+  MESON_TAC[]);;
 
 let T_IN_B_AX = prove
  (`!q. Box q -->  q IN B_AX`,
-  REWRITE_TAC[B_AX; IN_ELIM_THM; IN_UNIV; UNION] THEN MESON_TAC[]);;
+  REWRITE_TAC[B_AX; B_SCHEMA_DEF; T_SCHEMA_DEF; IN_ELIM_THM;
+              IN_UNIV; UNION] THEN
+  MESON_TAC[]);;
 
 let B_AX_B= prove
  (`!q. [B_AX. {} |~ (q --> Box Diam q)]`,
@@ -33,29 +32,18 @@ let B_AX_T = prove
 (* Reflexive-Symmetric frames.                                               *)
 (* ------------------------------------------------------------------------- *)
 
-let MODAL_SYM = prove
- (`!W R.
-     (!w w':W. w IN W /\ w' IN W /\
-                   R w w' 
-                   ==> R w' w) <=>
-     (!p. holds_in (W,R) ( p --> Box (Diam p)))`,
-  ASM_REWRITE_TAC[diam_DEF] THEN MODAL_SCHEMA_TAC THEN EQ_TAC THENL [ASM_MESON_TAC[]; REPEAT STRIP_TAC] THEN 
-  FIRST_X_ASSUM (MP_TAC o SPECL [`\v:W. v = w`; `w:W`]) THEN ASM_MESON_TAC[]);;
-
 let RSYM_DEF = new_definition
   `RSYM =
    {(W:W->bool,R:W->W->bool) |
-    ~(W = {}) /\
-    (!x y:W. R x y ==> x IN W /\ y IN W) /\
-    (!x:W. x IN W ==> R x x) /\
-    (!x y:W. x IN W /\ y IN W /\ R x y ==> R y x )}`;;
+    (W,R) IN FRAME /\
+    REFLEXIVE W R /\
+    SYMETRIC W R}`;;
 
-let IN_RSYM = prove
+let IN_RSYM_DEF = prove
  (`(W:W->bool,R:W->W->bool) IN RSYM <=>
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   (!x:W. x IN W ==> R x x) /\
-   (!x y:W. x IN W /\ y IN W /\ R x y ==> R y x )`,
+   (W,R) IN FRAME /\
+    REFLEXIVE W R /\
+    SYMETRIC W R`,
   REWRITE_TAC[RSYM_DEF; IN_ELIM_PAIR_THM]);;
 
 (* ------------------------------------------------------------------------- *)
@@ -64,20 +52,10 @@ let IN_RSYM = prove
 
 g `RSYM:(W->bool)#(W->W->bool)->bool = CHAR B_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REWRITE_TAC[IN_CHAR; IN_RSYM; IN_FRAME]);;
-e (REPEAT GEN_TAC);;
-e EQ_TAC;;
- e (INTRO_TAC "not_empty Rel Refl Sym");;
- e (ASM_REWRITE_TAC[B_UNION]);;
-  e (GEN_TAC THEN INTRO_TAC "DISJ" THEN  FIRST_ASSUM (fun th -> DISJ_CASES_TAC (REWRITE_RULE[IN_UNION;T_AX; IN_ELIM_THM] th)));;
-    e (CLAIM_TAC "@q. form T" `? p'. p' IN (:form) /\ p = Box p' --> p'`);;
-      e (ASM_REWRITE_TAC[]);;
-    e (ASM_MESON_TAC[MODAL_REFL]);;
-    e (CLAIM_TAC "@q. form 4" `? p'. p' IN (:form) /\ p = p' --> Box Diam p'`);;
-      e (ASM_REWRITE_TAC[]);;
-    e (ASM_MESON_TAC[MODAL_SYM]);;
- e (INTRO_TAC "(not_empty Rel) char");;
-  e (ASM_MESON_TAC[MODAL_REFL; MODAL_SYM; T_IN_B_AX; B_IN_B_AX]);;
+e (REWRITE_TAC[IN_CHAR; IN_RSYM_DEF]);;
+e (REWRITE_TAC[B_AX; FORALL_IN_UNION; FORALL_IN_GSPEC;
+               MODAL_REFL; MODAL_SYM; IN_UNIV]);;
+e (MESON_TAC[]);;
 let RSYM_CHAR_B = top_thm();;
 
 (* ------------------------------------------------------------------------- *)
@@ -97,39 +75,35 @@ let B_RSYM_VALID = prove
 let RSF_DEF = new_definition
  `RSF =
   {(W:W->bool,R:W->W->bool) |
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   FINITE W /\
-   (!x. x IN W ==> R x x) /\
-   (!x y:W. x IN W /\ y IN W /\ R x y ==> R y x )}`;;
+   (W,R) IN FINITE_FRAME /\
+    REFLEXIVE W R /\
+    SYMETRIC W R}`;;
 
-let IN_RSF = prove
+let IN_RSF_DEF = prove
  (`(W:W->bool,R:W->W->bool) IN RSF <=>
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   FINITE W /\
-   (!x. x IN W ==> R x x) /\
-   (!x y:W. x IN W /\ y IN W /\ R x y ==> R y x )`,
+   (W,R) IN FINITE_FRAME /\
+    REFLEXIVE W R /\
+    SYMETRIC W R`,
   REWRITE_TAC[RSF_DEF; IN_ELIM_PAIR_THM]);;
 
 let RSF_SUBSET_RSYM = prove
  (`RSF:(W->bool)#(W->W->bool)->bool SUBSET RSYM`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RSF; IN_RSYM] THEN MESON_TAC[]);;
+  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RSF_DEF; IN_FINITE_FRAME;
+              REFLEXIVE; TRANSITIVE; IN_RSYM_DEF; IN_FRAME] THEN
+  MESON_TAC[]);;
+
+let RSF_FIN_RSYM = prove
+ (`RSF:(W->bool)#(W->W->bool)->bool = (RSYM INTER FINITE_FRAME)`,
+  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN
+  REWRITE_TAC[IN_INTER; IN_RSF_DEF; IN_FINITE_FRAME; TRANSITIVE; REFLEXIVE;
+              IN_RSYM_DEF; IN_FRAME] THEN
+  MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET]);;
 
 g `RSF: (W->bool)#(W->W->bool)->bool = APPR B_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REPEAT GEN_TAC);;
-e (REWRITE_TAC[APPR_CAR]);;
-e EQ_TAC;;
- e (INTRO_TAC "In_RSF");;
- e CONJ_TAC;;
-  e (ASM_MESON_TAC [RSF_SUBSET_RSYM; SUBSET; RSYM_CHAR_B]);;
-  e (HYP_TAC "In_RSF" (REWRITE_RULE[IN_RSF]));;
-   e (ASM_REWRITE_TAC[]);;
- e (INTRO_TAC "In_Char Fin");;
-  e (SUBGOAL_THEN  `(p1:W->bool,p2:W->W->bool) IN RSYM` MP_TAC);;
-   e (ASM_MESON_TAC[RSYM_CHAR_B; EXTENSION; FORALL_PAIR_THM]);;
-  e (ASM_REWRITE_TAC[IN_RSYM; IN_RSF]);;
+e (REWRITE_TAC[APPR_CAR; RSF_FIN_RSYM]);;
+e (REWRITE_TAC[RSYM_CHAR_B; IN_INTER; IN_CHAR; IN_FINITE_FRAME_INTER]);;
+e (MESON_TAC[]);;
 let RSF_APPR_B = top_thm();;
 
 (* ------------------------------------------------------------------------- *)
@@ -147,8 +121,8 @@ let B_RSF_VALID = prove
 let B_CONSISTENT = prove
  (`~ [B_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] B_RSF_VALID)) THEN
-  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
-              IN_RSF; NOT_FORALL_THM] THEN
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_RSF_DEF;
+              IN_FINITE_FRAME; REFLEXIVE; SYMETRIC; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. x = 0 /\ x = y`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 
@@ -180,11 +154,6 @@ let IN_B_STANDARD_FRAME = prove
 
 let B_STANDARD_MODEL_DEF = new_definition
   `B_STANDARD_MODEL = GEN_STANDARD_MODEL B_AX`;;
-
-let RSF_SUBSET_FRAME = prove
- (`RSF:(W->bool)#(W->W->bool)->bool SUBSET FRAME`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM] THEN INTRO_TAC "![W] [R]" THEN
-  REWRITE_TAC[IN_RSF] THEN STRIP_TAC THEN ASM_REWRITE_TAC[IN_FRAME]);;
 
 let B_STANDARD_MODEL_CAR = prove
  (`!W R p V.
@@ -236,17 +205,18 @@ let RSF_MAXIMAL_CONSISTENT = prove
   INTRO_TAC "!p; p" THEN
   MP_TAC (ISPECL [`B_AX`; `p:form`] GEN_FINITE_FRAME_MAXIMAL_CONSISTENT) THEN
   REWRITE_TAC[IN_FINITE_FRAME] THEN INTRO_TAC "gen_max_cons" THEN
-  ASM_REWRITE_TAC[IN_RSF] THEN
+  ASM_REWRITE_TAC[IN_RSF_DEF; IN_FINITE_FRAME; REFLEXIVE; SYMETRIC] THEN
+  CONJ_TAC THENL
   (* Nonempty *)
-  CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
+  [CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Well-defined *)
   CONJ_TAC THENL
   [ASM_REWRITE_TAC[B_STANDARD_REL_DEF] THEN ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Finite *)
-  CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
+  ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Reflexive *)
   CONJ_TAC THENL [REWRITE_TAC[IN_ELIM_THM; B_STANDARD_REL_CAR] THEN
-  INTRO_TAC "!x; (max_cons) (imp)" THEN ASM_REWRITE_TAC[] THEN
+  INTRO_TAC "!w; (max_cons) (imp)" THEN ASM_REWRITE_TAC[] THEN
   GEN_TAC THEN INTRO_TAC "box_mem" THEN
   ASM_REWRITE_TAC[] THEN
   MATCH_MP_TAC MAXIMAL_CONSISTENT_LEMMA THEN
@@ -270,8 +240,8 @@ let RSF_MAXIMAL_CONSISTENT = prove
    ALL_TAC] THEN
   ASM_REWRITE_TAC[CONJLIST] THEN ASM_MESON_TAC[B_AX_T]; ALL_TAC] THEN
   (* Symmetric *)
-  REWRITE_TAC[IN_ELIM_THM; B_STANDARD_REL_CAR] THEN 
-  INTRO_TAC "!x y; (x1 x2) (y1 y2) +"  THEN
+  REWRITE_TAC[IN_ELIM_THM; B_STANDARD_REL_CAR] THEN
+  INTRO_TAC "!w w'; (x1 x2) (y1 y2) +"  THEN
   ASM_REWRITE_TAC[B_STANDARD_REL_CAR] THEN
   MESON_TAC[] );;
 
@@ -286,21 +256,22 @@ e (INTRO_TAC "!p w q; p  maxw subw boxq rrr");;
 e (REFUTE_THEN (LABEL_TAC "contra") THEN
   REMOVE_THEN "rrr" MP_TAC THEN REWRITE_TAC[NOT_FORALL_THM]);;
 e (CLAIM_TAC "consistent_X"
-    `CONSISTENT B_AX (CONS (Not q)
-                           (APPEND (FLATMAP (\x. match x with Box c -> [c] | _ -> []) w)
-                                   (FLATMAP (\x. match x with
-                                                 | Not e ->
-                                                     if Box e SUBSENTENCE p
-                                                     then [Not Box e]
-                                                     else []
-                                                 | _ -> []) w)))`);;
+    `CONSISTENT B_AX
+       (CONS (Not q)
+          (APPEND (FLATMAP (\x. match x with Box c -> [c] | _ -> []) w)
+                  (FLATMAP (\x. match x with
+                                | Not e ->
+                                    if Box e SUBSENTENCE p
+                                    then [Not Box e]
+                                    else []
+                                | _ -> []) w)))`);;
   e (REMOVE_THEN "contra" MP_TAC);;
   e (REWRITE_TAC[CONSISTENT; CONTRAPOS_THM]);;
   e (INTRO_TAC "incons" THEN MATCH_MP_TAC MAXIMAL_CONSISTENT_LEMMA);;
   e (MAP_EVERY EXISTS_TAC
        [`B_AX`;
         `p:form`;
-        `APPEND (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) w) 
+        `APPEND (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) w)
                 (FLATMAP (\x. match x with
                               | Not e ->
                                   if Box e SUBSENTENCE p
@@ -311,19 +282,23 @@ e (CLAIM_TAC "consistent_X"
   e CONJ_TAC;;
    e GEN_TAC;;
     e (ASM_REWRITE_TAC[MEM_APPEND]);;
-    e (ASM_REWRITE_TAC[MEM_FLATMAP_LEMMA_2; MEM_FLATMAP_LEMMA_4] THEN ASM_MESON_TAC[]);;
+    e (ASM_REWRITE_TAC[MEM_FLATMAP_LEMMA_2; MEM_FLATMAP_LEMMA_4] THEN
+       ASM_MESON_TAC[]);;
    e (MATCH_MP_TAC MLK_imp_trans);;
-    e (EXISTS_TAC `CONJLIST (APPEND (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) w)
-                                    (FLATMAP (\x. match x with
-                                                  | Not e ->
-                                                      if Box e SUBSENTENCE p
-                                                      then [Box Not Box e]
-                                                      else []
-                                                  | _ -> []) w))`);;
+    e (EXISTS_TAC
+        `CONJLIST
+           (APPEND (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) w)
+                   (FLATMAP (\x. match x with
+                                 | Not e ->
+                                     if Box e SUBSENTENCE p
+                                     then [Box Not Box e]
+                                     else []
+                                 | _ -> []) w))`);;
     e CONJ_TAC;;
-     e (MATCH_MP_TAC (CONJLIST_IMP_CONJLIST));;  
+     e (MATCH_MP_TAC (CONJLIST_IMP_CONJLIST));;
       e GEN_TAC;;
-      e (ASM_REWRITE_TAC[MAP_APPEND; MEM_APPEND; MEM_MAP; MEM_FLATMAP_LEMMA_4; MEM_FLATMAP_LEMMA_5]);;
+      e (ASM_REWRITE_TAC[MAP_APPEND; MEM_APPEND; MEM_MAP;
+          MEM_FLATMAP_LEMMA_4; MEM_FLATMAP_LEMMA_5]);;
        e STRIP_TAC;;
         e (EXISTS_TAC `p':form`);;
          e (ASM_REWRITE_TAC[MLK_imp_refl_th]);;
@@ -334,41 +309,51 @@ e (CLAIM_TAC "consistent_X"
            e (ASM_REWRITE_TAC[]);;
           e (ASM_REWRITE_TAC[]);;
           e (MP_TAC (ISPECL [`Not r`] B_AX_B));;
-          e (MESON_TAC[diam_DEF; MLK_not_subst; MLK_box_subst; MLK_not_not_th; MLK_imp_mp_subst; MLK_iff_refl_th]);;
+          e (MESON_TAC[diam_DEF; MLK_not_subst; MLK_box_subst; MLK_not_not_th;
+                       MLK_imp_mp_subst; MLK_iff_refl_th]);;
      e (MATCH_MP_TAC MLK_iff_mp);;
-     e (EXISTS_TAC `CONJLIST ( MAP (Box) (APPEND (FLATMAP (\x. match x with Box c -> [c] | _ -> []) w)
-                                                 (FLATMAP (\x. match x with
-                                                               | Not e ->
-                                                                   if Box e SUBSENTENCE p
-                                                                   then [Not Box e]
-                                                                   else []
-                                                               | _ -> []) w)))
-                    --> Box q`);;
+     e (EXISTS_TAC
+         `CONJLIST
+            (MAP (Box)
+                 (APPEND (FLATMAP (\x. match x with Box c -> [c] | _ -> []) w)
+                         (FLATMAP (\x. match x with
+                                       | Not e ->
+                                           if Box e SUBSENTENCE p
+                                           then [Not Box e]
+                                           else []
+                                       | _ -> []) w)))
+            --> Box q`);;
      e CONJ_TAC;;
       e (MATCH_MP_TAC MLK_imp_subst);;
        e (ASM_REWRITE_TAC[MLK_iff_refl_th]);;
        e (MATCH_MP_TAC MLK_iff_mp_subst);;
-       e (EXISTS_TAC `CONJLIST (APPEND (MAP (Box) (FLATMAP (\x. match x with Box c -> [c] | _ -> []) w))
-                                       (MAP (Box) (FLATMAP (\x. match x with
-                                                                | Not e ->
-                                                                    if Box e SUBSENTENCE p
-                                                                    then [Not Box e]
-                                                                    else []
-                                                                | _ -> []) w)))`);;   
-       e (EXISTS_TAC `CONJLIST (APPEND (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) w)
-                                       (FLATMAP (\x. match x with
-                                                                | Not e ->
-                                                                    if Box e SUBSENTENCE p
-                                                                    then [Box Not Box e]
-                                                                    else []
-                                                                | _ -> []) w))`);;  
+       e (EXISTS_TAC
+           `CONJLIST
+              (APPEND (MAP (Box)
+                        (FLATMAP (\x. match x with Box c -> [c] | _ -> []) w))
+                      (MAP (Box) (FLATMAP (\x. match x with
+                                               | Not e ->
+                                                   if Box e SUBSENTENCE p
+                                                   then [Not Box e]
+                                                   else []
+                                               | _ -> []) w)))`);;
+       e (EXISTS_TAC
+           `CONJLIST
+              (APPEND (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) w)
+                      (FLATMAP (\x. match x with
+                                    | Not e ->
+                                        if Box e SUBSENTENCE p
+                                        then [Box Not Box e]
+                                        else []
+                                    | _ -> []) w))`);;
        e (ASM_REWRITE_TAC[ MLK_iff_refl_th]);;
        e CONJ_TAC;;
         e (ASM_MESON_TAC[MLK_iff_sym; APPEND_MAP_BOX]);;
          e (ASM_REWRITE_TAC[MLK_iff_def]);;
          e CONJ_TAC;;
           e (MATCH_MP_TAC CONJLIST_IMP_CONJLIST);;
-           e (ASM_REWRITE_TAC[MEM_APPEND; MEM_FLATMAP_LEMMA_6; MEM_FLATMAP_LEMMA_5; MEM_FLATMAP_LEMMA_2; MEM_MAP; FLATMAP]);;
+           e (ASM_REWRITE_TAC[MEM_APPEND; MEM_FLATMAP_LEMMA_6;
+                MEM_FLATMAP_LEMMA_5; MEM_FLATMAP_LEMMA_2; MEM_MAP; FLATMAP]);;
            e (REPEAT STRIP_TAC);;
             e (EXISTS_TAC `Box q'`);;
              e CONJ_TAC;;
@@ -385,7 +370,8 @@ e (CLAIM_TAC "consistent_X"
                e (ASM_REWRITE_TAC[]);;
               e (ASM_REWRITE_TAC[MLK_imp_refl_th]);;
           e (MATCH_MP_TAC CONJLIST_IMP_CONJLIST);;
-           e (ASM_REWRITE_TAC[MEM_APPEND; MEM_FLATMAP_LEMMA_6; MEM_FLATMAP_LEMMA_5; MEM_FLATMAP_LEMMA_2; MEM_MAP; FLATMAP]);;
+           e (ASM_REWRITE_TAC[MEM_APPEND; MEM_FLATMAP_LEMMA_6;
+                MEM_FLATMAP_LEMMA_5; MEM_FLATMAP_LEMMA_2; MEM_MAP; FLATMAP]);;
            e (REPEAT STRIP_TAC);;
             e (EXISTS_TAC `Box x`);;
              e CONJ_TAC;;
@@ -399,8 +385,9 @@ e (CLAIM_TAC "consistent_X"
                e (EXISTS_TAC `r:form`);;
                e (ASM_REWRITE_TAC[]);;
               e (ASM_REWRITE_TAC[MLK_imp_refl_th]);;
-         e (CLAIM_TAC "XIMP" `!y l. [B_AX . {} |~ Not (Not y && CONJLIST l)]
-                                ==> [B_AX . {} |~ (CONJLIST (MAP (Box) l)) --> Box(y)]`);;
+         e (CLAIM_TAC "XIMP"
+              `!y l. [B_AX . {} |~ Not (Not y && CONJLIST l)]
+                     ==> [B_AX . {} |~ (CONJLIST (MAP (Box) l)) --> Box(y)]`);;
            e (REPEAT STRIP_TAC);;
            e (MATCH_MP_TAC MLK_imp_trans);;
            e (EXISTS_TAC `Box (CONJLIST l)`THEN CONJ_TAC);;
@@ -414,16 +401,18 @@ e (CLAIM_TAC "consistent_X"
             e (MATCH_MP_TAC MLK_imp_trans);;
              e (EXISTS_TAC `Not (CONJLIST l)`);;
              e CONJ_TAC;;
-              e (MESON_TAC[MLK_axiom_not;MLK_iff_imp2]);;
+              e (MESON_TAC[MLK_axiom_not; MLK_iff_imp2]);;
               e (MESON_TAC[MLK_imp_refl_th]);;
-        e (POP_ASSUM MATCH_MP_TAC);; 
+        e (POP_ASSUM MATCH_MP_TAC);;
         e (HYP_TAC "incons" (ONCE_REWRITE_RULE[CONJLIST]));;
         e (POP_ASSUM MP_TAC);;
         e (COND_CASES_TAC);;
         e (ASM_REWRITE_TAC[MLK_DOUBLENEG]);;
         e (INTRO_TAC "notnotq");;
         e (ASM_REWRITE_TAC[CONJLIST]);;
-        e (ASM_MESON_TAC[MLK_iff_mp; MLK_not_subst; MLK_and_left_true_th; MLK_iff_refl_th; MLK_iff_mp_subst; MLK_and_comm_th; MLK_iff_sym; MLK_and_left_true_th]);;
+        e (ASM_MESON_TAC[MLK_iff_mp; MLK_not_subst; MLK_and_left_true_th;
+             MLK_iff_refl_th; MLK_iff_mp_subst; MLK_and_comm_th;
+             MLK_iff_sym; MLK_and_left_true_th]);;
       e (ASM_REWRITE_TAC[]);;
 e (MP_TAC (SPECL
     [`B_AX`;
@@ -454,16 +443,17 @@ e ANTS_TAC;;
   e (REWRITE_TAC[MEM_APPEND; MEM_FLATMAP_LEMMA_6]);;
   e (STRIP_TAC);;
   e (CLAIM_TAC "mem_flatmap" `MEM (Box q') w`);;
-    e (ASM_MESON_TAC[MEM_FLATMAP_LEMMA]);; 
+    e (ASM_MESON_TAC[MEM_FLATMAP_LEMMA]);;
   e (SUBGOAL_THEN `(Box q') SUBSENTENCE p:form` MP_TAC);;
     e (POP_ASSUM MP_TAC);;
-    e (ASM_REWRITE_TAC[]);; 
+    e (ASM_REWRITE_TAC[]);;
   e (REWRITE_TAC[SUBSENTENCE_CASES]);;
   e STRIP_TAC;;
    e DISJ1_TAC;;
     e (MATCH_MP_TAC SUBFORMULA_TRANS);;
     e (EXISTS_TAC `Box q'`);;
-    e (ASM_REWRITE_TAC[SUBFORMULA_TRANS;SUBFORMULA_INVERSION; SUBFORMULA_REFL]);;
+    e (ASM_REWRITE_TAC[SUBFORMULA_TRANS; SUBFORMULA_INVERSION;
+                       SUBFORMULA_REFL]);;
    e (REFUTE_THEN MP_TAC);;
     e (ASM_MESON_TAC[form_DISTINCT]);;
   e (UNDISCH_TAC `Box r SUBSENTENCE p`);;
@@ -479,8 +469,9 @@ e (INTRO_TAC "@X. maxX subX subl");;
  e (ASM_REWRITE_TAC[NOT_IMP]);;
  e (ASM_REWRITE_TAC[B_STANDARD_REL_CAR]);;
  e CONJ_TAC;;
-  e (HYP_TAC "subl" (REWRITE_RULE[SUBLIST; MEM; MEM_APPEND; MEM_FLATMAP_LEMMA_6; MEM_FLATMAP_LEMMA_A]));;
-   e CONJ_TAC;; 
+  e (HYP_TAC "subl" (REWRITE_RULE[SUBLIST; MEM; MEM_APPEND;
+                      MEM_FLATMAP_LEMMA_6; MEM_FLATMAP_LEMMA_A]));;
+   e CONJ_TAC;;
     e (REPEAT STRIP_TAC);;
      e (ASM_MESON_TAC[]);;
     e (REPEAT STRIP_TAC);;
@@ -493,7 +484,8 @@ e (INTRO_TAC "@X. maxX subX subl");;
          e STRIP_TAC;;
           e (MATCH_MP_TAC SUBFORMULA_TRANS);;
            e (EXISTS_TAC `Box B`);;
-           e (ASM_REWRITE_TAC[SUBFORMULA_TRANS;SUBFORMULA_INVERSION; SUBFORMULA_REFL]);;
+           e (ASM_REWRITE_TAC[SUBFORMULA_TRANS; SUBFORMULA_INVERSION;
+                              SUBFORMULA_REFL]);;
           e (REFUTE_THEN MP_TAC);;
            e (ASM_MESON_TAC[form_DISTINCT]);;
        e (ASM_MESON_TAC[MAXIMAL_CONSISTENT_MEM_NOT]);;
@@ -507,13 +499,14 @@ e (INTRO_TAC "@X. maxX subX subl");;
      e (MATCH_MP_TAC SUBFORMULA_TRANS);;
      e (EXISTS_TAC `Box (q:form)`);;
      e (ASM_REWRITE_TAC[]);;
-     e (ASM_MESON_TAC[SUBFORMULA_TRANS; SUBFORMULA_INVERSION; SUBFORMULA_REFL]);;
+     e (ASM_MESON_TAC[SUBFORMULA_TRANS; SUBFORMULA_INVERSION;
+                      SUBFORMULA_REFL]);;
     r 1;;
-     e (REMOVE_THEN "" MATCH_MP_TAC THEN REWRITE_TAC[MEM]);; 
-let B_ACCESSIBILITY_LEMMA = top_thm();; 
+     e (REMOVE_THEN "" MATCH_MP_TAC THEN REWRITE_TAC[MEM]);;
+let B_ACCESSIBILITY_LEMMA = top_thm();;
 
 (* ------------------------------------------------------------------------- *)
-(* Modal completeness theorem for B.                                        *)
+(* Modal completeness theorem for B.                                         *)
 (* ------------------------------------------------------------------------- *)
 
 g `!p. ~ [B_AX . {} |~ p]
@@ -589,13 +582,14 @@ let B_COMPLETENESS_THM_GEN = prove
   ASM_MESON_TAC[RSF_APPR_B; GEN_LEMMA_FOR_GEN_COMPLETENESS]);;
 
 (* ------------------------------------------------------------------------- *)
-(* Simple decision procedure for B.                                         *)
+(* Simple decision procedure for B.                                          *)
 (* ------------------------------------------------------------------------- *)
 
 let B_TAC : tactic =
   MATCH_MP_TAC B_COMPLETENESS_THM THEN
   REWRITE_TAC[diam_DEF; valid; FORALL_PAIR_THM; holds_in; holds;
-              IN_RSF; GSYM MEMBER_NOT_EMPTY] THEN
+              IN_RSF_DEF; IN_FINITE_FRAME; REFLEXIVE; SYMETRIC;
+              GSYM MEMBER_NOT_EMPTY] THEN
   MESON_TAC[];;
 
 let B_RULE tm =
@@ -604,7 +598,7 @@ let B_RULE tm =
 B_RULE `!p q r. [B_AX . {} |~ p && q && r --> p && r]`;;
 B_RULE `!p q. [B_AX . {} |~  Box (p --> q) && Box p --> Box q]`;;
 B_RULE `!p q. [B_AX . {} |~  Box p --> p]`;;
-B_RULE `!p. [B_AX . {} |~  p -->  Box Diam p]`;; 
+B_RULE `!p. [B_AX . {} |~  p -->  Box Diam p]`;;
 (* B_RULE `!p. [B_AX . {} |~ Box p --> Box (Box p)]`;; *)
 (*B_RULE `!p. [B_AX . {} |~ (Box (Box p --> p) --> Box p)]`;;*)
 (*B_RULE `!p. [B_AX . {} |~ Box (Box p --> p) --> Box p]`;; *)

@@ -33,6 +33,26 @@ let CONSISTENT_SUBLIST = prove
   EXISTS_TAC `CONJLIST Y` THEN ASM_REWRITE_TAC[] THEN
   ASM_SIMP_TAC[CONJLIST_IMP_SUBLIST]);;
 
+let NOT_CONSISTENT_SUBLIST = prove
+ (`!S X Y. ~CONSISTENT S X /\ X SUBLIST Y ==> ~CONSISTENT S Y`,
+  MESON_TAC[CONSISTENT_SUBLIST]);;
+
+let NOT_CONSISTENT_1 = prove
+ (`!S p X. MEM p X /\ [S . {} |~ Not p] ==> ~CONSISTENT S X`,
+  REPEAT STRIP_TAC THEN CLAIM_TAC "+" `~CONSISTENT S [p]` THENL
+  [ASM_REWRITE_TAC[CONSISTENT_SING]; ALL_TAC] THEN
+  SUBGOAL_THEN `[p:form] SUBLIST X`
+    (fun th -> ASM_MESON_TAC[th; CONSISTENT_SUBLIST]) THEN
+  ASM_REWRITE_TAC[SUBLIST; FORALL_MEM_INSERT; NOT_MEM_NIL]);;
+
+let NOT_CONSISTENT_2 = prove
+ (`!S p q X. MEM p X /\ MEM q X /\ [S . {} |~ Not (p && q)] ==> ~CONSISTENT S X`,
+  REPEAT STRIP_TAC THEN CLAIM_TAC "+" `~CONSISTENT S [p; q]` THENL
+  [ASM_REWRITE_TAC[CONSISTENT; CONJLIST; NOT_CONS_NIL]; ALL_TAC] THEN
+  SUBGOAL_THEN `[p; q:form] SUBLIST X`
+    (fun th -> ASM_MESON_TAC[th; CONSISTENT_SUBLIST]) THEN
+  ASM_REWRITE_TAC[SUBLIST; FORALL_MEM_INSERT; NOT_MEM_NIL]);;
+
 let CONSISTENT_CONS = prove
  (`!S h t. CONSISTENT S (CONS h t) <=> ~[S . {} |~ Not h || Not CONJLIST t]`,
   REPEAT GEN_TAC THEN REWRITE_TAC[CONSISTENT] THEN AP_TERM_TAC THEN
@@ -43,10 +63,9 @@ let CONSISTENT_CONS = prove
 
 let CONSISTENT_NC = prove
  (`!S X p. MEM p X /\ MEM (Not p) X ==> ~CONSISTENT S X`,
-  INTRO_TAC "!S X p; p np" THEN REWRITE_TAC[CONSISTENT; MLK_not_def] THEN
-  MATCH_MP_TAC MLK_imp_trans THEN EXISTS_TAC `p && Not p` THEN
-  REWRITE_TAC[MLK_nc_th] THEN MATCH_MP_TAC MLK_and_intro THEN
-  ASM_SIMP_TAC[CONJLIST_IMP_MEM]);;
+  REPEAT GEN_TAC THEN STRIP_TAC THEN MATCH_MP_TAC NOT_CONSISTENT_2 THEN
+  MAP_EVERY EXISTS_TAC [`p:form`; `Not p`] THEN
+  ASM_REWRITE_TAC[MLK_not_def; MLK_nc_th]);;
 
 let CONSISTENT_EM = prove
  (`!S h t. CONSISTENT S t
@@ -71,8 +90,8 @@ let CONSISTENT_EM = prove
     MATCH_ACCEPT_TAC MLK_axiom_addimp]]);;
 
 let FALSE_IMP_NOT_CONSISTENT = prove
- (`!S X. MEM False X ==> ~ CONSISTENT S X`,
-  SIMP_TAC[CONSISTENT; FALSE_NOT_CONJLIST]);;
+ (`!S X. MEM False X ==> ~CONSISTENT S X`,
+  MESON_TAC[NOT_CONSISTENT_1; MLK_not_false]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Maximal Consistent Sets.                                                  *)

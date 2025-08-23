@@ -6,11 +6,11 @@
 (* ========================================================================= *)
 
 let T_AX = new_definition
-  `T_AX = {Box p -->  p | p IN (:form)}`;;
+  `T_AX = {T_SCHEMA p| p IN (:form)}`;;
 
 let T_IN_T_AX = prove
  (`!q. Box q --> q IN T_AX`,
-  REWRITE_TAC[T_AX; IN_ELIM_THM; IN_UNIV] THEN MESON_TAC[]);;
+  REWRITE_TAC[T_AX; T_SCHEMA_DEF; IN_ELIM_THM; IN_UNIV] THEN MESON_TAC[]);;
 
 let T_AX_T= prove
  (`!q. [T_AX. {} |~ (Box q --> q)]`,
@@ -20,25 +20,17 @@ let T_AX_T= prove
 (* Reflexive frames.                                                         *)
 (* ------------------------------------------------------------------------- *)
 
-let MODAL_REFL = prove
- (`!W R.
-     (!w:W. w IN W ==> R w w) <=>
-     (!p. holds_in (W,R) (Box p --> p))`,
-  MODAL_SCHEMA_TAC THEN MESON_TAC[]);;
-
 let REFL_DEF = new_definition
   `REFL =
    {(W:W->bool,R:W->W->bool) |
-    ~(W = {}) /\
-    (!x y:W. R x y ==> x IN W /\ y IN W) /\
-    (!x:W. x IN W ==> R x x)}`;;
+    (W,R) IN FRAME  /\
+    REFLEXIVE W R}`;;
 
-let IN_REFL = prove
+let IN_REFL_DEF = prove
  (`(W:W->bool,R:W->W->bool) IN REFL <=>
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   (!x:W. x IN W ==> R x x)`,
-  REWRITE_TAC[REFL_DEF; IN_ELIM_PAIR_THM]);;
+   (W,R) IN FRAME /\
+   REFLEXIVE W R`,
+  MESON_TAC[REFL_DEF; IN_ELIM_PAIR_THM]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Correspondence Theory: Reflexive Frames are characteristic for T.         *)
@@ -46,34 +38,13 @@ let IN_REFL = prove
 
 g `REFL:(W->bool)#(W->W->bool)->bool = CHAR T_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REWRITE_TAC[IN_CHAR; IN_REFL; IN_FRAME]);;
-e (REWRITE_TAC[T_AX; FORALL_IN_GSPEC; IN_UNIV]);;
-e (REPEAT GEN_TAC);;
-e EQ_TAC;;
- e (INTRO_TAC "not_empty Rel Refl");;
- e (ASM_MESON_TAC[MODAL_REFL]);;
-e (INTRO_TAC "(not_empty Rel) char");;
-e (ASM_MESON_TAC[MODAL_REFL]);;
+e (REWRITE_TAC[IN_CHAR; IN_REFL_DEF; IN_FRAME]);;
+e (REWRITE_TAC[MODAL_REFL; T_AX; FORALL_IN_GSPEC; IN_UNIV]);;
 let REFL_CHAR_T = top_thm();;
 
 (* ------------------------------------------------------------------------- *)
 (* Proof of soundness w.r.t. Reflexive Frames                                *)
 (* ------------------------------------------------------------------------- *)
-
-g `!W:W->bool R:W->W->bool. ~(W = {}) /\
-                            (!x y. R x y ==> x IN W /\ y IN W) /\
-                            (!x. x IN W ==> R x x)
-                            ==> (!p. holds_in (W,R) (Box p --> p))`;;
-e (INTRO_TAC "!W R; non_empty Rel Refl");;
-e (MP_TAC (REWRITE_RULE [EXTENSION; FORALL_PAIR_THM] REFL_CHAR_T));;
-e (INTRO_TAC "Eq_form_Refl_Char");;
-e (CLAIM_TAC "In_Refl" `(W,R) IN REFL:(W->bool)#(W->W->bool)->bool`);;
-  e (ASM_REWRITE_TAC [IN_REFL]);;
-e (SUBGOAL_THEN `(W,R) IN  CHAR T_AX: (W->bool)#(W->W->bool)->bool` MP_TAC);;
-  e (ASM_MESON_TAC []);;
-e (ASM_REWRITE_TAC [IN_CHAR; T_AX; FORALL_IN_GSPEC; IN_UNIV]);;
-e (ASM_MESON_TAC []);;
-let REFL_IMP_T = top_thm();;
 
 let T_REFL_VALID = prove
  (`!H p. [T_AX . H |~ p] /\
@@ -88,40 +59,31 @@ let T_REFL_VALID = prove
 let RF_DEF = new_definition
  `RF =
   {(W:W->bool,R:W->W->bool) |
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   FINITE W /\
-   (!x. x IN W ==> R x x)}`;;
+   (W, R) IN FINITE_FRAME  /\
+   REFLEXIVE W R }`;;
 
-let IN_RF = prove
+let IN_RF_DEF = prove
  (`(W:W->bool,R:W->W->bool) IN RF <=>
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   FINITE W /\
-   (!x. x IN W ==> R x x)`,
-  REWRITE_TAC[RF_DEF; IN_ELIM_PAIR_THM]);;
+   (W, R) IN FINITE_FRAME /\
+   REFLEXIVE W R`,
+  MESON_TAC[RF_DEF; IN_FINITE_FRAME; REFLEXIVE; IN_ELIM_PAIR_THM]);;
 
 let RF_SUBSET_REFL = prove
  (`RF:(W->bool)#(W->W->bool)->bool SUBSET REFL`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RF; IN_REFL] THEN MESON_TAC[]);;
+  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RF_DEF; IN_REFL_DEF] THEN
+  MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET]);;
+
+let RF_FIN_REFL = prove
+ (`RF:(W->bool)#(W->W->bool)->bool = (REFL INTER FINITE_FRAME)`,
+  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN
+  REWRITE_TAC[IN_INTER; IN_RF_DEF; IN_REFL_DEF] THEN
+  MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET]);;
 
 g `RF: (W->bool)#(W->W->bool)->bool = APPR T_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REPEAT GEN_TAC);;
-e EQ_TAC;;
- e (INTRO_TAC "In_RF");;
-  e (SUBGOAL_THEN `(p1:W->bool, p2:W->W->bool) IN CHAR T_AX` MP_TAC);;
-    e (ASM_MESON_TAC [RF_SUBSET_REFL; SUBSET; REFL_CHAR_T]);;
-  e (HYP_TAC "In_RF" (REWRITE_RULE[IN_RF]));;
-  e (ASM_REWRITE_TAC [IN_APPR; IN_FINITE_FRAME; IN_FRAME]);;
-  e (ASM_MESON_TAC[CHAR_CAR]);;
- e (INTRO_TAC "In_Appr");;
-  e (SUBGOAL_THEN  `(p1:W->bool,p2:W->W->bool) IN REFL` MP_TAC);;
-   e (SUBGOAL_THEN  `(p1:W->bool,p2:W->W->bool) IN CHAR T_AX` MP_TAC);;
-     e (ASM_MESON_TAC[APPR_SUBSET_CHAR; SUBSET; FORALL_PAIR_THM]);;
-   e (ASM_MESON_TAC[REFL_CHAR_T; EXTENSION; FORALL_PAIR_THM]);;
-  e (HYP_TAC "In_Appr" (REWRITE_RULE[IN_APPR; IN_FINITE_FRAME]));;
-  e (ASM_REWRITE_TAC[IN_REFL; IN_RF]);;
+e (REWRITE_TAC[APPR_CAR; RF_FIN_REFL]);;
+e (REWRITE_TAC[REFL_CHAR_T; IN_INTER; IN_CHAR; IN_FINITE_FRAME_INTER]);;
+e (MESON_TAC[]);;
 let RF_APPR_T = top_thm();;
 
 (* ------------------------------------------------------------------------- *)
@@ -140,7 +102,7 @@ let T_CONSISTENT = prove
  (`~ [T_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] T_RF_VALID)) THEN
   REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
-              IN_RF; NOT_FORALL_THM] THEN
+              IN_RF_DEF; IN_FINITE_FRAME; REFLEXIVE; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. x = 0 /\ x = y`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 
@@ -176,7 +138,8 @@ let T_STANDARD_MODEL_DEF = new_definition
 let RF_SUBSET_FRAME = prove
  (`RF:(W->bool)#(W->W->bool)->bool SUBSET FRAME`,
   REWRITE_TAC[SUBSET; FORALL_PAIR_THM] THEN INTRO_TAC "![W] [R]" THEN
-  REWRITE_TAC[IN_RF] THEN STRIP_TAC THEN ASM_REWRITE_TAC[IN_FRAME]);;
+  REWRITE_TAC[IN_RF_DEF; IN_FINITE_FRAME; REFLEXIVE] THEN STRIP_TAC THEN
+  ASM_REWRITE_TAC[IN_FRAME]);;
 
 let T_STANDARD_MODEL_CAR = prove
  (`!W R p V.
@@ -225,17 +188,17 @@ let RF_MAXIMAL_CONSISTENT = prove
   INTRO_TAC "!p; p" THEN
   MP_TAC (ISPECL [`T_AX`; `p:form`] GEN_FINITE_FRAME_MAXIMAL_CONSISTENT) THEN
   REWRITE_TAC[IN_FINITE_FRAME] THEN INTRO_TAC "gen_max_cons" THEN
-  ASM_REWRITE_TAC[IN_RF] THEN
+  ASM_REWRITE_TAC[IN_RF_DEF; REFLEXIVE; IN_FINITE_FRAME] THEN CONJ_TAC THENL
   (* Nonempty *)
-  CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
+  [CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Well-defined *)
   CONJ_TAC THENL
   [ASM_REWRITE_TAC[T_STANDARD_REL_DEF] THEN ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Finite *)
-  CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
+  ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Reflexive *)
   REWRITE_TAC[IN_ELIM_THM; T_STANDARD_REL_CAR] THEN
-  INTRO_TAC "!x; (max_cons) (imp)" THEN ASM_REWRITE_TAC[] THEN
+  INTRO_TAC "!w; (max_cons) (imp)" THEN ASM_REWRITE_TAC[] THEN
   GEN_TAC THEN INTRO_TAC "box_mem" THEN
   MATCH_MP_TAC MAXIMAL_CONSISTENT_LEMMA THEN
   EXISTS_TAC `T_AX` THEN EXISTS_TAC `p:form` THEN EXISTS_TAC `[Box B]` THEN
@@ -357,8 +320,8 @@ let T_COMPLETENESS_THM_GEN = prove
 
 let T_TAC : tactic =
   MATCH_MP_TAC T_COMPLETENESS_THM THEN
-  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds;
-              IN_RF; GSYM MEMBER_NOT_EMPTY] THEN
+  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds; IN_RF_DEF;
+              IN_FINITE_FRAME; REFLEXIVE; GSYM MEMBER_NOT_EMPTY] THEN
   MESON_TAC[];;
 
 let T_RULE tm =

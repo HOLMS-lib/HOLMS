@@ -4,22 +4,20 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
-
 let S4_AX = new_definition
-  `S4_AX = {Box p --> Box Box p | p IN (:form)} UNION {Box p --> p |p IN (:form)}`;;
-
-let S4_UNION = prove
- (`S4_AX = T_AX UNION K4_AX`,
-  REWRITE_TAC[S4_AX;T_AX; K4_AX;EXTENSION] THEN
-  REWRITE_TAC[UNION;IN_ELIM_THM; IN_UNIV] THEN MESON_TAC[]);; 
+  `S4_AX = {4_SCHEMA p | p IN (:form)} UNION {T_SCHEMA p |p IN (:form)}`;;
 
 let FOUR_IN_S4_AX = prove
  (`!q. Box q --> Box Box q IN S4_AX`,
-  REWRITE_TAC[S4_AX; IN_ELIM_THM; IN_UNIV; UNION] THEN MESON_TAC[]);;
+  REWRITE_TAC[S4_AX; FOUR_SCHEMA_DEF; T_SCHEMA_DEF;
+              IN_ELIM_THM; IN_UNIV; UNION] THEN
+  MESON_TAC[]);;
 
 let T_IN_S4_AX = prove
  (`!q. Box q -->  q IN S4_AX`,
-  REWRITE_TAC[S4_AX; IN_ELIM_THM; IN_UNIV; UNION] THEN MESON_TAC[]);;
+  REWRITE_TAC[S4_AX; FOUR_SCHEMA_DEF; T_SCHEMA_DEF; IN_ELIM_THM;
+              IN_UNIV; UNION] THEN
+  MESON_TAC[]);;
 
 let S4_AX_FOUR = prove
  (`!q. [S4_AX. {} |~ (Box q --> Box Box q)]`,
@@ -40,17 +38,15 @@ let S4_DOT_BOX = prove
 let RTRANS_DEF = new_definition
   `RTRANS =
    {(W:W->bool,R:W->W->bool) |
-    ~(W = {}) /\
-    (!x y:W. R x y ==> x IN W /\ y IN W) /\
-    (!x:W. x IN W ==> R x x) /\
-    (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)}`;;
+    (W,R) IN FRAME /\
+    REFLEXIVE W R /\
+    TRANSITIVE W R}`;;
 
-let IN_RTRANS = prove
+let IN_RTRANS_DEF = prove
  (`(W:W->bool,R:W->W->bool) IN RTRANS <=>
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   (!x:W. x IN W ==> R x x) /\
-   (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)`,
+   (W,R) IN FRAME /\
+   REFLEXIVE W R /\
+   TRANSITIVE W R`,
   REWRITE_TAC[RTRANS_DEF; IN_ELIM_PAIR_THM]);;
 
 (* ------------------------------------------------------------------------- *)
@@ -59,20 +55,10 @@ let IN_RTRANS = prove
 
 g `RTRANS:(W->bool)#(W->W->bool)->bool = CHAR S4_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REWRITE_TAC[IN_CHAR; IN_RTRANS; IN_FRAME]);;
-e (REPEAT GEN_TAC);;
-e EQ_TAC;;
- e (INTRO_TAC "not_empty Rel Refl Trans");;
- e (ASM_REWRITE_TAC[S4_UNION]);;
-  e (GEN_TAC THEN INTRO_TAC "DISJ" THEN  FIRST_ASSUM (fun th -> DISJ_CASES_TAC (REWRITE_RULE[IN_UNION;T_AX; IN_ELIM_THM; K4_AX] th)));;
-    e (CLAIM_TAC "@q. form T" `? p'. p' IN (:form) /\ p = Box p' --> p'`);;
-      e (ASM_REWRITE_TAC[]);;
-    e (ASM_MESON_TAC[MODAL_REFL]);;
-    e (CLAIM_TAC "@q. form 4" `? p'. p' IN (:form) /\ p = Box p' --> Box Box p'`);;
-      e (ASM_REWRITE_TAC[]);;
-    e (ASM_MESON_TAC[MODAL_TRANS]);;
- e (INTRO_TAC "(not_empty Rel) char");;
-  e (ASM_MESON_TAC[MODAL_REFL; MODAL_TRANS; T_IN_S4_AX; FOUR_IN_S4_AX]);;
+e (REWRITE_TAC[IN_CHAR; IN_RTRANS_DEF]);;
+e (REWRITE_TAC[S4_AX; FORALL_IN_UNION; FORALL_IN_GSPEC; MODAL_REFL;
+                MODAL_TRANS; IN_UNIV]);;
+e (MESON_TAC[]);;
 let RTRANS_CHAR_S4 = top_thm();;
 
 (* ------------------------------------------------------------------------- *)
@@ -92,50 +78,35 @@ let S4_RTRANS_VALID = prove
 let RTF_DEF = new_definition
  `RTF =
   {(W:W->bool,R:W->W->bool) |
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   FINITE W /\
-   (!x. x IN W ==> R x x) /\
-   (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)}`;;
+   FINITE_FRAME (W,R) /\
+   REFLEXIVE W R /\
+   TRANSITIVE W R}`;;
 
-let IN_RTF = prove
+let IN_RTF_DEF = prove
  (`(W:W->bool,R:W->W->bool) IN RTF <=>
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   FINITE W /\
-   (!x. x IN W ==> R x x) /\
-   (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)`,
-  REWRITE_TAC[RTF_DEF; IN_ELIM_PAIR_THM]);;
+   (W,R) IN FINITE_FRAME /\
+   REFLEXIVE W R /\
+   TRANSITIVE W R`,
+  MESON_TAC[RTF_DEF; IN_ELIM_PAIR_THM; IN]);;
 
 let RTF_SUBSET_RTRANS = prove
  (`RTF:(W->bool)#(W->W->bool)->bool SUBSET RTRANS`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RTF; IN_RTRANS] THEN MESON_TAC[]);;
+  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RTF_DEF; IN_FINITE_FRAME; REFLEXIVE;
+              TRANSITIVE; IN_RTRANS_DEF; IN_FRAME] THEN MESON_TAC[]);;
 
-(*let RTF_SUBSET_REFL = prove
- (`RTF:(W->bool)#(W->W->bool)->bool SUBSET REFL`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RTF; IN_REFL] THEN MESON_TAC[]);;
-  
-let RTF_SUBSET_TRANS = prove
- (`RTF:(W->bool)#(W->W->bool)->bool SUBSET TRANS`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RTF; IN_TRANS] THEN MESON_TAC[]);;*)
-
+let RTF_FIN_RTRANS = prove
+ (`RTF:(W->bool)#(W->W->bool)->bool = (RTRANS INTER FINITE_FRAME)`,
+  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN
+  REWRITE_TAC[IN_INTER; IN_RTF_DEF; IN_FINITE_FRAME; TRANSITIVE; REFLEXIVE;
+              IN_RTRANS_DEF; IN_FRAME] THEN
+  MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET]);;
 
 g `RTF: (W->bool)#(W->W->bool)->bool = APPR S4_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REPEAT GEN_TAC);;
-e (REWRITE_TAC[APPR_CAR]);;
-e EQ_TAC;;
- e (INTRO_TAC "In_RTF");;
- e CONJ_TAC;;
-  e (ASM_MESON_TAC [RTF_SUBSET_RTRANS; SUBSET; RTRANS_CHAR_S4]);;
-  e (HYP_TAC "In_RTF" (REWRITE_RULE[IN_RTF]));;
-   e (ASM_REWRITE_TAC[]);;
- e (INTRO_TAC "In_Char Fin");;
-  e (SUBGOAL_THEN  `(p1:W->bool,p2:W->W->bool) IN RTRANS` MP_TAC);;
-   e (ASM_MESON_TAC[RTRANS_CHAR_S4; EXTENSION; FORALL_PAIR_THM]);;
-  e (ASM_REWRITE_TAC[IN_RTRANS; IN_RTF]);;
+e (REWRITE_TAC[APPR_CAR; RTF_FIN_RTRANS]);;
+e (REWRITE_TAC[RTRANS_CHAR_S4; IN_INTER; IN_CHAR; IN_FINITE_FRAME_INTER]);;
+e (MESON_TAC[]);;
 let RTF_APPR_S4 = top_thm();;
-
 
 (* ------------------------------------------------------------------------- *)
 (* Proof of soundness w.r.t. RTF.                                            *)
@@ -152,8 +123,8 @@ let S4_RTF_VALID = prove
 let S4_CONSISTENT = prove
  (`~ [S4_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] S4_RTF_VALID)) THEN
-  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
-              IN_RTF; NOT_FORALL_THM] THEN
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_RTF_DEF; REFLEXIVE;
+              TRANSITIVE; IN_FINITE_FRAME; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. x = 0 /\ x = y`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 
@@ -185,11 +156,6 @@ let IN_S4_STANDARD_FRAME = prove
 
 let S4_STANDARD_MODEL_DEF = new_definition
   `S4_STANDARD_MODEL = GEN_STANDARD_MODEL S4_AX`;;
-
-let RTF_SUBSET_FRAME = prove
- (`RTF:(W->bool)#(W->W->bool)->bool SUBSET FRAME`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM] THEN INTRO_TAC "![W] [R]" THEN
-  REWRITE_TAC[IN_RTF] THEN STRIP_TAC THEN ASM_REWRITE_TAC[IN_FRAME]);;
 
 let S4_STANDARD_MODEL_CAR = prove
  (`!W R p V.
@@ -231,8 +197,7 @@ let S4_STANDARD_REL_CAR = prove
   REPEAT GEN_TAC THEN REWRITE_TAC[S4_STANDARD_REL_DEF; GEN_STANDARD_REL] THEN
   EQ_TAC THEN REPEAT (ASM_MESON_TAC[]) THEN REPEAT (ASM_MESON_TAC[]));;
 
-
- let RTF_MAXIMAL_CONSISTENT = prove
+let RTF_MAXIMAL_CONSISTENT = prove
  (`!p. ~ [S4_AX . {} |~ p]
        ==> ({M | MAXIMAL_CONSISTENT S4_AX p M /\
                  (!q. MEM q M ==> q SUBSENTENCE p)},
@@ -241,17 +206,18 @@ let S4_STANDARD_REL_CAR = prove
   INTRO_TAC "!p; p" THEN
   MP_TAC (ISPECL [`S4_AX`; `p:form`] GEN_FINITE_FRAME_MAXIMAL_CONSISTENT) THEN
   REWRITE_TAC[IN_FINITE_FRAME] THEN INTRO_TAC "gen_max_cons" THEN
-  ASM_REWRITE_TAC[IN_RTF] THEN
+  ASM_REWRITE_TAC[IN_RTF_DEF; TRANSITIVE; REFLEXIVE; IN_FINITE_FRAME] THEN
+  CONJ_TAC THENL [
   (* Nonempty *)
   CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Well-defined *)
   CONJ_TAC THENL
   [ASM_REWRITE_TAC[S4_STANDARD_REL_DEF] THEN ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Finite *)
-  CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
+  ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Reflexive *)
   CONJ_TAC THENL [REWRITE_TAC[IN_ELIM_THM; S4_STANDARD_REL_CAR] THEN
-  INTRO_TAC "!x; (max_cons) (imp)" THEN ASM_REWRITE_TAC[] THEN
+  INTRO_TAC "!w; (max_cons) (imp)" THEN ASM_REWRITE_TAC[] THEN
   GEN_TAC THEN INTRO_TAC "box_mem" THEN
   ASM_REWRITE_TAC[] THEN
   MATCH_MP_TAC MAXIMAL_CONSISTENT_LEMMA THEN
@@ -276,8 +242,8 @@ let S4_STANDARD_REL_CAR = prove
   ASM_REWRITE_TAC[CONJLIST] THEN ASM_MESON_TAC[S4_AX_T]; ALL_TAC] THEN
   (* Transitive *)
   REWRITE_TAC[IN_ELIM_THM; S4_STANDARD_REL_CAR] THEN
-  INTRO_TAC "!x y z; (x1 x2) (y1 y2) (z1 z2) +" THEN
-  ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);; 
+  INTRO_TAC "!w w' w''; (x1 x2) (y1 y2) (z1 z2) +" THEN
+  ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 let CONJLIST_FLATMAP_DOT_BOX_LEMMA_S4 = prove
  (`!w. [S4_AX . {} |~
@@ -287,7 +253,7 @@ let CONJLIST_FLATMAP_DOT_BOX_LEMMA_S4 = prove
             (FLATMAP (\x. match x with Box c -> [c; Box c] | _ -> []) w))]`,
   MATCH_MP_TAC CONJLIST_FLATMAP_DOT_BOX_LEMMA_2 THEN
   MATCH_ACCEPT_TAC S4_DOT_BOX);;
-  
+
 g `!p w q.
      ~ [S4_AX . {} |~ p] /\
      MAXIMAL_CONSISTENT S4_AX p w /\
@@ -319,8 +285,9 @@ e (CLAIM_TAC "consistent_X"
    e CONJ_TAC;;
     e (MP_TAC (CONJLIST_FLATMAP_DOT_BOX_LEMMA_S4));;
     e (ASM_MESON_TAC[]);;
-   e (CLAIM_TAC "XIMP" `!y l. [S4_AX . {} |~ Not (Not y && CONJLIST l)]
-                                ==> [S4_AX . {} |~ (CONJLIST (MAP (Box) l)) --> Box(y)]`);;
+   e (CLAIM_TAC "XIMP"
+        `!y l. [S4_AX . {} |~ Not (Not y && CONJLIST l)]
+               ==> [S4_AX . {} |~ (CONJLIST (MAP (Box) l)) --> Box(y)]`);;
     e (REPEAT STRIP_TAC);;
     e (MATCH_MP_TAC MLK_imp_trans);;
     e (EXISTS_TAC `Box (CONJLIST l)`THEN CONJ_TAC);;
@@ -345,7 +312,8 @@ e (CLAIM_TAC "consistent_X"
    e (INTRO_TAC "notnotq");;
    e (CLAIM_TAC "or" `[S4_AX . {} |~ Not Not q || Not CONJLIST []]`);;
      e (ASM_MESON_TAC [MLK_or_introl]);;
-   e (CLAIM_TAC "eq" `[S4_AX . {} |~ Not (Not q && CONJLIST []) <-> Not Not q || Not CONJLIST []]`);;
+   e (CLAIM_TAC "eq" `[S4_AX . {} |~ Not (Not q && CONJLIST []) <->
+                                     Not Not q || Not CONJLIST []]`);;
     e (ASM_MESON_TAC[MLK_de_morgan_and_th]);;
    e (ASM_MESON_TAC[MLK_iff_mp;MLK_iff_sym]);;
   e (DISCH_THEN MATCH_ACCEPT_TAC);;
@@ -479,8 +447,8 @@ let S4_COMPLETENESS_THM_GEN = prove
 
 let S4_TAC : tactic =
   MATCH_MP_TAC S4_COMPLETENESS_THM THEN
-  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds;
-              IN_RTF; GSYM MEMBER_NOT_EMPTY] THEN
+  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds; IN_RTF_DEF; REFLEXIVE;
+              TRANSITIVE; IN_FINITE_FRAME; GSYM MEMBER_NOT_EMPTY] THEN
   MESON_TAC[];;
 
 let S4_RULE tm =
@@ -613,4 +581,3 @@ let S4_COUNTERMODEL_FINITE_SETS = prove
                      set_of_list w1 = w2` THEN
   ASM_REWRITE_TAC[S4_BISIMIMULATION_SET_OF_LIST] THEN
   MATCH_MP_TAC S4_STDWORLDS_RULES THEN ASM_REWRITE_TAC[]);;
-

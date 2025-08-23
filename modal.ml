@@ -38,6 +38,67 @@ let form_DISTINCT = distinctness "form";;
 let form_INJ = injectivity "form";;
 
 (* ------------------------------------------------------------------------- *)
+(* OCaml procedure for analyzing modal formulas.                             *)
+(* ------------------------------------------------------------------------- *)
+
+let dest_modal_conj = dest_binop `&&`;;
+let dest_modal_disj = dest_binop `||`;;
+let dest_modal_imp = dest_binop `-->`;;
+let dest_modal_iff = dest_binop `<->`;;
+
+let dest_unop ftm =
+  let errstr = "dest_unop "^string_of_term ftm in
+  fun tm -> try if rator tm <> ftm then fail() else rand tm
+            with Failure _ -> failwith errstr;;
+
+let dest_modal_not = dest_unop `Not`;;
+let dest_modal_box = dest_unop `Box`;;
+
+(* ------------------------------------------------------------------------- *)
+(* Specialized induction tactics for formulas.                               *)
+(* ------------------------------------------------------------------------- *)
+
+let FORM_INDUCT_TAC : tactic =
+  let form_ty = `:form` in
+  let string_ty = `:string` in
+  fun (asl,w) as gl ->
+    let q = try let v,_ = dest_forall w in
+                if type_of v = form_ty then v else fail()
+            with Failure _ -> failwith "FORM_INDUCT_TAC" in
+    let s = name_of q in
+    let q1 = mk_var(s^"1",form_ty)
+    and q2 = mk_var(s^"2",form_ty)
+    and a = mk_var(s,string_ty) in
+    let lab_tac = LABEL_TAC (s^"_hpind")
+    and lab1_tac = LABEL_TAC (s^"1_hpind")
+    and lab2_tac = LABEL_TAC (s^"2_hpind") in
+    let intro1_tac = X_GEN_TAC q THEN DISCH_THEN lab_tac
+    and intro2_tac = X_GEN_TAC q1 THEN X_GEN_TAC q2 THEN
+                     DISCH_THEN (CONJUNCTS_THEN2 lab1_tac lab2_tac) in
+    let tac =
+      MATCH_MP_TAC form_INDUCT THEN REPEAT CONJ_TAC THENL
+      [ALL_TAC; (* False *)
+       ALL_TAC; (* True *)
+       X_GEN_TAC a; (* Atom *)
+       intro1_tac; (* Not *)
+       intro2_tac; (* && *)
+       intro2_tac; (* || *)
+       intro2_tac; (* --> *)
+       intro2_tac; (* <-> *)
+       intro1_tac (* Box *)
+      ] in
+    tac gl;;
+
+let GEN_FORM_INDUCT_TAC : term -> tactic =
+  fun tm ->
+    let has_var = partition (free_in tm o concl o snd) in
+    let induct_tac = SPEC_TAC(tm,tm) THEN FORM_INDUCT_TAC in
+    fun (asl,w) as gl ->
+      let l1,l2 = has_var asl in
+      if l1 = [] then induct_tac gl else
+      (MP_TAC (end_itlist CONJ (map snd l1)) THEN induct_tac) (l2,w);;
+
+(* ------------------------------------------------------------------------- *)
 (* Kripke's Semantics of formulae.                                           *)
 (* ------------------------------------------------------------------------- *)
 

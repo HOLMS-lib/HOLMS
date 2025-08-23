@@ -9,15 +9,29 @@
 (* ========================================================================= *)
 
 let GL_AX = new_definition
-  `GL_AX = {Box (Box p --> p) --> Box p | p IN (:form)}`;;
+  `GL_AX = {LOB_SCHEMA p | p IN (:form)}`;;
 
 let LOB_IN_GL_AX = prove
  (`!q. (Box (Box q --> q) --> Box q) IN GL_AX`,
-  REWRITE_TAC[GL_AX; IN_ELIM_THM; IN_UNIV] THEN MESON_TAC[]);;
+  REWRITE_TAC[GL_AX; LOB_SCHEMA_DEF; IN_ELIM_THM; IN_UNIV] THEN MESON_TAC[]);;
 
 let GL_axiom_lob = prove
  (`!q. [GL_AX. {} |~ (Box (Box q --> q) --> Box q)]`,
   MESON_TAC[MODPROVES_RULES; LOB_IN_GL_AX]);;
+
+(* ------------------------------------------------------------------------- *)
+(* Proposition for GL.                                                       *)
+(* ------------------------------------------------------------------------- *)
+
+let GL_schema_4 = prove
+ (`!p. [GL_AX . {} |~ (Box p --> Box (Box p))]`,
+  MESON_TAC[GL_axiom_lob; MLK_imp_box; MLK_and_pair_th; MLK_and_intro;
+            MLK_shunt; MLK_imp_trans; MLK_and_right_th; MLK_and_left_th;
+            MLK_box_and_th]);;
+
+let GL_dot_box = prove
+ (`!p. [GL_AX . {} |~ (Box p --> Box p && Box (Box p))]`,
+  MESON_TAC[MLK_imp_refl_th; GL_schema_4; MLK_and_intro]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Transitive Noetherian frames.                                             *)
@@ -26,16 +40,14 @@ let GL_axiom_lob = prove
 let TRANSNT_DEF = new_definition
   `TRANSNT =
    {(W:W->bool,R:W->W->bool) |
-    ~(W = {}) /\
-    (!x y:W. R x y ==> x IN W /\ y IN W) /\
-    (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
+    (W,R) IN FRAME /\
+    TRANSITIVE W R /\
     WF(\x y. R y x)}`;;
 
-let IN_TRANSNT = prove
+let IN_TRANSNT_DEF = prove
  (`(W:W->bool,R:W->W->bool) IN TRANSNT <=>
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   (!x y z:W. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
+   (W,R) IN FRAME /\
+    TRANSITIVE W R /\
    WF(\x y. R y x)`,
   REWRITE_TAC[TRANSNT_DEF; IN_ELIM_PAIR_THM]);;
 
@@ -46,34 +58,28 @@ let IN_TRANSNT = prove
 
 g `TRANSNT:(W->bool)#(W->W->bool)->bool = CHAR GL_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REWRITE_TAC[IN_CHAR; IN_TRANSNT; IN_FRAME]);;
-e (REWRITE_TAC[GL_AX; FORALL_IN_GSPEC; IN_UNIV]);;
-e MODAL_SCHEMA_TAC;;
-e EQ_TAC;;
- e (INTRO_TAC "not_empty Rel TRANS WF");;
- e (ASM_REWRITE_TAC[]);;
- e (HYP_TAC "WF" (REWRITE_RULE[WF_IND]));;
- e (REPEAT GEN_TAC THEN REPEAT DISCH_TAC);;
- e (FIRST_X_ASSUM MATCH_MP_TAC);;
- e (ASM_MESON_TAC[]);;
-e (INTRO_TAC "(not_empty Rel) char");;
-e (ASM_REWRITE_TAC[]);;
-e CONJ_TAC;;
- e (X_GEN_TAC `w:W` THEN FIRST_X_ASSUM(MP_TAC o SPECL
-  [`\v:W. v IN W /\ R w v /\ !w''. w'' IN W /\ R v w'' ==> R w w''`;
-   `w:W`]));;
- e (MESON_TAC[]);;
-e (REWRITE_TAC[WF_IND]);;
-e (X_GEN_TAC `P:W->bool`);;
-e DISCH_TAC;;
-e (FIRST_X_ASSUM(MP_TAC o SPEC `\x:W. !w:W. x IN W /\ R w x ==> P x`));;
-e (MATCH_MP_TAC MONO_FORALL);;
-e (ASM_MESON_TAC[]);;
+e (REWRITE_TAC[IN_CHAR; IN_TRANSNT_DEF]);;
+e (REWRITE_TAC[GL_AX; FORALL_IN_UNION; FORALL_IN_GSPEC]);;
+e (REPEAT GEN_TAC THEN EQ_TAC);;
+ e DISCH_TAC;;
+  e (CLAIM_TAC "Rel" `(!x:W y:W. p2 x y ==> x IN p1 /\ y IN p1)`);;
+    e (ASM_MESON_TAC[IN_FRAME]);;
+  e (ASM_MESON_TAC[MODAL_TRANSNT; IN_UNIV; LOB_SCHEMA_DEF]);;
+ e DISCH_TAC;;
+  e (CLAIM_TAC "Rel" `(!x:W y:W. p2 x y ==> x IN p1 /\ y IN p1)`);;
+    e (ASM_MESON_TAC[IN_FRAME]);;
+  e (ASM_MESON_TAC[MODAL_TRANSNT; IN_UNIV; LOB_SCHEMA_DEF]);;
 let TRANSNT_CHAR_GL = top_thm();;
 
 (* ------------------------------------------------------------------------- *)
 (* Proof of soundness w.r.t. transitive noetherian frames.                   *)
 (* ------------------------------------------------------------------------- *)
+
+let GL_TRANSNT_VALID = prove
+(`!H p. [GL_AX . H |~ p] /\
+        (!q. q IN H ==> TRANSNT:(W->bool)#(W->W->bool)->bool |= q)
+        ==> TRANSNT:(W->bool)#(W->W->bool)->bool |= p`,
+ASM_MESON_TAC[GEN_CHAR_VALID; TRANSNT_CHAR_GL]);;
 
 g `!W:W->bool R:W->W->bool.
      ~(W= {}) /\
@@ -81,58 +87,14 @@ g `!W:W->bool R:W->W->bool.
      (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
      WF (\x y. R y x)
      ==> (!p. holds_in (W,R) (Box(Box p --> p) --> Box p))`;;
-e (INTRO_TAC "!W R; non_empty Rel Trans WF ");;
-e (MP_TAC (REWRITE_RULE [EXTENSION; FORALL_PAIR_THM] TRANSNT_CHAR_GL));;
-e (INTRO_TAC "Eq_form_Transnt_Char");;
-e (CLAIM_TAC "In_transnt" `(W,R) IN TRANSNT:(W->bool)#(W->W->bool)->bool`);;
- e (ASM_REWRITE_TAC[IN_TRANSNT]);;
-e (SUBGOAL_THEN `(W,R) IN CHAR GL_AX:(W->bool)#(W->W->bool)->bool`
-     MP_TAC);;
- e (ASM_MESON_TAC[]);;
-e (ASM_REWRITE_TAC[IN_CHAR; GL_AX; FORALL_IN_GSPEC; IN_UNIV]);;
-e (ASM_MESON_TAC[]);;
-let TRANSNT_IMP_LOB = top_thm();;
+e (MP_TAC (ISPECL [`{}: form-> bool`; `(Box(Box p --> p) --> Box p)`]
+                   GL_TRANSNT_VALID));;
 
-g `!W:W->bool R:W->W->bool.
-     ~(W = {}) /\
-     (!x y. R x y ==> x IN W /\ y IN W) /\
-     (!p. holds_in (W,R) (Box (Box p --> p) --> Box p))
-     ==> (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
-          WF (\x y. R y x)`;;
-e (INTRO_TAC "!W R; non_empty Rel lob_hold_in");;
-e (MP_TAC (REWRITE_RULE [EXTENSION; FORALL_PAIR_THM] TRANSNT_CHAR_GL));;
-e (INTRO_TAC "Eq_form_Transnt_Char");;
-e (SUBGOAL_THEN `(W,R) IN CHAR GL_AX:(W->bool)#(W->W->bool)->bool`
-     MP_TAC);;
- e (ASM_REWRITE_TAC[IN_CHAR; IN_FRAME; GL_AX;
-                    FORALL_IN_GSPEC; IN_UNIV]);;
-e (INTRO_TAC "In_char");;
-e (SUBGOAL_THEN `(W,R) IN TRANSNT:(W->bool)#(W->W->bool)->bool` MP_TAC);;
- e (ASM_MESON_TAC[]);;
-e (ASM_REWRITE_TAC[IN_TRANSNT]);;
-let LOB_IMP_TRANSNT = top_thm();;
-
-g `!W:W->bool R:W->W->bool.
-     ~(W = {}) /\
-     (!x y. R x y ==> x IN W /\ y IN W)
-     ==> ((!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
-          WF (\x y. R y x) <=>
-          (!p. holds_in (W,R) (Box(Box p --> p) --> Box p)))`;;
-e (INTRO_TAC "!W R; non_empty Rel");;
-e EQ_TAC;;
- e (INTRO_TAC "Trans WF");;
- e (MATCH_MP_TAC TRANSNT_IMP_LOB);;
- e (ASM_REWRITE_TAC[]);;
-e (INTRO_TAC "lob_holds_in");;
-e (MATCH_MP_TAC LOB_IMP_TRANSNT);;
-e (ASM_REWRITE_TAC[]);;
-let TRANSNT_EQ_LOB = top_thm();;
-
-let GL_TRANSNT_VALID = prove
-(`!H p. [GL_AX . H |~ p] /\
-        (!q. q IN H ==> TRANSNT:(W->bool)#(W->W->bool)->bool |= q)
-        ==> TRANSNT:(W->bool)#(W->W->bool)->bool |= p`,
-ASM_MESON_TAC[GEN_CHAR_VALID; TRANSNT_CHAR_GL]);;
+g ` TRANSNT:(W->bool)#(W->W->bool)->bool |= (Box(Box p --> p) --> Box p)`;;
+e (MATCH_MP_TAC GL_TRANSNT_VALID);;
+e (EXISTS_TAC `{}: form-> bool`);;
+e (ASM_REWRITE_TAC[ NOT_IN_EMPTY; GL_axiom_lob]);;
+let LOB_THM_TRANSNT = top_thm();;
 
 (* ------------------------------------------------------------------------- *)
 (* Irreflexive Transitive Frames.                                            *)
@@ -141,41 +103,42 @@ ASM_MESON_TAC[GEN_CHAR_VALID; TRANSNT_CHAR_GL]);;
 let ITF_DEF = new_definition
   `ITF =
    {(W:W->bool,R:W->W->bool) |
-    ~(W = {}) /\
-    (!x y:W. R x y ==> x IN W /\ y IN W) /\
-    FINITE W /\
-    (!x. x IN W ==> ~R x x) /\
-    (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)}`;;
+    (W,R) IN FINITE_FRAME /\
+    IRREFLEXIVE W R /\
+    TRANSITIVE W R}`;;
 
-let IN_ITF = prove
+let IN_ITF_DEF = prove
  (`(W:W->bool,R:W->W->bool) IN ITF <=>
-   ~(W = {}) /\
-   (!x y:W. R x y ==> x IN W /\ y IN W) /\
-   FINITE W /\
-   (!x. x IN W ==> ~R x x) /\
-   (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z)`,
+   (W,R) IN FINITE_FRAME /\
+    IRREFLEXIVE W R /\
+    TRANSITIVE W R`,
   REWRITE_TAC[ITF_DEF; IN_ELIM_PAIR_THM]);;
 
-let ITF_SUBSET_TRANSNT = prove
- (`ITF:(W->bool)#(W->W->bool)->bool SUBSET TRANSNT`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_ITF] THEN
-  INTRO_TAC "![W] [R]" THEN STRIP_TAC THEN
-  ASM_REWRITE_TAC[IN_TRANSNT] THEN MATCH_MP_TAC WF_FINITE THEN
-  CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
-  CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
-  GEN_TAC THEN MATCH_MP_TAC FINITE_SUBSET THEN EXISTS_TAC `W:W->bool` THEN
-  ASM_REWRITE_TAC[] THEN ASM SET_TAC[]);;
+g `ITF:(W->bool)#(W->W->bool)->bool SUBSET TRANSNT`;;
+e (REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_ITF_DEF; IN_TRANSNT_DEF;
+               FINITE_FRAME_SUBSET_FRAME]);;
+e (REPEAT STRIP_TAC);;
+ e (ASM_MESON_TAC[IN_FRAME; IN_FINITE_FRAME]);;
+ e (ASM_REWRITE_TAC[]);;
+ e (ASM_REWRITE_TAC[IRREFLEXIVE] THEN MATCH_MP_TAC WF_FINITE);;
+  e (CONJ_TAC THENL [ASM_MESON_TAC[IRREFLEXIVE; IN_FINITE_FRAME]; ALL_TAC]);;
+  e (CONJ_TAC THENL [ASM_MESON_TAC[IN_FINITE_FRAME; TRANSITIVE]; ALL_TAC]);;
+  e (GEN_TAC THEN MATCH_MP_TAC FINITE_SUBSET THEN EXISTS_TAC `p1:W->bool`);;
+   e CONJ_TAC;;
+    e (ASM_MESON_TAC[IN_FINITE_FRAME]);;
+    e (ASM SET_TAC[IN_FINITE_FRAME]);;
+let ITF_SUBSET_TRANSNT = top_thm();;
 
-g `!W:W->bool R:W->W->bool.
-     FINITE (W) ==> ((W,R) IN ITF <=> (W,R) IN TRANSNT)`;;
-e (INTRO_TAC "!W R; Finite");;
-e EQ_TAC;;
- e (ASM_MESON_TAC[ITF_SUBSET_TRANSNT;SUBSET; FORALL_PAIR_THM]);;
-e (REWRITE_TAC[IN_TRANSNT; IN_ITF]);;
-e (INTRO_TAC "non_empty Rel Trans WF");;
-e (ASM_REWRITE_TAC[]);;
-e (ASM_MESON_TAC[WF_REFL]);;
-let FINITE_EQ_ITF_TRANSNT = top_thm();;
+let ITF_FIN_TRANSNT = prove
+ (`ITF:(W->bool)#(W->W->bool)->bool = (TRANSNT INTER FINITE_FRAME)`,
+  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN
+  REPEAT STRIP_TAC THEN EQ_TAC THENL
+  [ASM_MESON_TAC[IN_INTER; ITF_SUBSET_TRANSNT; SUBSET; IN_ITF_DEF];
+   ALL_TAC] THEN
+  REWRITE_TAC[IN_INTER; IN_ITF_DEF; IN_FINITE_FRAME;
+              TRANSITIVE; IN_TRANSNT_DEF; IN_FRAME] THEN
+  INTRO_TAC "((non_empty Rel) Trans WF) non_empty' Rel' Finite" THEN
+  ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[WF_REFL; IRREFLEXIVE]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Correspondence Theory: ITF frames are appropriate to GL.                  *)
@@ -183,22 +146,9 @@ let FINITE_EQ_ITF_TRANSNT = top_thm();;
 
 g `ITF: (W->bool)#(W->W->bool)->bool = APPR GL_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REPEAT GEN_TAC);;
-e EQ_TAC;;
- e (INTRO_TAC "In_ITF");;
- e (SUBGOAL_THEN `(p1:W->bool, p2:W->W->bool) IN CHAR GL_AX` MP_TAC);;
-  e (ASM_MESON_TAC[ITF_SUBSET_TRANSNT; SUBSET; TRANSNT_CHAR_GL]);;
- e (DISCH_TAC);;
- e (ASM_REWRITE_TAC[IN_APPR;IN_FINITE_FRAME]);;
- e (HYP_TAC "In_ITF" (REWRITE_RULE[IN_ITF]));;
- e (ASM_MESON_TAC[CHAR_CAR]);;
-e (INTRO_TAC "In_Appr");;
-e (SUBGOAL_THEN  `(p1:W->bool,p2:W->W->bool) IN TRANSNT` MP_TAC);;
- e (SUBGOAL_THEN  `(p1:W->bool,p2:W->W->bool) IN CHAR GL_AX` MP_TAC);;
-  e (ASM_MESON_TAC[APPR_SUBSET_CHAR; SUBSET; FORALL_PAIR_THM]);;
- e (ASM_MESON_TAC[TRANSNT_CHAR_GL; EXTENSION; FORALL_PAIR_THM]);;
-e (HYP_TAC "In_Appr" (REWRITE_RULE[IN_APPR; IN_FINITE_FRAME]));;
-e (ASM_MESON_TAC[FINITE_EQ_ITF_TRANSNT]);;
+e (REWRITE_TAC[APPR_CAR; ITF_FIN_TRANSNT]);;
+e (REWRITE_TAC[TRANSNT_CHAR_GL; IN_INTER; IN_CHAR; IN_FINITE_FRAME_INTER]);;
+e (MESON_TAC[]);;
 let ITF_APPR_GL = top_thm();;
 
 (* ------------------------------------------------------------------------- *)
@@ -216,24 +166,10 @@ let GL_ITF_VALID = prove
 let GL_consistent = prove
  (`~ [GL_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] GL_ITF_VALID)) THEN
-  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
-              IN_ITF; NOT_FORALL_THM] THEN
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_ITF_DEF;
+              IN_FINITE_FRAME; TRANSITIVE; IRREFLEXIVE; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. F`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
-
-(* ------------------------------------------------------------------------- *)
-(* Proposition for GL.                                                       *)
-(* ------------------------------------------------------------------------- *)
-
-let GL_schema_4 = prove
- (`!p. [GL_AX . {} |~ (Box p --> Box (Box p))]`,
-  MESON_TAC[GL_axiom_lob; MLK_imp_box; MLK_and_pair_th; MLK_and_intro;
-            MLK_shunt; MLK_imp_trans; MLK_and_right_th; MLK_and_left_th;
-            MLK_box_and_th]);;
-
-let GL_dot_box = prove
- (`!p. [GL_AX . {} |~ (Box p --> Box p && Box (Box p))]`,
-  MESON_TAC[MLK_imp_refl_th; GL_schema_4; MLK_and_intro]);;
 
 (* ------------------------------------------------------------------------- *)
 (* GL standard frames and models.                                            *)
@@ -267,7 +203,8 @@ let GL_STANDARD_MODEL_DEF = new_definition
 let ITF_SUBSET_FRAME = prove
  (`ITF:(W->bool)#(W->W->bool)->bool SUBSET FRAME`,
   REWRITE_TAC[SUBSET; FORALL_PAIR_THM] THEN INTRO_TAC "![W] [R]" THEN
-  REWRITE_TAC[IN_ITF] THEN STRIP_TAC THEN ASM_REWRITE_TAC[IN_FRAME]);;
+  REWRITE_TAC[IN_ITF_DEF; IN_FINITE_FRAME; IRREFLEXIVE; TRANSITIVE] THEN
+  STRIP_TAC THEN ASM_REWRITE_TAC[IN_FRAME]);;
 
 let GL_STANDARD_MODEL_CAR = prove
  (`!W R p V.
@@ -319,14 +256,15 @@ let ITF_MAXIMAL_CONSISTENT = prove
   INTRO_TAC "!p; p" THEN
   MP_TAC (ISPECL [`GL_AX`; `p:form`] GEN_FINITE_FRAME_MAXIMAL_CONSISTENT) THEN
   REWRITE_TAC[IN_FINITE_FRAME] THEN INTRO_TAC "gen_max_cons" THEN
-  ASM_REWRITE_TAC[IN_ITF] THEN
+  ASM_REWRITE_TAC[IN_ITF_DEF; IN_FINITE_FRAME; IRREFLEXIVE; TRANSITIVE] THEN
+  CONJ_TAC THENL
   (* Nonempty *)
-  CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
+  [CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Well-defined *)
   CONJ_TAC THENL [ASM_REWRITE_TAC[GL_STANDARD_REL_DEF] THEN
   ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Finite *)
-  CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
+  ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Irreflexive *)
   CONJ_TAC THENL
   [REWRITE_TAC[FORALL_IN_GSPEC; GL_STANDARD_REL_CAR] THEN
@@ -338,7 +276,7 @@ let ITF_MAXIMAL_CONSISTENT = prove
    ALL_TAC] THEN
   (* Transitive *)
   REWRITE_TAC[IN_ELIM_THM; GL_STANDARD_REL_CAR] THEN
-  INTRO_TAC "!x y z; (x1 x2) (y1 y2) (z1 z2) +" THEN
+  INTRO_TAC "!w w' w''; (x1 x2) (y1 y2) (z1 z2) +" THEN
   ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 let GL_ACCESSIBILITY_LEMMA =
@@ -547,8 +485,9 @@ let GL_COMPLETENESS_THM_GEN = prove
 
 let GL_TAC : tactic =
   MATCH_MP_TAC GL_COMPLETENESS_THM THEN
-  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds;
-              IN_ITF; GSYM MEMBER_NOT_EMPTY] THEN
+  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds; IN_ITF_DEF;
+              IN_FINITE_FRAME; IRREFLEXIVE; TRANSITIVE;
+              GSYM MEMBER_NOT_EMPTY] THEN
   MESON_TAC[];;
 
 let GL_RULE tm =
