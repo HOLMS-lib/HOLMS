@@ -37,22 +37,49 @@ let form_CASES = prove_cases_thm form_INDUCT;;
 let form_DISTINCT = distinctness "form";;
 let form_INJ = injectivity "form";;
 
+(* ----------------------------------------------------------------------- *)
+(* Further operators.                                                      *)
+(* ----------------------------------------------------------------------- *)
+
+parse_as_prefix "Diam";;
+parse_as_prefix "Dotbox";;
+
+let diam_DEF = new_definition
+  `Diam p = Not Box Not p`;;
+
+let dotbox_DEF = new_definition
+  `Dotbox p = (Box p && p)`;;
+
 (* ------------------------------------------------------------------------- *)
 (* OCaml procedure for analyzing modal formulas.                             *)
 (* ------------------------------------------------------------------------- *)
-
-let dest_modal_conj = dest_binop `&&`;;
-let dest_modal_disj = dest_binop `||`;;
-let dest_modal_imp = dest_binop `-->`;;
-let dest_modal_iff = dest_binop `<->`;;
 
 let dest_unop ftm =
   let errstr = "dest_unop "^string_of_term ftm in
   fun tm -> try if rator tm <> ftm then fail() else rand tm
             with Failure _ -> failwith errstr;;
 
+let dest_modal_conj = dest_binop `&&`;;
+let dest_modal_disj = dest_binop `||`;;
+let dest_modal_imp = dest_binop `-->`;;
+let dest_modal_iff = dest_binop `<->`;;
+
+let dest_modal_atom = dest_unop `Atom`;;
 let dest_modal_not = dest_unop `Not`;;
 let dest_modal_box = dest_unop `Box`;;
+let dest_modal_diam = dest_unop `Diam`;;
+let dest_modal_dotbox = dest_unop `Dotbox`;;
+
+let is_modal_conj = can dest_modal_conj;;
+let is_modal_disj = can dest_modal_disj;;
+let is_modal_imp = can dest_modal_imp;;
+let is_modal_iff = can dest_modal_iff;;
+
+let is_modal_atom = can dest_modal_atom;;
+let is_modal_not = can dest_modal_not;;
+let is_modal_box = can dest_modal_box;;
+let is_modal_diam = can dest_modal_diam;;
+let is_modal_dotbox = can dest_modal_dotbox;;
 
 (* ------------------------------------------------------------------------- *)
 (* Specialized induction tactics for formulas.                               *)
@@ -375,16 +402,3 @@ let BISIMILAR_VALID = prove
     ==> (!p. L2 |= p ==> L1 |= p)`,
   REWRITE_TAC[valid; holds_in; FORALL_PAIR_THM] THEN
   MESON_TAC[BISIMILAR_HOLDS; BISIMILAR_IN]);;
-
-(* ----------------------------------------------------------------------- *)
-(* Further operators.                                                      *)
-(* ----------------------------------------------------------------------- *)
-
-parse_as_prefix "Diam";;
-parse_as_prefix "Dotbox";;
-
-let diam_DEF = new_definition
-  `Diam p = Not Box Not p`;;
-
-let dotbox_DEF = new_definition
-  `Dotbox p = (Box p && p)`;;
