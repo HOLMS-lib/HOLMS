@@ -51,35 +51,66 @@ let dotbox_DEF = new_definition
   `Dotbox p = (Box p && p)`;;
 
 (* ------------------------------------------------------------------------- *)
-(* OCaml procedure for analyzing modal formulas.                             *)
+(* Constants of modal formulas.                                              *)
 (* ------------------------------------------------------------------------- *)
 
+let modal_atom_tm = `Atom`;;
+let modal_true_tm = `True`;;
+let modal_false_tm = `False`;;
+let modal_not_tm = `(Not)`;;
+let modal_conj_tm = `(&&)`;;
+let modal_disj_tm = `(||)`;;
+let modal_imp_tm = `(-->)`;;
+let modal_iff_tm = `(<->)`;;
+let modal_box_tm = `(Box)`;;
+let modal_diam_tm = `(Diam)`;;
+let modal_dotbox_tm = `(Dotbox)`;;
+
+(* ------------------------------------------------------------------------- *)
+(* OCaml procedure for analyzing and syntesis of modal formulas.             *)
+(* ------------------------------------------------------------------------- *)
+
+let mk_unop ftm = curry mk_comb ftm;;
+
 let dest_unop ftm =
-  let errstr = "dest_unop "^string_of_term ftm in
+  let errstr = "dest_unop: "^string_of_term ftm in
   fun tm -> try if rator tm <> ftm then fail() else rand tm
             with Failure _ -> failwith errstr;;
 
-let dest_modal_conj = dest_binop `&&`;;
-let dest_modal_disj = dest_binop `||`;;
-let dest_modal_imp = dest_binop `-->`;;
-let dest_modal_iff = dest_binop `<->`;;
+let is_unop ftm = can (dest_unop ftm);;
+
+let mk_modal_conj = mk_binop `(&&)`;;
+let mk_modal_disj = mk_binop `(||)`;;
+let mk_modal_imp = mk_binop `(-->)`;;
+let mk_modal_iff = mk_binop `(<->)`;;
+
+let dest_modal_conj = dest_binop `(&&)`;;
+let dest_modal_disj = dest_binop `(||)`;;
+let dest_modal_imp = dest_binop `(-->)`;;
+let dest_modal_iff = dest_binop `(<->)`;;
+
+let is_modal_conj = is_binop `(&&)`;;
+let is_modal_disj = is_binop `(||)`;;
+let is_modal_imp = is_binop `(-->)`;;
+let is_modal_iff = is_binop `(<->)`;;
+
+let mk_modal_atom = mk_unop `Atom`;;
+let mk_modal_not = mk_unop `(Not)`;;
+let mk_modal_box = mk_unop `(Box)`;;
+let mk_modal_diam = mk_unop `(Diam)`;;
+let mk_modal_dotbox = mk_unop `(Dotbox)`;;
 
 let dest_modal_atom = dest_unop `Atom`;;
-let dest_modal_not = dest_unop `Not`;;
-let dest_modal_box = dest_unop `Box`;;
-let dest_modal_diam = dest_unop `Diam`;;
-let dest_modal_dotbox = dest_unop `Dotbox`;;
+let dest_modal_not = dest_unop `(Not)`;;
+let dest_modal_box = dest_unop `(Box)`;;
+let dest_modal_diam = dest_unop `(Diam)`;;
+let dest_modal_dotbox = dest_unop `(Dotbox)`;;
 
-let is_modal_conj = can dest_modal_conj;;
-let is_modal_disj = can dest_modal_disj;;
-let is_modal_imp = can dest_modal_imp;;
-let is_modal_iff = can dest_modal_iff;;
-
-let is_modal_atom = can dest_modal_atom;;
-let is_modal_not = can dest_modal_not;;
-let is_modal_box = can dest_modal_box;;
-let is_modal_diam = can dest_modal_diam;;
-let is_modal_dotbox = can dest_modal_dotbox;;
+let is_modal_atom = is_unop `Atom`;;
+let is_modal_not = is_unop `(Not)`;;
+let is_modal_box = is_unop `(Box)`;;
+let is_modal_diam = is_unop `(Diam)`;;
+let is_modal_dotbox = is_unop `(Dotbox)`;;
 
 (* ------------------------------------------------------------------------- *)
 (* Specialized induction tactics for formulas.                               *)
