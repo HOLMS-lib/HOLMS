@@ -8,6 +8,8 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/conjlist.ml";;
+
 let CONSISTENT = new_definition
   `CONSISTENT S (l:form list) <=> ~[S . {} |~ Not (CONJLIST l)]`;;
 

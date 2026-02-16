@@ -5,6 +5,8 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/gen_completeness.ml";;
+
 let B_AX = new_definition
   `B_AX = {B_SCHEMA p | p IN (:form)} UNION {T_SCHEMA p |p IN (:form)}`;;
 
@@ -37,13 +39,13 @@ let RSYM_DEF = new_definition
    {(W:W->bool,R:W->W->bool) |
     (W,R) IN FRAME /\
     REFLEXIVE W R /\
-    SYMETRIC W R}`;;
-
-let IN_RSYM_DEF = prove
+    SYMMETRIC W R}`;;
+    
+let IN_RSYM = prove
  (`(W:W->bool,R:W->W->bool) IN RSYM <=>
    (W,R) IN FRAME /\
     REFLEXIVE W R /\
-    SYMETRIC W R`,
+    SYMMETRIC W R`,
   REWRITE_TAC[RSYM_DEF; IN_ELIM_PAIR_THM]);;
 
 (* ------------------------------------------------------------------------- *)
@@ -52,9 +54,8 @@ let IN_RSYM_DEF = prove
 
 g `RSYM:(W->bool)#(W->W->bool)->bool = CHAR B_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REWRITE_TAC[IN_CHAR; IN_RSYM_DEF]);;
-e (REWRITE_TAC[B_AX; FORALL_IN_UNION; FORALL_IN_GSPEC;
-               MODAL_REFL; MODAL_SYM; IN_UNIV]);;
+e (REWRITE_TAC[IN_CHAR; IN_RSYM]);;
+e (REWRITE_TAC[B_AX; FORALL_IN_UNION; FORALL_IN_GSPEC; MODAL_REFL; MODAL_SYM; IN_UNIV]);;
 e (MESON_TAC[]);;
 let RSYM_CHAR_B = top_thm();;
 
@@ -77,26 +78,25 @@ let RSF_DEF = new_definition
   {(W:W->bool,R:W->W->bool) |
    (W,R) IN FINITE_FRAME /\
     REFLEXIVE W R /\
-    SYMETRIC W R}`;;
+    SYMMETRIC W R}`;;
 
-let IN_RSF_DEF = prove
+let IN_RSF = prove
  (`(W:W->bool,R:W->W->bool) IN RSF <=>
    (W,R) IN FINITE_FRAME /\
     REFLEXIVE W R /\
-    SYMETRIC W R`,
+    SYMMETRIC W R`,
   REWRITE_TAC[RSF_DEF; IN_ELIM_PAIR_THM]);;
 
 let RSF_SUBSET_RSYM = prove
  (`RSF:(W->bool)#(W->W->bool)->bool SUBSET RSYM`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RSF_DEF; IN_FINITE_FRAME;
-              REFLEXIVE; TRANSITIVE; IN_RSYM_DEF; IN_FRAME] THEN
-  MESON_TAC[]);;
+  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RSF; IN_FINITE_FRAME; REFLEXIVE;
+              TRANSITIVE; IN_RSYM; IN_FRAME] THEN MESON_TAC[]);;
 
 let RSF_FIN_RSYM = prove
  (`RSF:(W->bool)#(W->W->bool)->bool = (RSYM INTER FINITE_FRAME)`,
-  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN
-  REWRITE_TAC[IN_INTER; IN_RSF_DEF; IN_FINITE_FRAME; TRANSITIVE; REFLEXIVE;
-              IN_RSYM_DEF; IN_FRAME] THEN
+  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN 
+  REWRITE_TAC[IN_INTER; IN_RSF; IN_FINITE_FRAME; TRANSITIVE; REFLEXIVE;
+              IN_RSYM; IN_FRAME] THEN
   MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET]);;
 
 g `RSF: (W->bool)#(W->W->bool)->bool = APPR B_AX`;;
@@ -121,8 +121,8 @@ let B_RSF_VALID = prove
 let B_CONSISTENT = prove
  (`~ [B_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] B_RSF_VALID)) THEN
-  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_RSF_DEF;
-              IN_FINITE_FRAME; REFLEXIVE; SYMETRIC; NOT_FORALL_THM] THEN
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_RSF;
+              IN_FINITE_FRAME; REFLEXIVE; SYMMETRIC; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. x = 0 /\ x = y`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 
@@ -205,7 +205,7 @@ let RSF_MAXIMAL_CONSISTENT = prove
   INTRO_TAC "!p; p" THEN
   MP_TAC (ISPECL [`B_AX`; `p:form`] GEN_FINITE_FRAME_MAXIMAL_CONSISTENT) THEN
   REWRITE_TAC[IN_FINITE_FRAME] THEN INTRO_TAC "gen_max_cons" THEN
-  ASM_REWRITE_TAC[IN_RSF_DEF; IN_FINITE_FRAME; REFLEXIVE; SYMETRIC] THEN
+  ASM_REWRITE_TAC[IN_RSF; IN_FINITE_FRAME; REFLEXIVE; SYMMETRIC] THEN
   CONJ_TAC THENL
   (* Nonempty *)
   [CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
@@ -587,9 +587,8 @@ let B_COMPLETENESS_THM_GEN = prove
 
 let B_TAC : tactic =
   MATCH_MP_TAC B_COMPLETENESS_THM THEN
-  REWRITE_TAC[diam_DEF; valid; FORALL_PAIR_THM; holds_in; holds;
-              IN_RSF_DEF; IN_FINITE_FRAME; REFLEXIVE; SYMETRIC;
-              GSYM MEMBER_NOT_EMPTY] THEN
+  REWRITE_TAC[diam_DEF; valid; FORALL_PAIR_THM; holds_in; holds; IN_RSF;
+    IN_FINITE_FRAME; REFLEXIVE; SYMMETRIC; GSYM MEMBER_NOT_EMPTY] THEN
   MESON_TAC[];;
 
 let B_RULE tm =
@@ -600,9 +599,9 @@ B_RULE `!p q. [B_AX . {} |~  Box (p --> q) && Box p --> Box q]`;;
 B_RULE `!p q. [B_AX . {} |~  Box p --> p]`;;
 B_RULE `!p. [B_AX . {} |~  p -->  Box Diam p]`;;
 (* B_RULE `!p. [B_AX . {} |~ Box p --> Box (Box p)]`;; *)
-(*B_RULE `!p. [B_AX . {} |~ (Box (Box p --> p) --> Box p)]`;;*)
-(*B_RULE `!p. [B_AX . {} |~ Box (Box p --> p) --> Box p]`;; *)
-(*B_RULE `[B_AX . {} |~ Box (Box False --> False) --> Box False]`;;*)
+(* B_RULE `!p. [B_AX . {} |~ (Box (Box p --> p) --> Box p)]`;; *)
+(* B_RULE `!p. [B_AX . {} |~ Box (Box p --> p) --> Box p]`;; *)
+(* B_RULE `[B_AX . {} |~ Box (Box False --> False) --> Box False]`;; *)
 
 (* ------------------------------------------------------------------------- *)
 (* Countermodel using set of formulae (instead of lists of formulae).        *)

@@ -5,12 +5,15 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/gen_completeness.ml";;
+
 let K4_AX = new_definition
-  `K4_AX = {4_SCHEMA p | p IN (:form)}`;;
+  `K4_AX = {FOUR_SCHEMA p| p IN (:form)}`;;
 
 let FOUR_IN_K4_AX = prove
  (`!q. Box q --> Box Box q IN K4_AX`,
-  REWRITE_TAC[K4_AX; FOUR_SCHEMA_DEF; IN_ELIM_THM; IN_UNIV] THEN MESON_TAC[]);;
+  REWRITE_TAC[K4_AX; FOUR_SCHEMA_DEF; IN_ELIM_THM; IN_UNIV] THEN
+  MESON_TAC[]);;
 
 let K4_AX_FOUR = prove
  (`!q. [K4_AX. {} |~ (Box q --> Box Box q)]`,
@@ -30,7 +33,7 @@ let TRANS_DEF = new_definition
     (W,R) IN FRAME  /\
     TRANSITIVE W R }`;;
 
-let IN_TRANS_DEF = prove
+let IN_TRANS = prove
  (`(W:W->bool,R:W->W->bool) IN TRANS <=>
    (W,R) IN FRAME /\
    TRANSITIVE W R`,
@@ -42,7 +45,7 @@ let IN_TRANS_DEF = prove
 
 g `TRANS:(W->bool)#(W->W->bool)->bool = CHAR K4_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REWRITE_TAC [IN_CHAR; IN_TRANS_DEF]);;
+e (REWRITE_TAC [IN_CHAR; IN_TRANS]);;
 e (REWRITE_TAC[MODAL_TRANS; K4_AX; FORALL_IN_GSPEC; IN_UNIV]);;
  let TRANS_CHAR_K4 = top_thm();;
 
@@ -66,7 +69,7 @@ let TF_DEF = new_definition
    FINITE_FRAME (W,R) /\
    TRANSITIVE W R}`;;
 
-let IN_TF_DEF = prove
+let IN_TF = prove
  (`(W:W->bool,R:W->W->bool) IN TF <=>
    (W,R) IN FINITE_FRAME /\
    TRANSITIVE W R`,
@@ -74,14 +77,15 @@ let IN_TF_DEF = prove
 
 let TF_SUBSET_TRANS = prove
  (`TF:(W->bool)#(W->W->bool)->bool SUBSET TRANS`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_TF_DEF; IN_FINITE_FRAME; IN_FRAME;
-              TRANSITIVE; IN_TRANS_DEF] THEN MESON_TAC[]);;
+  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_TF; IN_FINITE_FRAME; IN_FRAME;
+              TRANSITIVE; IN_TRANS] THEN
+  MESON_TAC[]);;
 
 let TF_FIN_TRANS = prove
  (`TF:(W->bool)#(W->W->bool)->bool = (TRANS INTER FINITE_FRAME)`,
-  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN
-  REWRITE_TAC[IN_INTER; IN_TF_DEF; IN_FINITE_FRAME; TRANSITIVE;
-              IN_TRANS_DEF; IN_FRAME] THEN
+  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN 
+  REWRITE_TAC[IN_INTER; IN_TF; IN_FINITE_FRAME; TRANSITIVE;
+              IN_TRANS; IN_FRAME] THEN
   MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET]);;
 
 g `TF: (W->bool)#(W->W->bool)->bool = APPR K4_AX`;;
@@ -107,7 +111,7 @@ let K4_CONSISTENT = prove
  (`~ [K4_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] K4_TF_VALID)) THEN
   REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
-              IN_TF_DEF; IN_FINITE_FRAME; TRANSITIVE; NOT_FORALL_THM] THEN
+              IN_TF; IN_FINITE_FRAME; TRANSITIVE; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. F`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 
@@ -189,7 +193,7 @@ let TF_MAXIMAL_CONSISTENT = prove
   INTRO_TAC "!p; p" THEN
   MP_TAC (ISPECL [`K4_AX`; `p:form`] GEN_FINITE_FRAME_MAXIMAL_CONSISTENT) THEN
   REWRITE_TAC[IN_FINITE_FRAME] THEN INTRO_TAC "gen_max_cons" THEN
-  ASM_REWRITE_TAC[IN_TF_DEF; TRANSITIVE; IN_FINITE_FRAME] THEN
+  ASM_REWRITE_TAC[IN_TF; TRANSITIVE; IN_FINITE_FRAME] THEN
   CONJ_TAC THENL [
   (* Nonempty *)
   CONJ_TAC THENL  [ASM_MESON_TAC[]; ALL_TAC] THEN
@@ -405,8 +409,8 @@ let K4_COMPLETENESS_THM_GEN = prove
 
 let K4_TAC : tactic =
   MATCH_MP_TAC K4_COMPLETENESS_THM THEN
-  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds;
-              IN_TF_DEF; IN_FINITE_FRAME; TRANSITIVE; GSYM MEMBER_NOT_EMPTY] THEN
+  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds; IN_TF; IN_FINITE_FRAME;
+              TRANSITIVE; GSYM MEMBER_NOT_EMPTY] THEN
   MESON_TAC[];;
 
 let K4_RULE tm =

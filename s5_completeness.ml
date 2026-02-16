@@ -5,8 +5,10 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/gen_completeness.ml";;
+
 let S5_AX = new_definition
-  `S5_AX = {5_SCHEMA p | p IN (:form)} UNION
+  `S5_AX = {FIVE_SCHEMA p | p IN (:form)} UNION
            {T_SCHEMA p |p IN (:form)}`;;
 
 let FIVE_IN_S5_AX = prove
@@ -40,7 +42,7 @@ let REUCL_DEF = new_definition
     REFLEXIVE W R /\
     EUCLIDEAN W R }`;;
 
-let IN_REUCL_DEF = prove
+let IN_REUCL = prove
  (`(W:W->bool,R:W->W->bool) IN REUCL <=>
     (W,R) IN FRAME /\
     REFLEXIVE W R /\
@@ -53,9 +55,8 @@ let IN_REUCL_DEF = prove
 
 g `REUCL:(W->bool)#(W->W->bool)->bool = CHAR S5_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REWRITE_TAC[IN_CHAR; IN_REUCL_DEF]);;
-e (REWRITE_TAC[S5_AX; FORALL_IN_UNION; FORALL_IN_GSPEC; MODAL_REFL;
-               MODAL_EUCL; IN_UNIV]);;
+e (REWRITE_TAC[IN_CHAR; IN_REUCL]);;
+e (REWRITE_TAC[S5_AX; FORALL_IN_UNION; FORALL_IN_GSPEC; MODAL_REFL; MODAL_EUCL; IN_UNIV]);;
 e (MESON_TAC[]);;
 let REUCL_CHAR_S5 = top_thm();;
 
@@ -80,7 +81,7 @@ let REF_DEF = new_definition
     REFLEXIVE W R /\
     EUCLIDEAN W R}`;;
 
-let IN_REF_DEF = prove
+let IN_REF = prove
  (`(W:W->bool,R:W->W->bool) IN REF <=>
    (W,R) IN FINITE_FRAME /\
     REFLEXIVE W R /\
@@ -89,15 +90,16 @@ let IN_REF_DEF = prove
 
 let REF_SUBSET_REUCL = prove
  (`REF:(W->bool)#(W->W->bool)->bool SUBSET REUCL`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_REF_DEF; IN_FINITE_FRAME;
-              REFLEXIVE; EUCLIDEAN; IN_REUCL_DEF; IN_FRAME] THEN MESON_TAC[]);;
+  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_REF; IN_FINITE_FRAME; REFLEXIVE;
+              EUCLIDEAN; IN_REUCL; IN_FRAME] THEN
+  MESON_TAC[]);;
 
 let REF_FIN_REUCL = prove
  (`REF:(W->bool)#(W->W->bool)->bool = (REUCL INTER FINITE_FRAME)`,
-  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN
-  REWRITE_TAC[IN_INTER; IN_REF_DEF; IN_FINITE_FRAME; EUCLIDEAN; REFLEXIVE;
-              IN_REUCL_DEF; IN_FRAME] THEN MESON_TAC[FINITE_FRAME_SUBSET_FRAME;
-              SUBSET]);;
+  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN 
+  REWRITE_TAC[IN_INTER; IN_REF; IN_FINITE_FRAME; EUCLIDEAN; REFLEXIVE;
+              IN_REUCL; IN_FRAME] THEN
+  MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET]);;
 
 g `REF: (W->bool)#(W->W->bool)->bool = APPR S5_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
@@ -121,8 +123,8 @@ let S5_REF_VALID = prove
 let S5_CONSISTENT = prove
  (`~ [S5_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] S5_REF_VALID)) THEN
-  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_REF_DEF;
-              IN_FINITE_FRAME; REFLEXIVE; EUCLIDEAN; NOT_FORALL_THM] THEN
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
+    IN_REF; IN_FINITE_FRAME; REFLEXIVE; EUCLIDEAN; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. x = 0 /\ x = y`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 
@@ -252,7 +254,8 @@ let S5_STANDARD_REL_CAR = prove
   INTRO_TAC "!p; p" THEN
   MP_TAC (ISPECL [`S5_AX`; `p:form`] GEN_FINITE_FRAME_MAXIMAL_CONSISTENT) THEN
   REWRITE_TAC[IN_FINITE_FRAME] THEN INTRO_TAC "gen_max_cons" THEN
-  ASM_REWRITE_TAC[IN_REF_DEF; IN_FINITE_FRAME; REFLEXIVE; EUCLIDEAN] THEN CONJ_TAC THENL
+  ASM_REWRITE_TAC[IN_REF; IN_FINITE_FRAME; REFLEXIVE; EUCLIDEAN] THEN
+  CONJ_TAC THENL
   (* Nonempty *)
   [CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Well-defined *)
@@ -572,8 +575,8 @@ let S5_COMPLETENESS_THM_GEN = prove
 
 let S5_TAC : tactic =
   MATCH_MP_TAC S5_COMPLETENESS_THM THEN
-  REWRITE_TAC[diam_DEF; valid; FORALL_PAIR_THM; holds_in; holds; IN_REF_DEF;
-    IN_FINITE_FRAME; REFLEXIVE; EUCLIDEAN; GSYM MEMBER_NOT_EMPTY] THEN
+  REWRITE_TAC[diam_DEF; valid; FORALL_PAIR_THM; holds_in; holds;
+              IN_REF; IN_FINITE_FRAME; REFLEXIVE; EUCLIDEAN; GSYM MEMBER_NOT_EMPTY] THEN
   MESON_TAC[];;
 
 let S5_RULE tm =

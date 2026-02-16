@@ -7,6 +7,8 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/calculus.ml";;
+
 (* ------------------------------------------------------------------------- *)
 (* Frame.                                                                    *)
 (* ------------------------------------------------------------------------- *)
@@ -34,8 +36,7 @@ let IN_FINITE_FRAME_INTER = prove
  (`!W:W->bool R:W->W->bool.
      (W,R) IN FINITE_FRAME <=>
      (W,R) IN FRAME /\ FINITE W`,
-  REWRITE_TAC[IN_ELIM_THM; IN_FINITE_FRAME; IN_FRAME] THEN
-  MESON_TAC[]);;
+  REWRITE_TAC[IN_ELIM_THM; IN_FINITE_FRAME; IN_FRAME] THEN MESON_TAC[]);;
 
 let FINITE_FRAME_SUBSET_FRAME = prove
  (`FINITE_FRAME:(W->bool)#(W->W->bool)->bool SUBSET FRAME`,
@@ -48,24 +49,34 @@ let FINITE_FRAME_SUBSET_FRAME = prove
 
 let CHAR_DEF = new_definition
   `CHAR S = {(W:W->bool,R:W->W->bool) |
-                    (W,R) IN FRAME /\
-                    (!p. p IN S ==> holds_in (W:W->bool,R:W->W->bool) p)}`;;
+             (W,R) IN FRAME /\
+             (!p. p IN S ==> holds_in (W,R) p)}`;;
 
 let IN_CHAR = prove
  (`!S. (W:W->bool,R:W->W->bool) IN CHAR S <=>
        (W,R) IN FRAME /\
-       !p. p IN S ==> holds_in (W:W->bool,R:W->W->bool) p`,
+       !p. p IN S ==> holds_in (W,R) p`,
   REWRITE_TAC[CHAR_DEF; IN_ELIM_PAIR_THM]);;
 
 (* ------------------------------------------------------------------------- *)
 (* General Validity.                                                         *)
 (* ------------------------------------------------------------------------- *)
-(*TODO: rivedere*)
 
 let GEN_KAXIOM_CHAR_VALID = prove
  (`!S p. KAXIOM p ==> CHAR S:(W->bool)#(W->W->bool)->bool |= p`,
   GEN_TAC THEN MATCH_MP_TAC KAXIOM_INDUCT THEN REWRITE_TAC[valid] THEN
   FIX_TAC "f" THEN REWRITE_TAC[RIGHT_FORALL_IMP_THM] THEN
+  SPEC_TAC (`f:(W->bool)#(W->W->bool)`,`f:(W->bool)#(W->W->bool)`) THEN
+  MATCH_MP_TAC (MESON[PAIR_SURJECTIVE]
+    `(!W:W->bool R:W->W->bool. P (W,R)) ==> (!f. P f)`) THEN
+  REWRITE_TAC[IN_CHAR; IN_FRAME] THEN REPEAT GEN_TAC THEN
+  REPEAT CONJ_TAC THEN MODAL_TAC);;
+
+let GEN_KAXIOM_SUBS_CHAR_VALID = prove
+(`!S X. (X:(W->bool)#(W->W->bool)->bool) SUBSET CHAR S ==> (! p. KAXIOM p ==> X:(W->bool)#(W->W->bool)->bool |= p)`,
+  GEN_TAC THEN GEN_TAC THEN DISCH_TAC THEN MATCH_MP_TAC KAXIOM_INDUCT THEN
+  REWRITE_TAC[valid] THEN FIX_TAC "f" THEN
+  REWRITE_TAC[RIGHT_FORALL_IMP_THM] THEN
   SPEC_TAC (`f:(W->bool)#(W->W->bool)`,`f:(W->bool)#(W->W->bool)`) THEN
   MATCH_MP_TAC (MESON[PAIR_SURJECTIVE]
     `(!W:W->bool R:W->W->bool. P (W,R)) ==> (!f. P f)`) THEN
@@ -78,6 +89,11 @@ let GEN_AX_CHAR_VALID = prove
   REWRITE_TAC[IN_CHAR] THEN INTRO_TAC "!p1 p2; in_frame char" THEN
   ASM_MESON_TAC[]);;
 
+let GEN_AX_SUBS_CHAR_VALID = prove
+ (`!S X:(W->bool)#(W->W->bool)->bool.
+     X SUBSET CHAR S ==> (!p. p IN S ==> X |= p)`,
+  REWRITE_TAC[valid; SUBSET; FORALL_PAIR_THM; IN_CHAR] THEN MESON_TAC[]);;
+
 let GEN_CHAR_VALID = prove
  (`!S H p. [S . H |~ p] /\
            (!q. q IN H ==> CHAR S:(W->bool)#(W->W->bool)->bool |= q)
@@ -89,7 +105,20 @@ let GEN_CHAR_VALID = prove
   CONJ_TAC THENL [MODAL_TAC; ALL_TAC] THEN
   REWRITE_TAC[NOT_IN_EMPTY] THEN MODAL_TAC);;
 
-g `!S:form->bool W:(W->bool) R:(W->W->bool).
+let GEN_SUBS_CHAR_VALID = prove
+ (`!S X:(W->bool)#(W->W->bool)->bool.
+     X SUBSET CHAR S
+     ==> (! H p. [S . H |~ p] /\ (!q. q IN H ==> X |= q)
+         ==> X |= p)`,
+  GEN_TAC THEN GEN_TAC THEN DISCH_TAC THEN REWRITE_TAC[IMP_CONJ] THEN
+  MATCH_MP_TAC MODPROVES_INDUCT THEN
+  CONJ_TAC THENL [ASM_MESON_TAC[GEN_KAXIOM_SUBS_CHAR_VALID]; ALL_TAC] THEN
+  CONJ_TAC THENL [ASM_MESON_TAC[GEN_AX_SUBS_CHAR_VALID]; ALL_TAC] THEN
+  CONJ_TAC THENL [ASM_MESON_TAC[GEN_KAXIOM_SUBS_CHAR_VALID]; ALL_TAC] THEN
+  CONJ_TAC THENL [MODAL_TAC; ALL_TAC] THEN
+  REWRITE_TAC[NOT_IN_EMPTY] THEN MODAL_TAC);;
+
+g `!S:form->bool W:(W->bool) R:W->W->bool.
     ((W,R) IN FRAME /\ !p. [S . {} |~ p] ==> holds_in (W,R) p) <=>
     (W,R) IN CHAR S`;;
 e (REPEAT GEN_TAC);;
@@ -121,16 +150,16 @@ let CHAR_CAR = top_thm ();;
 let APPR_DEF = new_definition
   `APPR S = {(W:W->bool,R:W->W->bool) |
              (W,R) IN FINITE_FRAME  /\
-             !p. [S. {} |~ p] ==> holds_in (W:W->bool,R:W->W->bool) p}`;;
+             !p. [S. {} |~ p] ==> holds_in (W,R) p}`;;
 
 let IN_APPR = prove
  (`!S. (W:W->bool,R:W->W->bool) IN APPR S <=>
        (W,R) IN FINITE_FRAME /\
-       !p. [S. {} |~ p] ==> holds_in (W:W->bool,R:W->W->bool) p`,
+       !p. [S. {} |~ p] ==> holds_in (W,R) p`,
   REWRITE_TAC[APPR_DEF; IN_ELIM_PAIR_THM]);;
 
 let APPR_CAR = prove
-  (`!S:form->bool W:(W->bool) R:(W->W->bool).
+  (`!S W:(W->bool) R:(W->W->bool).
      (W,R) IN APPR S <=>
      (W,R) IN CHAR S /\ FINITE W`,
     ASM_REWRITE_TAC[IN_APPR] THEN
@@ -138,19 +167,18 @@ let APPR_CAR = prove
                   IN_FINITE_FRAME; IN_CHAR; IN_FRAME]);;
 
 let APPR_EQ_CHAR_FINITE = prove
-  (`!S. APPR S : (W->bool)#(W->W->bool)->bool = CHAR S INTER FINITE_FRAME`,
+  (`!S. APPR S:(W->bool)#(W->W->bool)->bool = CHAR S INTER FINITE_FRAME`,
    GEN_TAC THEN
    REWRITE_TAC[EXTENSION; FORALL_PAIR_THM; APPR_CAR; IN_INTER;
                IN_FINITE_FRAME; IN_CHAR; IN_FRAME; NOT_IN_EMPTY] THEN
    REPEAT GEN_TAC THEN EQ_TAC THEN STRIP_TAC THEN ASM_REWRITE_TAC[]);;
 
-g `!S:form->bool. APPR S:(W->bool)#(W->W->bool)->bool SUBSET CHAR S`;;
+g `!S. APPR S:(W->bool)#(W->W->bool)->bool SUBSET CHAR S`;;
 e (REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_APPR]);;
 e (INTRO_TAC "!S p1 p2; In_Fin_Frame Appr");;
 e (CLAIM_TAC "In_Frame" `(p1:W->bool, p2:W->W->bool) IN FRAME`);;
-  e (ASM_MESON_TAC[SUBSET; FINITE_FRAME_SUBSET_FRAME]);;
+ e (ASM_MESON_TAC[SUBSET; FINITE_FRAME_SUBSET_FRAME]);;
 e (MP_TAC CHAR_CAR);;
-e (DISCH_TAC);;
 e (ASM_MESON_TAC[CHAR_CAR]);;
 let APPR_SUBSET_CHAR = top_thm();;
 

@@ -5,6 +5,9 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/k4_completeness.ml";;
+needs "HOLMS/gen_countermodel.ml";;
+
 (* ------------------------------------------------------------------------- *)
 (* Lemmata.                                                                  *)
 (* ------------------------------------------------------------------------- *)
@@ -17,7 +20,7 @@ let IN_TF_CLAUSES = prove
                  ==> !p. holds (W,R) V (Box p) w ==> holds (W,R) V p w') /\
          (!w p. holds (W,R) V (Box p) w
                  ==> !w'. R w w' ==> holds (W,R) V p w')`,
-  REWRITE_TAC[IN_TF_DEF; IN_FINITE_FRAME; TRANSITIVE] THEN
+  REWRITE_TAC[IN_TF; IN_FINITE_FRAME; TRANSITIVE] THEN
   MESON_TAC[HOLDS_LEFT_BOX]);;
 
 let K4_COMPLETENESS_NUM =
@@ -125,7 +128,6 @@ K4_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
 
 needs "Library/iter.ml";;
 
-let run_conv conv tm = rhs (concl (conv tm));;
 let tm = `!a. [K4_AX . {} |~ a --> ITER 5 (Box) a]`;;
 let tm = run_conv (TOP_SWEEP_CONV num_CONV THENC REWRITE_CONV [ITER]) tm;;
 let ctm = HOLMS_BUILD_COUNTERMODEL tm;;

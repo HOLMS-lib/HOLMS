@@ -18,7 +18,7 @@ let IN_RSF_CLAUSES = prove
                  ==> !p. holds (W,R) V (Box p) w ==> holds (W,R) V p w') /\
          (!w p. holds (W,R) V (Box p) w
                  ==> !w'. R w w' ==> holds (W,R) V p w')`,
-  REWRITE_TAC[IN_RSF_DEF; IN_FINITE_FRAME; REFLEXIVE; SYMETRIC] THEN
+  REWRITE_TAC[IN_RSF; IN_FINITE_FRAME; REFLEXIVE; SYMMETRIC] THEN
   MESON_TAC[HOLDS_LEFT_BOX]);;
 
 let B_COMPLETENESS_NUM =
@@ -123,7 +123,6 @@ B_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
 
 needs "Library/iter.ml";;
 
-let run_conv conv tm = rhs (concl (conv tm));;
 let tm = `!a. [B_AX . {} |~ a --> ITER 4 (Box) a]`;;
 let tm = run_conv (TOP_SWEEP_CONV num_CONV THENC REWRITE_CONV[ITER]) tm;;
 let ctm = HOLMS_BUILD_COUNTERMODEL tm;;

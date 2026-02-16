@@ -5,6 +5,8 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/gen_completeness.ml";;
+
 let T_AX = new_definition
   `T_AX = {T_SCHEMA p| p IN (:form)}`;;
 
@@ -26,7 +28,7 @@ let REFL_DEF = new_definition
     (W,R) IN FRAME  /\
     REFLEXIVE W R}`;;
 
-let IN_REFL_DEF = prove
+let IN_REFL = prove
  (`(W:W->bool,R:W->W->bool) IN REFL <=>
    (W,R) IN FRAME /\
    REFLEXIVE W R`,
@@ -38,7 +40,7 @@ let IN_REFL_DEF = prove
 
 g `REFL:(W->bool)#(W->W->bool)->bool = CHAR T_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REWRITE_TAC[IN_CHAR; IN_REFL_DEF; IN_FRAME]);;
+e (REWRITE_TAC[IN_CHAR; IN_REFL; IN_FRAME]);;
 e (REWRITE_TAC[MODAL_REFL; T_AX; FORALL_IN_GSPEC; IN_UNIV]);;
 let REFL_CHAR_T = top_thm();;
 
@@ -62,7 +64,7 @@ let RF_DEF = new_definition
    (W, R) IN FINITE_FRAME  /\
    REFLEXIVE W R }`;;
 
-let IN_RF_DEF = prove
+let IN_RF = prove
  (`(W:W->bool,R:W->W->bool) IN RF <=>
    (W, R) IN FINITE_FRAME /\
    REFLEXIVE W R`,
@@ -70,13 +72,13 @@ let IN_RF_DEF = prove
 
 let RF_SUBSET_REFL = prove
  (`RF:(W->bool)#(W->W->bool)->bool SUBSET REFL`,
-  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RF_DEF; IN_REFL_DEF] THEN
+  REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_RF; IN_REFL] THEN
   MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET]);;
 
 let RF_FIN_REFL = prove
  (`RF:(W->bool)#(W->W->bool)->bool = (REFL INTER FINITE_FRAME)`,
-  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN
-  REWRITE_TAC[IN_INTER; IN_RF_DEF; IN_REFL_DEF] THEN
+  REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN 
+  REWRITE_TAC[IN_INTER; IN_RF; IN_REFL] THEN
   MESON_TAC[FINITE_FRAME_SUBSET_FRAME; SUBSET]);;
 
 g `RF: (W->bool)#(W->W->bool)->bool = APPR T_AX`;;
@@ -102,7 +104,7 @@ let T_CONSISTENT = prove
  (`~ [T_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] T_RF_VALID)) THEN
   REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM;
-              IN_RF_DEF; IN_FINITE_FRAME; REFLEXIVE; NOT_FORALL_THM] THEN
+              IN_RF; IN_FINITE_FRAME; REFLEXIVE; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. x = 0 /\ x = y`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
 
@@ -138,8 +140,7 @@ let T_STANDARD_MODEL_DEF = new_definition
 let RF_SUBSET_FRAME = prove
  (`RF:(W->bool)#(W->W->bool)->bool SUBSET FRAME`,
   REWRITE_TAC[SUBSET; FORALL_PAIR_THM] THEN INTRO_TAC "![W] [R]" THEN
-  REWRITE_TAC[IN_RF_DEF; IN_FINITE_FRAME; REFLEXIVE] THEN STRIP_TAC THEN
-  ASM_REWRITE_TAC[IN_FRAME]);;
+  REWRITE_TAC[IN_RF; IN_FINITE_FRAME; REFLEXIVE] THEN STRIP_TAC THEN ASM_REWRITE_TAC[IN_FRAME]);;
 
 let T_STANDARD_MODEL_CAR = prove
  (`!W R p V.
@@ -188,7 +189,7 @@ let RF_MAXIMAL_CONSISTENT = prove
   INTRO_TAC "!p; p" THEN
   MP_TAC (ISPECL [`T_AX`; `p:form`] GEN_FINITE_FRAME_MAXIMAL_CONSISTENT) THEN
   REWRITE_TAC[IN_FINITE_FRAME] THEN INTRO_TAC "gen_max_cons" THEN
-  ASM_REWRITE_TAC[IN_RF_DEF; REFLEXIVE; IN_FINITE_FRAME] THEN CONJ_TAC THENL
+  ASM_REWRITE_TAC[IN_RF; REFLEXIVE; IN_FINITE_FRAME] THEN CONJ_TAC THENL 
   (* Nonempty *)
   [CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
   (* Well-defined *)
@@ -320,8 +321,8 @@ let T_COMPLETENESS_THM_GEN = prove
 
 let T_TAC : tactic =
   MATCH_MP_TAC T_COMPLETENESS_THM THEN
-  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds; IN_RF_DEF;
-              IN_FINITE_FRAME; REFLEXIVE; GSYM MEMBER_NOT_EMPTY] THEN
+  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds;
+              IN_RF; IN_FINITE_FRAME; REFLEXIVE; GSYM MEMBER_NOT_EMPTY] THEN
   MESON_TAC[];;
 
 let T_RULE tm =

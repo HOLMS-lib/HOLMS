@@ -5,6 +5,8 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+loadt "HOLMS/gen_decid.ml";;
+
 (* ------------------------------------------------------------------------- *)
 (* Miscellanea.                                                              *)
 (* ------------------------------------------------------------------------- *)
@@ -36,8 +38,8 @@ let IN_TF_ALT = prove
      (!x y. R x y ==> x IN W /\ y IN W) /\
      FINITE W /\
      (!x y z. R x y /\ R y z ==> R x z)`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[IN_TF_DEF; IN_FINITE_FRAME; TRANSITIVE] THEN EQ_TAC THEN STRIP_TAC THEN
-  ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
+  REPEAT GEN_TAC THEN REWRITE_TAC[IN_TF; IN_FINITE_FRAME; TRANSITIVE] THEN
+  EQ_TAC THEN STRIP_TAC THEN ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 (* S4 *)
 let IN_RTF_ALT = prove
@@ -48,8 +50,9 @@ let IN_RTF_ALT = prove
      FINITE W /\
      (!x. x IN W ==> R x x) /\
      (!x y z. R x y /\ R y z ==> R x z)`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[IN_RTF_DEF; IN_FINITE_FRAME; REFLEXIVE; TRANSITIVE] THEN EQ_TAC THEN STRIP_TAC THEN
-  ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[IN_RTF; IN_FINITE_FRAME; REFLEXIVE; TRANSITIVE] THEN
+  EQ_TAC THEN STRIP_TAC THEN ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 (* B *)
 let IN_RSF_ALT = prove
@@ -59,8 +62,9 @@ let IN_RSF_ALT = prove
      FINITE W /\
      (!x. x IN W ==> R x x) /\
      (!x y. R x y ==> R y x )`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[IN_RSF_DEF; IN_FINITE_FRAME; REFLEXIVE; SYMETRIC] THEN EQ_TAC THEN STRIP_TAC THEN
-  ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[IN_RSF; IN_FINITE_FRAME; REFLEXIVE; SYMMETRIC] THEN
+  EQ_TAC THEN STRIP_TAC THEN ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 (* S5 *)
 let IN_REF_ALT = prove
@@ -70,8 +74,9 @@ let IN_REF_ALT = prove
    FINITE W /\
    (!x. x IN W ==> R x x) /\
    (!x y z:W. R x y /\ R x z ==> R z y)`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[IN_REF_DEF; IN_FINITE_FRAME; REFLEXIVE; EUCLIDEAN] THEN EQ_TAC THEN STRIP_TAC THEN
-  ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[IN_REF; IN_FINITE_FRAME; REFLEXIVE; EUCLIDEAN] THEN
+  EQ_TAC THEN STRIP_TAC THEN ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 (* GL *)
 let IN_ITF_ALT = prove
@@ -82,8 +87,9 @@ let IN_ITF_ALT = prove
      FINITE W /\
      (!x. ~R x x) /\
      (!x y z. R x y /\ R y z ==> R x z)`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[IN_ITF_DEF; IN_FINITE_FRAME; IRREFLEXIVE; TRANSITIVE] THEN EQ_TAC THEN STRIP_TAC THEN
-  ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[IN_ITF; IN_FINITE_FRAME; IRREFLEXIVE; TRANSITIVE] THEN
+  EQ_TAC THEN STRIP_TAC THEN ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Auxiliary OCaml procedures.                                               *)
@@ -160,7 +166,6 @@ let HOLDS_ACCREL_WD_LEMMA = prove
 (* Resolve existentials of metavariables with atomic formulas.  *)
 
 let EXISTS_ATOM_TAC : tactic =
-  let num_ty = `:num` in
   let mk_modal_atom : string -> term =
     let atom_tm = `Atom` in
     fun s -> mk_comb(atom_tm,mk_string s) in
@@ -177,7 +182,6 @@ let EXISTS_ATOM_TAC : tactic =
 
 (* Metavariables occurring in the modal formula. *)
 let get_modal_metavars : term -> term list =
-  let form_ty = `:form` in
   filter ((=) form_ty o type_of) o frees;;
 
 (* Instantiation of the metavariables occurring in a formula. *)
@@ -207,14 +211,12 @@ let mk_worlds_def : int -> term =
    - ilist is an instantiation list [`1`,`w`; ...]                           *)
 (* ------------------------------------------------------------------------- *)
 
-let get_worlds : term -> int * (term * term) list =
-  let num_ty = `:num` in
-  fun ctm ->
-    let worlds = filter ((=) num_ty o type_of) (frees ctm) in
-    let num_worlds = length worlds in
-    let nworlds = map mk_small_numeral (1--num_worlds) in
-    let world_ilist = zip nworlds worlds in
-    num_worlds, world_ilist;;
+let get_worlds (ctm:term) : int * (term * term) list =
+  let worlds = filter ((=) num_ty o type_of) (frees ctm) in
+  let num_worlds = length worlds in
+  let nworlds = map mk_small_numeral (1--num_worlds) in
+  let world_ilist = zip nworlds worlds in
+  num_worlds, world_ilist;;
 
 (* ------------------------------------------------------------------------- *)
 (* Extract atoms from the countermodel.                                      *)
@@ -224,8 +226,10 @@ let get_worlds : term -> int * (term * term) list =
 let get_eval_atoms : term list -> term list =
   let dest_eval_atom =
     let pth = prove
-     (`(holds (W:num->bool,R) V (Atom s) w <=> V s w = T) /\
-       (~holds (W:num->bool,R) V (Atom s) w <=> V s w = F)`,
+     (`(holds (W,R) V (Atom s) (w:W) <=> V s w = T) /\
+       (~holds (W,R) V (Atom s) w <=> V s w = F) /\
+       (V s w <=> V s w = T) /\
+       (~V s w <=> V s w = F)`,
       REWRITE_TAC[holds]) in
     rhs o concl o GEN_REWRITE_CONV I [pth] in
   mapfilter dest_eval_atom;;

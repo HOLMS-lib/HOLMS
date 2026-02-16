@@ -8,6 +8,8 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/calculus.ml";;
+
 let CONJLIST = new_recursive_definition list_RECURSION
   `CONJLIST [] = True /\
    (!p X. CONJLIST (CONS p X) = if X = [] then p else p && CONJLIST X)`;;
@@ -124,7 +126,7 @@ let CONJLIST_APPEND = prove
 
 let CONJLIST_APPEND_SYM = prove
  (`!l m. [S . H |~ (CONJLIST (APPEND l m) <-> (CONJLIST (APPEND m l)))]`,
-  REPEAT GEN_TAC THEN 
+  REPEAT GEN_TAC THEN
   CLAIM_TAC "eq" `[S . H |~ CONJLIST l && CONJLIST m <-> CONJLIST m && CONJLIST l]`THENL
    [ASM_MESON_TAC [MLK_and_comm_th]; ALL_TAC] THEN
   ASM_MESON_TAC[CONJLIST_APPEND; MLK_iff_mp_subst; MLK_iff_sym]);;
@@ -158,11 +160,10 @@ let CONJLIST_MAP_BOX = prove
   MATCH_MP_TAC MLK_box_iff THEN MATCH_MP_TAC MLK_necessitation THEN
   ONCE_REWRITE_TAC[MLK_iff_sym] THEN MATCH_ACCEPT_TAC CONJLIST_CONS);;
 
-g `!l m. [S . H |~ (CONJLIST (MAP (Box) (APPEND l m)) <-> (CONJLIST (APPEND (MAP (Box) l) (MAP (Box) m))))]`;;
-e LIST_INDUCT_TAC;;
-e ( ASM_REWRITE_TAC[MLK_iff_refl_th; MAP_APPEND]);;
-e ( ASM_REWRITE_TAC[MLK_iff_refl_th; MAP_APPEND]);;
-let APPEND_MAP_BOX = top_thm();;
+let APPEND_MAP_BOX = prove
+ (`!l m. [S . H |~ CONJLIST (MAP (Box) (APPEND l m)) <->
+                   CONJLIST (APPEND (MAP (Box) l) (MAP (Box) m))]`,
+  LIST_INDUCT_TAC THEN ASM_REWRITE_TAC[MLK_iff_refl_th; MAP_APPEND]);;
 
 let MODPROVES_DEDUCTION_LEMMA_CONJLIST = prove
  (`!S H K p. [S . H |~ CONJLIST K --> p] <=>
@@ -352,3 +353,71 @@ let CONJLIST_FLATMAP_DOT_BOX_LEMMA_2 = prove
   STRUCT_CASES_TAC (SPEC `h:form` (cases "form")) THEN
   REWRITE_TAC[distinctness "form"; MAP; MLK_imp_refl_th] THEN
   REWRITE_TAC[CONJLIST; NOT_CONS_NIL] THEN  ASM_MESON_TAC[]);;
+
+g `!S w. [S . {}
+         |~ CONJLIST (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) w)
+            <-> CONJLIST (MAP (Box)
+                              (FLATMAP (\x. match x with Box c -> [c] | _ -> [])
+                                        w))]`;;
+e (REWRITE_TAC[MLK_iff_def]);;
+e (GEN_TAC THEN LIST_INDUCT_TAC);;
+ e (REWRITE_TAC[MEM; FLATMAP; MAP; MLK_imp_refl_th]);;
+e CONJ_TAC;;
+ e (REWRITE_TAC[FLATMAP; MAP_APPEND]);;
+  e (MATCH_MP_TAC MLK_imp_trans);;
+  e (EXISTS_TAC
+     `CONJLIST (match h with Box c -> [Box c] | _ -> []) &&
+      CONJLIST (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) t)`);;
+  e CONJ_TAC;;
+   e (MATCH_MP_TAC MLK_iff_imp1);;
+    e (MATCH_ACCEPT_TAC CONJLIST_APPEND);;
+   e (MATCH_MP_TAC MLK_imp_trans);;
+    e (EXISTS_TAC
+      `CONJLIST (MAP (Box) (match h with Box c -> [c] | _ -> [])) &&
+       CONJLIST (MAP (Box)
+        (FLATMAP (\x. match x with Box c -> [c] | _ -> []) t))`);;
+     e CONJ_TAC;;
+      r (1);;
+      e (MATCH_MP_TAC MLK_iff_imp2);;
+       e (MATCH_ACCEPT_TAC CONJLIST_APPEND);;
+      r 1;;
+      e (MATCH_MP_TAC MLK_and_intro);;
+       e CONJ_TAC;;
+        r (1);;
+        e (ASM_MESON_TAC[MLK_imp_trans; MLK_and_right_th; MAP]);;
+        r 1;;
+        e (MATCH_MP_TAC MLK_imp_trans);;
+         e (EXISTS_TAC `CONJLIST (match h with Box c -> [Box c] | _ -> [])`);;
+         e CONJ_TAC;;
+          e (MATCH_ACCEPT_TAC MLK_and_left_th);;
+          e (POP_ASSUM (K ALL_TAC));;
+           e (STRUCT_CASES_TAC (SPEC `h:form` (cases "form")) THEN
+              REWRITE_TAC[distinctness "form"; MAP; MLK_imp_refl_th]);;
+  e (REWRITE_TAC[FLATMAP; MAP_APPEND]);;
+  e (MATCH_MP_TAC MLK_imp_trans);;
+  e (EXISTS_TAC
+     `CONJLIST (MAP (Box) (match h with Box c -> [c] | _ -> [])) &&
+      CONJLIST (MAP (Box) (FLATMAP (\x. match x with Box c -> [c] | _ -> []) t))`);;
+   e CONJ_TAC;;
+    e (MATCH_MP_TAC MLK_iff_imp1);;
+     e (MATCH_ACCEPT_TAC CONJLIST_APPEND);;
+    e (MATCH_MP_TAC MLK_imp_trans);;
+    e (EXISTS_TAC
+     `CONJLIST (match h with Box c -> [Box c] | _ -> []) &&
+      CONJLIST (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) t)`);;
+    e CONJ_TAC;;
+      r (1);;
+      e (MATCH_MP_TAC MLK_iff_imp2);;
+       e (MATCH_ACCEPT_TAC CONJLIST_APPEND);;
+      e (MATCH_MP_TAC MLK_and_intro);;
+       e CONJ_TAC;;
+        r (1);;
+        e (ASM_MESON_TAC[MLK_imp_trans; MLK_and_right_th; MAP]);;
+        e (MATCH_MP_TAC MLK_imp_trans);;
+         e (EXISTS_TAC `CONJLIST (MAP (Box) (match h with Box c -> [c] | _ -> []))`);;
+         e CONJ_TAC;;
+          e (MATCH_ACCEPT_TAC MLK_and_left_th);;
+          e (POP_ASSUM (K ALL_TAC));;
+           e (STRUCT_CASES_TAC (SPEC `h:form` (cases "form")) THEN
+              REWRITE_TAC[distinctness "form"; MAP; MLK_imp_refl_th]);;
+let CONJLIST_FLATMAP_DOT_BOX_LEMMA_3 = top_thm();;

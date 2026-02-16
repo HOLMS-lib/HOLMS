@@ -8,6 +8,9 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/k_completeness.ml";;
+needs "HOLMS/gen_countermodel.ml";;
+
 (* ------------------------------------------------------------------------- *)
 (* Collect the countermodel from the unfinished proof context.               *)
 (* ------------------------------------------------------------------------- *)
@@ -131,7 +134,6 @@ K_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
 
 needs "Library/iter.ml";;
 
-let run_conv conv tm = rhs (concl (conv tm));;
 let tm = `!a. [{} . {} |~ a --> ITER 8 (Box) a]`;;
 let tm = run_conv (TOP_SWEEP_CONV num_CONV THENC REWRITE_CONV [ITER]) tm;;
 let ctm = HOLMS_BUILD_COUNTERMODEL tm;;

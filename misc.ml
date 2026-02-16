@@ -7,8 +7,45 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* Additional OCaml functions.                                               *)
+(* Additional OCaml definitions.                                             *)
 (* ------------------------------------------------------------------------- *)
+
+let num_ty = `:num`;;
+let string_ty = `:string`;;
+
+let true_tm = concl TRUTH;;
+let false_tm = lhs (concl F_DEF);;
+
+(* Run a conversion.  Do not test whether the conversion is correct. *)
+let run_conv (conv:conv) tm =
+  let etm =
+    try concl (conv tm)
+    with Failure s -> failwith ("run_conv: Conversion fails: "^s) in
+  try rhs etm
+  with Failure _ -> failwith "run_conv: Not equational";;
+
+(* Run a conversion.  Tests whether the conversion is correct. *)
+let check_run_conv (conv:conv) tm =
+  let etm =
+    try concl (conv tm)
+    with Failure s -> failwith ("check_run_conv: Conversion fails: "^s) in
+  let l,r = try dest_eq etm with
+            Failure _ -> failwith "check_run_conv: Not equational" in
+  if tm = l then r else
+  failwith "check_run_conv: Bad conversion";;
+
+let check_conv_eq conv tm expected =
+  let ret = check_run_conv conv tm in
+  if ret = expected then () else
+  failwith ("check_conv_eq: unexpected result: "^string_of_term ret);;
+
+let check_conv_true conv tm = check_conv_eq conv tm true_tm;;
+let check_conv_false conv tm = check_conv_eq conv tm false_tm;;
+
+(* Test a function for expected failure. *)
+let check_fail f x =
+  try f x; failwith "check_fail: Should fail"
+  with Failure s -> remark ("check_fail: Failed as expected: "^s);;
 
 (* Power for integer numbers in OCaml. *)
 let int_pow a b =

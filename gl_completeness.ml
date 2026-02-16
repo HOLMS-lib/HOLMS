@@ -8,6 +8,8 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/gen_completeness.ml";;
+
 let GL_AX = new_definition
   `GL_AX = {LOB_SCHEMA p | p IN (:form)}`;;
 
@@ -44,7 +46,7 @@ let TRANSNT_DEF = new_definition
     TRANSITIVE W R /\
     WF(\x y. R y x)}`;;
 
-let IN_TRANSNT_DEF = prove
+let IN_TRANSNT = prove
  (`(W:W->bool,R:W->W->bool) IN TRANSNT <=>
    (W,R) IN FRAME /\
     TRANSITIVE W R /\
@@ -58,7 +60,7 @@ let IN_TRANSNT_DEF = prove
 
 g `TRANSNT:(W->bool)#(W->W->bool)->bool = CHAR GL_AX`;;
 e (REWRITE_TAC[EXTENSION; FORALL_PAIR_THM]);;
-e (REWRITE_TAC[IN_CHAR; IN_TRANSNT_DEF]);;
+e (REWRITE_TAC[IN_CHAR; IN_TRANSNT]);;
 e (REWRITE_TAC[GL_AX; FORALL_IN_UNION; FORALL_IN_GSPEC]);;
 e (REPEAT GEN_TAC THEN EQ_TAC);;
  e DISCH_TAC;;
@@ -107,7 +109,7 @@ let ITF_DEF = new_definition
     IRREFLEXIVE W R /\
     TRANSITIVE W R}`;;
 
-let IN_ITF_DEF = prove
+let IN_ITF = prove
  (`(W:W->bool,R:W->W->bool) IN ITF <=>
    (W,R) IN FINITE_FRAME /\
     IRREFLEXIVE W R /\
@@ -115,7 +117,7 @@ let IN_ITF_DEF = prove
   REWRITE_TAC[ITF_DEF; IN_ELIM_PAIR_THM]);;
 
 g `ITF:(W->bool)#(W->W->bool)->bool SUBSET TRANSNT`;;
-e (REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_ITF_DEF; IN_TRANSNT_DEF;
+e (REWRITE_TAC[SUBSET; FORALL_PAIR_THM; IN_ITF; IN_TRANSNT;
                FINITE_FRAME_SUBSET_FRAME]);;
 e (REPEAT STRIP_TAC);;
  e (ASM_MESON_TAC[IN_FRAME; IN_FINITE_FRAME]);;
@@ -133,10 +135,9 @@ let ITF_FIN_TRANSNT = prove
  (`ITF:(W->bool)#(W->W->bool)->bool = (TRANSNT INTER FINITE_FRAME)`,
   REWRITE_TAC[EXTENSION; FORALL_PAIR_THM] THEN
   REPEAT STRIP_TAC THEN EQ_TAC THENL
-  [ASM_MESON_TAC[IN_INTER; ITF_SUBSET_TRANSNT; SUBSET; IN_ITF_DEF];
-   ALL_TAC] THEN
-  REWRITE_TAC[IN_INTER; IN_ITF_DEF; IN_FINITE_FRAME;
-              TRANSITIVE; IN_TRANSNT_DEF; IN_FRAME] THEN
+  [ASM_MESON_TAC[IN_INTER; ITF_SUBSET_TRANSNT; SUBSET; IN_ITF]; ALL_TAC] THEN
+  REWRITE_TAC[IN_INTER; IN_ITF; IN_FINITE_FRAME; TRANSITIVE;
+              IN_TRANSNT; IN_FRAME] THEN
   INTRO_TAC "((non_empty Rel) Trans WF) non_empty' Rel' Finite" THEN
   ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[WF_REFL; IRREFLEXIVE]);;
 
@@ -159,6 +160,11 @@ let GL_ITF_VALID = prove
  (`!p. [GL_AX . {} |~ p] ==> ITF:(W->bool)#(W->W->bool)->bool |= p`,
   ASM_MESON_TAC[GEN_APPR_VALID; ITF_APPR_GL]);;
 
+(* Useful instatiation (W = num) for our dedusion procedures. *)
+let GL_ITF_VALID_NUM = prove
+ (`!p. [GL_AX . {} |~ p] ==> ITF:(num->bool)#(num->num->bool)->bool |= p`,
+  MATCH_ACCEPT_TAC GL_ITF_VALID);;
+
 (* ------------------------------------------------------------------------- *)
 (* Proof of GL Consistency                                                   *)
 (* ------------------------------------------------------------------------- *)
@@ -166,7 +172,7 @@ let GL_ITF_VALID = prove
 let GL_consistent = prove
  (`~ [GL_AX . {} |~  False]`,
   REFUTE_THEN (MP_TAC o MATCH_MP (INST_TYPE [`:num`,`:W`] GL_ITF_VALID)) THEN
-  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_ITF_DEF;
+  REWRITE_TAC[valid; holds; holds_in; FORALL_PAIR_THM; IN_ITF;
               IN_FINITE_FRAME; TRANSITIVE; IRREFLEXIVE; NOT_FORALL_THM] THEN
   MAP_EVERY EXISTS_TAC [`{0}`; `\x:num y:num. F`] THEN
   REWRITE_TAC[NOT_INSERT_EMPTY; FINITE_SING; IN_SING] THEN MESON_TAC[]);;
@@ -203,7 +209,7 @@ let GL_STANDARD_MODEL_DEF = new_definition
 let ITF_SUBSET_FRAME = prove
  (`ITF:(W->bool)#(W->W->bool)->bool SUBSET FRAME`,
   REWRITE_TAC[SUBSET; FORALL_PAIR_THM] THEN INTRO_TAC "![W] [R]" THEN
-  REWRITE_TAC[IN_ITF_DEF; IN_FINITE_FRAME; IRREFLEXIVE; TRANSITIVE] THEN
+  REWRITE_TAC[IN_ITF; IN_FINITE_FRAME; IRREFLEXIVE; TRANSITIVE] THEN
   STRIP_TAC THEN ASM_REWRITE_TAC[IN_FRAME]);;
 
 let GL_STANDARD_MODEL_CAR = prove
@@ -256,7 +262,7 @@ let ITF_MAXIMAL_CONSISTENT = prove
   INTRO_TAC "!p; p" THEN
   MP_TAC (ISPECL [`GL_AX`; `p:form`] GEN_FINITE_FRAME_MAXIMAL_CONSISTENT) THEN
   REWRITE_TAC[IN_FINITE_FRAME] THEN INTRO_TAC "gen_max_cons" THEN
-  ASM_REWRITE_TAC[IN_ITF_DEF; IN_FINITE_FRAME; IRREFLEXIVE; TRANSITIVE] THEN
+  ASM_REWRITE_TAC[IN_ITF; IN_FINITE_FRAME; IRREFLEXIVE; TRANSITIVE] THEN
   CONJ_TAC THENL
   (* Nonempty *)
   [CONJ_TAC THENL [ASM_MESON_TAC[]; ALL_TAC] THEN
@@ -480,14 +486,22 @@ let GL_COMPLETENESS_THM_GEN = prove
   ASM_MESON_TAC[ITF_APPR_GL; GEN_LEMMA_FOR_GEN_COMPLETENESS]);;
 
 (* ------------------------------------------------------------------------- *)
+(* Soundness and completeness wrt models in `:num`.                          *)
+(* Useful for our decision procedures.                                       *)
+(* ------------------------------------------------------------------------- *)
+
+let GL_MODPROVES_IFF_ITF_VALID = prove
+ (`!p. [GL_AX . {} |~ p] <=> ITF:(num->bool)#(num->num->bool)->bool |= p`,
+    MESON_TAC[GL_COMPLETENESS_THM_GEN; num_INFINITE; GL_ITF_VALID]);;
+
+(* ------------------------------------------------------------------------- *)
 (* Simple decision procedure for GL.                                         *)
 (* ------------------------------------------------------------------------- *)
 
 let GL_TAC : tactic =
   MATCH_MP_TAC GL_COMPLETENESS_THM THEN
-  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds; IN_ITF_DEF;
-              IN_FINITE_FRAME; IRREFLEXIVE; TRANSITIVE;
-              GSYM MEMBER_NOT_EMPTY] THEN
+  REWRITE_TAC[valid; FORALL_PAIR_THM; holds_in; holds; IN_ITF; IN_FINITE_FRAME;
+              IRREFLEXIVE; TRANSITIVE; GSYM MEMBER_NOT_EMPTY] THEN
   MESON_TAC[];;
 
 let GL_RULE tm =

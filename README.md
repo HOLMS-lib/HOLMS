@@ -1,7 +1,7 @@
 # HOLMS: A HOL Light Library for Modal Systems
 
 (c) Copyright, Antonella Bilotta, Marco Maggesi, Cosimo Perini Brogi, Leonardo Quartini 2024. <br>
-(c) Copyright, Antonella Bilotta, Marco Maggesi, Cosimo Perini Brogi 2025.
+(c) Copyright, Antonella Bilotta, Marco Maggesi, Cosimo Perini Brogi 2025-2026.
 
 See the [website](https://holms-lib.github.io/) for a brief overview of our [HOLMS library](https://github.com/HOLMS-lib/HOLMS) for the [HOL Light](https://hol-light.github.io/) theorem prover.
 

@@ -5,11 +5,13 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (*                                                                           *)
 (* Part of this code is copied or adapted from                               *)
 (*   John Harrison (2017) The HOL Light Tutorial.                            *)
 (* ========================================================================= *)
+
+needs "HOLMS/misc.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Syntax of formulae.                                                       *)
@@ -53,6 +55,8 @@ let dotbox_DEF = new_definition
 (* ------------------------------------------------------------------------- *)
 (* Constants of modal formulas.                                              *)
 (* ------------------------------------------------------------------------- *)
+
+let form_ty = `:form`;;
 
 let modal_atom_tm = `Atom`;;
 let modal_true_tm = `True`;;
@@ -112,13 +116,36 @@ let is_modal_box = is_unop `(Box)`;;
 let is_modal_diam = is_unop `(Diam)`;;
 let is_modal_dotbox = is_unop `(Dotbox)`;;
 
+let dest_modal_unop =
+  let unops =
+    [dest_modal_not; dest_modal_box; dest_modal_diam; dest_modal_dotbox] in
+  fun tm -> try tryfind (fun f -> f tm) unops
+            with Failure _ -> failwith "dest_modal_unop";;
+
+let dest_modal_binop =
+  let binops =
+    [dest_modal_conj; dest_modal_disj; dest_modal_imp; dest_modal_iff] in
+  fun tm -> try tryfind (fun f -> f tm) binops
+            with Failure _ -> failwith "dest_modal_binop";;
+
+let atomicals =
+  let rec recur atoms tml =
+    match tml with
+    | [] -> setify atoms
+    | h::t ->
+        let atoms',tml' =
+          try atoms,dest_modal_unop h::t with Failure _ ->
+          try let l,r = dest_modal_binop h in
+              atoms,l::r::t
+          with Failure _ -> h::atoms,t in
+        recur atoms' tml' in
+  fun tm -> recur [] [tm];;
+
 (* ------------------------------------------------------------------------- *)
 (* Specialized induction tactics for formulas.                               *)
 (* ------------------------------------------------------------------------- *)
 
 let FORM_INDUCT_TAC : tactic =
-  let form_ty = `:form` in
-  let string_ty = `:string` in
   fun (asl,w) as gl ->
     let q = try let v,_ = dest_forall w in
                 if type_of v = form_ty then v else fail()

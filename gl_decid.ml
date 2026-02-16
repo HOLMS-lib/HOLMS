@@ -8,6 +8,9 @@
 (*                Cosimo Perini Brogi 2025.                                  *)
 (* ========================================================================= *)
 
+needs "HOLMS/gl_completeness.ml";;
+needs "HOLMS/gen_countermodel.ml";;
+
 (* ------------------------------------------------------------------------- *)
 (* Lemmata.                                                                  *)
 (* ------------------------------------------------------------------------- *)
@@ -25,11 +28,11 @@ let HOLDS_BOX_EQ = prove
    ALL_TAC] THEN
   REPEAT STRIP_TAC THEN
   MATCH_MP_TAC
-    (REWRITE_RULE [valid; FORALL_PAIR_THM; IN_TRANSNT_DEF; TRANSITIVE;
+    (REWRITE_RULE [valid; FORALL_PAIR_THM; IN_TRANSNT; TRANSITIVE;
                    IN_FRAME; holds_in; holds; RIGHT_IMP_FORALL_THM; IMP_IMP]
                   LOB_THM_TRANSNT) THEN
   EXISTS_TAC `w:A` THEN
-  HYP_TAC "tnt" (REWRITE_RULE[IN_TRANSNT_DEF; TRANSITIVE; IN_FRAME]) THEN
+  HYP_TAC "tnt" (REWRITE_RULE[IN_TRANSNT; TRANSITIVE; IN_FRAME]) THEN
   ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[]);;
 
 let MATCH_BOX_RIGHT_MODIFIED_TAC : tactic =
@@ -65,7 +68,7 @@ let IN_ITF_CLAUSES = prove
                  ==> !p. holds (W,R) V (Box p) w ==> holds (W,R) V p w') /\
          (!w p. holds (W,R) V (Box p) w
                  ==> !w'. R w w' ==> holds (W,R) V p w')`,
-  REWRITE_TAC[IN_ITF_DEF; IN_FINITE_FRAME; TRANSITIVE] THEN
+  REWRITE_TAC[IN_ITF; IN_FINITE_FRAME; TRANSITIVE] THEN
   MESON_TAC[HOLDS_LEFT_BOX]);;
 
 let GL_COMPLETENESS_NUM =
@@ -93,6 +96,8 @@ let IN_ITF_RULES =
 
 let GL_TAC : tactic =
   GEN_HOLMS_TAC MATCH_BOX_RIGHT_MODIFIED_TAC GL_COMPLETENESS_NUM IN_ITF_RULES;;
+
+let GL_RULE tm = prove(tm,GL_TAC);;
 
 holms_register_tactic `GL_AX` GL_TAC;;
 
@@ -133,6 +138,25 @@ let GL_HOLMS_CERTIFY_COUNTERMODEL : term -> term -> thm =
 HOLMS_RULE `[GL_AX . {} |~ Box (Box p --> p) --> Box p]`;;
 
 (* ------------------------------------------------------------------------- *)
+(* Associated conversion.                                                    *)
+(* ------------------------------------------------------------------------- *)
+
+let GL_CONV : conv =
+  let final_conv =
+    GEN_REWRITE_RULE RAND_CONV [GSYM GL_MODPROVES_IFF_ITF_VALID] in
+  fun tm ->
+    try EQT_INTRO (GL_RULE tm) with Failure _ ->
+    let ctm = run_conv (REWRITE_CONV[]) (!the_HOLMS_countermodel) in
+    let cth = GL_HOLMS_CERTIFY_COUNTERMODEL ctm tm in
+    EQF_INTRO (final_conv cth);;
+
+(* ------------------------------------------------------------------------- *)
+(* Register the tactic in the HOLMS_TAC dispach.                             *)
+(* ------------------------------------------------------------------------- *)
+
+holms_register_tactic `GL_AX` GL_TAC;;
+
+(* ------------------------------------------------------------------------- *)
 (* Non-axiom examples.                                                       *)
 (* ------------------------------------------------------------------------- *)
 
@@ -171,7 +195,6 @@ GL_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
 
 needs "Library/iter.ml";;
 
-let run_conv conv tm = rhs (concl (conv tm));;
 let tm = `!a. [GL_AX . {} |~ a --> ITER 5 (Box) a]`;;
 let tm = run_conv (TOP_SWEEP_CONV num_CONV THENC REWRITE_CONV [ITER]) tm;;
 let ctm = HOLMS_BUILD_COUNTERMODEL tm;;

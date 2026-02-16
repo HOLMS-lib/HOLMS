@@ -10,6 +10,8 @@
 (* with HOL Light in the subdirectory Arithmetic.                            *)
 (* ========================================================================= *)
 
+needs "HOLMS/modal.ml";;
+
 (* ------------------------------------------------------------------------- *)
 (* Concrete syntax for judgements: `[S . H |~ p]`.                           *)
 (*   - S set of axioms / axiom schemas;                                      *)
@@ -157,6 +159,13 @@ let MODPROVES_MONO1 = prove
     (fun th -> MESON_TAC[th]) THEN
   MATCH_MP_TAC MODPROVES_INDUCT THEN
   MESON_TAC[MODPROVES_RULES; SUBSET]);;
+g `!S S' H p. S SUBSET S' /\ [S . H |~ p] ==> [S' . H |~ p]`;;
+e GEN_TAC;;
+e (SUBGOAL_THEN
+    `!H p. [S . H |~ p] ==> !S'. S SUBSET S' ==> [S' . H |~ p]`
+    (fun th -> MESON_TAC[th]));;
+e ( MATCH_MP_TAC MODPROVES_INDUCT);;
+
 
 let MODPROVES_MONO2 = prove
  (`!S H H' p. [S . H |~ p] /\ H SUBSET H' ==> [S . H' |~ p]`,
