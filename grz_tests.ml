@@ -38,12 +38,12 @@ g `[GRZ_AX . {}
              |~ Contingent (Atom "p") --> 
                 Diam (Penultimate (Atom "p") || 
                       Penultimate (Not (Atom "p")))]`;;  
-e (REWRITE_TAC[Contingent_DEF; Penultimate2_DEF]);;
+e (REWRITE_TAC[Contingent_DEF; Penultimate_DEF]);;
 e HOLMS_TAC;;
 
 HOLMS_RULE `[GRZ_AX . {}
              |~ Diam Box (Atom "p") --> Box Diam (Atom "p") ]`;;  
-             
+
 HOLMS_BUILD_COUNTERMODEL
   `[GRZ_AX . {} |~  Box (Box Atom "p" --> Atom "p") --> Box Atom "p"]`;;
 
