@@ -25,6 +25,31 @@ GRZ_CONV `[GRZ_AX . {}
 GRZ_CONV `[GRZ_AX . {} |~  Box(Box Atom "p" --> Atom "p") --> Box Atom "p"]`;;
 
 (* ------------------------------------------------------------------------- *)
+(* Examples from "Grzegorczyk Logic Unlocked" , Woloszyn 2025                *)
+(* ------------------------------------------------------------------------- *)
+
+let Contingent_DEF = new_definition 
+  `Contingent p  = Diam p && Diam Not p` ;;
+
+let Penultimate_DEF = new_definition 
+  `Penultimate p = p && Diam Not p && Box (Not p --> Box Not p)`;;
+
+g `[GRZ_AX . {}
+             |~ Contingent (Atom "p") --> 
+                Diam (Penultimate (Atom "p") || 
+                      Penultimate (Not (Atom "p")))]`;;  
+e (REWRITE_TAC[Contingent_DEF; Penultimate2_DEF]);;
+e HOLMS_TAC;;
+
+HOLMS_RULE `[GRZ_AX . {}
+             |~ Diam Box (Atom "p") --> Box Diam (Atom "p") ]`;;  
+             
+HOLMS_BUILD_COUNTERMODEL
+  `[GRZ_AX . {} |~  Box (Box Atom "p" --> Atom "p") --> Box Atom "p"]`;;
+
+GRZ_CONV `[GRZ_AX . {} |~  Box (Box Atom "p" --> Atom "p") --> Box Atom "p"]`;;
+
+(* ------------------------------------------------------------------------- *)
 (* Tests, examples.                                                          *)
 (* ------------------------------------------------------------------------- *)
 
