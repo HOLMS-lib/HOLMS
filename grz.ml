@@ -633,7 +633,7 @@ let EXTEND_MAXIMAL_CONSISTENT'' = prove
   ASM_REWRITE_TAC[] THEN REMOVE_THEN "sub" MP_TAC THEN
   REWRITE_TAC[SUBLIST; MEM] THEN MESON_TAC[]);;
 
-let NONEMPTY_MAXIMAL_CONSISTENT'' = prove
+let GRZ_NONEMPTY_MAXIMAL_CONSISTENT = prove
  (`!S p. ~ [S . {} |~ p]
          ==> ?M. MAXIMAL_CONSISTENT S p M /\
                  MEM (Not p) M /\
@@ -1018,7 +1018,7 @@ let S4GRZ_COMPLETENESS_THM = prove
                                 (q = Box (C --> Box C) \/
                                  q = Not Box (C --> Box C)))))`
                    MP_TAC THENL
-    [MATCH_MP_TAC NONEMPTY_MAXIMAL_CONSISTENT'' THEN
+    [MATCH_MP_TAC GRZ_NONEMPTY_MAXIMAL_CONSISTENT THEN
     ASM_MESON_TAC[]; ALL_TAC] THEN
     INTRO_TAC "@M. max mem sub" THEN
     EXISTS_TAC`M:form list` THEN
@@ -1092,7 +1092,7 @@ let S4GRZ_COMPLETENESS_THM = prove
   ASM_REWRITE_TAC[holds_in; NOT_FORALL_THM; NOT_IMP] THEN
    EXISTS_TAC `\a M. Atom a SUBFORMULA p /\ MEM (Atom a) M` THEN
    DESTRUCT_TAC "@M. max mem subf"
-      (MATCH_MP NONEMPTY_MAXIMAL_CONSISTENT'' (ASSUME `~ [S4GRZ_AX . {} |~ p]`)) THEN
+      (MATCH_MP GRZ_NONEMPTY_MAXIMAL_CONSISTENT (ASSUME `~ [S4GRZ_AX . {} |~ p]`)) THEN
    EXISTS_TAC `M:form list` THEN ASM_REWRITE_TAC[] THEN
    CONJ_TAC THENL
    [ASM_REWRITE_TAC[S4GRZ_STANDARD_WORLDS_DEF; IN_ELIM_THM];
