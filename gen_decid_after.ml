@@ -1,6 +1,9 @@
-(* ------------------------------------------------------------------------- *)
+(* ========================================================================= *)
 (* Some additional theorem-tactics.                                          *)
-(* ------------------------------------------------------------------------- *)
+(*                                                                           *)
+(* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
+(*                Cosimo Perini Brogi 2026.                                  *)
+(* ========================================================================= *)
 
 let HOLDS_NNFC_UNFOLD_CONV : conv =
   GEN_REWRITE_CONV TOP_DEPTH_CONV
@@ -49,7 +52,6 @@ let HOLDS_SIMP_THEN : thm_tactical =
 let SATURATE_STRIP_THEN : thm_tactical =
   FIRST_TCL [CONJUNCTS_THEN; DISJ_CASES_THEN; IMP_RES_THEN'; HOLDS_SIMP_THEN];;
 
-(* TODO: Fattorizzare con TRIVIAL_ASSUME_LITERAL_THEN. *)
 let rec SATURATE_TAC thl th =
   (REPEAT_TCL SATURATE_STRIP_THEN)
   (fun th ->

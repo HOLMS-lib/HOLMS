@@ -12,28 +12,15 @@ needs "HOLMS/k_completeness.ml";;
 needs "HOLMS/gen_countermodel.ml";;
 
 (* ------------------------------------------------------------------------- *)
-(* Collect the countermodel from the unfinished proof context.               *)
-(* ------------------------------------------------------------------------- *)
-
-(* TODO: Move elsewhere *)
-let HOLMS_COLLECT_COUNTERMODEL : tactic =
-  fun asl,w ->
-    let pos_lits = map (concl o snd) asl
-    and neg_lits = map mk_neg (striplist dest_disj w) in
-    the_HOLMS_countermodel := end_itlist (curry mk_conj) (pos_lits @ neg_lits);
-    failwith "Countermodel stored in reference the_HOLMS_countermodel.";;
-
-(* ------------------------------------------------------------------------- *)
 (* Top-level invocation.                                                     *)
 (* ------------------------------------------------------------------------- *)
 
-(* TODO: Move elsewhere *)
 let TOP_HOLMS_TAC MATCH_BOX_RIGHT_TAC (compl_thm : thm) (rules : thm list) : int -> tactic =
   let PREPARE_TAC = HOLMS_PREPARE_TAC compl_thm
   and SATURATE_TAC = HOLMS_SATURATE_TAC rules in
   let INNER_TAC = INNER_HOLMS_TAC (MATCH_BOX_RIGHT_TAC,SATURATE_TAC) in
   fun (n : int) ->
-    PREPARE_TAC THEN INNER_TAC n THEN HOLMS_COLLECT_COUNTERMODEL;;
+    PREPARE_TAC THEN INNER_TAC n;;
 
 let GEN_HOLMS_TAC MATCH_BOX_RIGHT_TAC (compl_thm : thm) (rules : thm list) : tactic =
   let TOP_TAC = TOP_HOLMS_TAC MATCH_BOX_RIGHT_TAC compl_thm rules in

@@ -5,13 +5,23 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2026.                                  *)
 (* ========================================================================= *)
 
 needs "HOLMS/conjlist.ml";;
 
 let CONSISTENT = new_definition
   `CONSISTENT S (l:form list) <=> ~[S . {} |~ Not (CONJLIST l)]`;;
+
+let CONSISTENT_ALT = prove
+ (`!S X. CONSISTENT S X <=> ~[S . set_of_list X |~ False]`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[CONSISTENT] THEN AP_TERM_TAC THEN
+  REWRITE_TAC[GSYM MODPROVES_DEDUCTION_LEMMA_CONJLIST_EMPTY] THEN
+  REWRITE_TAC[MLK_not_def]);;
+
+let CONSISTENT_IFF_SETCONSISTENT = prove
+ (`!S X. CONSISTENT S X <=> SETCONSISTENT S (set_of_list X)`,
+  REWRITE_TAC[SETCONSISTENT; CONSISTENT_ALT]);;
 
 let CONSISTENT_SING = prove
  (`!S p. CONSISTENT S [p] <=> ~[S . {} |~ Not p]`,
@@ -70,26 +80,9 @@ let CONSISTENT_NC = prove
   ASM_REWRITE_TAC[MLK_not_def; MLK_nc_th]);;
 
 let CONSISTENT_EM = prove
- (`!S h t. CONSISTENT S t
-           ==> CONSISTENT S (CONS h t) \/ CONSISTENT S (CONS (Not h) t)`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[CONSISTENT_CONS] THEN
-  REWRITE_TAC[CONSISTENT] THEN
-  SUBGOAL_THEN
-    `[S . {} |~ (Not h || Not CONJLIST t) --> (Not Not h || Not CONJLIST t)
-                --> Not CONJLIST t]`
-    (fun th -> MESON_TAC[th; MLK_modusponens]) THEN
-  REWRITE_TAC[MLK_disj_imp] THEN CONJ_TAC THENL
-  [MATCH_MP_TAC MLK_imp_swap THEN REWRITE_TAC[MLK_disj_imp] THEN
-   CONJ_TAC THENL
-   [MATCH_MP_TAC MLK_imp_swap THEN MATCH_MP_TAC MLK_shunt THEN
-    MATCH_MP_TAC MLK_frege THEN EXISTS_TAC `False` THEN
-    REWRITE_TAC[MLK_nc_th] THEN
-    MATCH_MP_TAC MLK_add_assum THEN MATCH_ACCEPT_TAC MLK_ex_falso_th;
-    MATCH_ACCEPT_TAC MLK_axiom_addimp];
-   MATCH_MP_TAC MLK_imp_swap THEN REWRITE_TAC[MLK_disj_imp] THEN
-   CONJ_TAC THENL
-   [MATCH_MP_TAC MLK_add_assum THEN MATCH_ACCEPT_TAC MLK_imp_refl_th;
-    MATCH_ACCEPT_TAC MLK_axiom_addimp]]);;
+ (`!h t. CONSISTENT S t
+         ==> CONSISTENT S (CONS h t) \/ CONSISTENT S (CONS (Not h) t)`,
+  REWRITE_TAC[CONSISTENT_IFF_SETCONSISTENT; set_of_list; SETCONSISTENT_EXTEND_CASES]);;
 
 let FALSE_IMP_NOT_CONSISTENT = prove
  (`!S X. MEM False X ==> ~CONSISTENT S X`,
@@ -104,6 +97,15 @@ let MAXIMAL_CONSISTENT = new_definition
   `MAXIMAL_CONSISTENT S p X <=>
    CONSISTENT S X /\ NOREPETITION X /\
    (!q. q SUBFORMULA p ==> MEM q X \/ MEM (Not q) X)`;;
+
+let MAXIMAL_CONSISTENT_IFF_MAXIMAL_SETCONSISTENT = prove
+ (`!S p X. MAXIMAL_CONSISTENT S p X <=>
+           MAXIMAL_SETCONSISTENT S p (set_of_list X) /\
+           NOREPETITION X`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[MAXIMAL_CONSISTENT; MAXIMAL_SETCONSISTENT] THEN
+  REWRITE_TAC[IN_SET_OF_LIST; CONSISTENT_IFF_SETCONSISTENT] THEN
+  MESON_TAC[]);;
 
 let MAXIMAL_CONSISTENT_LEMMA = prove
  (`!S p X A b. MAXIMAL_CONSISTENT S p X /\
@@ -135,17 +137,19 @@ let MAXIMAL_CONSISTENT_MEM_CASES = prove
              ==> (MEM q X \/ MEM (Not q) X)`,
   REWRITE_TAC[MAXIMAL_CONSISTENT] THEN MESON_TAC[CONSISTENT_NC]);;
 
+let MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE_ALT = prove
+ (`!S p w q. MAXIMAL_CONSISTENT S p w /\ q SUBFORMULA p
+             ==> (MEM q w <=> [S . set_of_list w |~ q])`,
+  REPEAT GEN_TAC THEN
+  REWRITE_TAC[MAXIMAL_CONSISTENT_IFF_MAXIMAL_SETCONSISTENT] THEN
+  MESON_TAC[MAXIMAL_SETCONSISTENT_SUBFORMULA_MEMBER_IFF_DERIVABLE;
+            IN_SET_OF_LIST]);;
+
 let MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE = prove
  (`!S p w q. MAXIMAL_CONSISTENT S p w /\ q SUBFORMULA p
              ==> (MEM q w <=> [S . {} |~ CONJLIST w --> q])`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[MAXIMAL_CONSISTENT; CONSISTENT] THEN
-  INTRO_TAC "(w em) sub" THEN LABEL_ASM_CASES_TAC "q" `MEM (q:form) w` THEN
-  ASM_SIMP_TAC[CONJLIST_IMP_MEM] THEN CLAIM_TAC "nq" `MEM (Not q) w` THENL
-  [ASM_MESON_TAC[]; INTRO_TAC "deriv"] THEN
-  SUBGOAL_THEN `[S . {} |~  Not (CONJLIST w)]` (fun th -> ASM_MESON_TAC[th]) THEN
-  REWRITE_TAC[MLK_not_def] THEN MATCH_MP_TAC MLK_imp_trans THEN
-  EXISTS_TAC `q && Not q` THEN REWRITE_TAC[MLK_nc_th] THEN
-  ASM_SIMP_TAC[MLK_and_intro; CONJLIST_IMP_MEM]);;
+  REWRITE_TAC[MODPROVES_DEDUCTION_LEMMA_CONJLIST_EMPTY;
+              MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE_ALT]);;
 
 let MAXIMAL_CONSISTENT_SUBFORMULA_MEM_NEG_EQ_DERIVABLE = prove
  (`!S p w q. MAXIMAL_CONSISTENT S p w /\ q SUBFORMULA p
@@ -158,25 +162,6 @@ let MAXIMAL_CONSISTENT_SUBFORMULA_MEM_NEG_EQ_DERIVABLE = prove
   REWRITE_TAC[MLK_not_def] THEN MATCH_MP_TAC MLK_imp_trans THEN
   EXISTS_TAC `q && Not q` THEN REWRITE_TAC[MLK_nc_th] THEN
   ASM_SIMP_TAC[MLK_and_intro; CONJLIST_IMP_MEM]);;
-
-(* ------------------------------------------------------------------------- *)
-(* Subsentences.                                                             *)
-(* ------------------------------------------------------------------------- *)
-
-parse_as_infix("SUBSENTENCE",get_infix_status "SUBFORMULA");;
-
-let SUBSENTENCE_RULES,SUBSENTENCE_INDUCT,SUBSENTENCE_CASES =
-  new_inductive_definition
-  `(!p q. p SUBFORMULA q ==> p SUBSENTENCE q) /\
-   (!p q. p SUBFORMULA q ==> Not p SUBSENTENCE q)`;;
-
-let SUBFORMULA_IMP_SUBSENTENCE = prove
- (`!p q. p SUBFORMULA q ==> p SUBSENTENCE q`,
-  REWRITE_TAC[SUBSENTENCE_RULES]);;
-
-let SUBFORMULA_IMP_NEG_SUBSENTENCE = prove
- (`!p q. p SUBFORMULA q ==> Not p SUBSENTENCE q`,
-  REWRITE_TAC[SUBSENTENCE_RULES]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Extension Lemma.                                                          *)

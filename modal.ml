@@ -213,6 +213,20 @@ let valid = new_definition
   `L |= p <=> !f:(W->bool)#(W->W->bool). f IN L ==> holds_in f p`;;
 
 (* ------------------------------------------------------------------------- *)
+(* Abstraction barrier for frames.                                           *)
+(* ------------------------------------------------------------------------- *)
+
+let WORLDS = new_definition
+  `WORLDS (W:W->bool,R:W->W->bool) = W`;;
+
+let ACCREL = new_definition
+  `ACCREL (W:W->bool,R:W->W->bool) = R`;;
+
+let HOLDS_IN = prove
+ (`!f p. holds_in f p <=> (!V w:W. w IN WORLDS f ==> holds f V p w)`,
+  REWRITE_TAC[FORALL_PAIR_THM; holds_in; WORLDS]);;
+
+(* ------------------------------------------------------------------------- *)
 (* Some model-theoretic lemmas.                                              *)
 (* ------------------------------------------------------------------------- *)
 
@@ -277,9 +291,41 @@ let SUBFORMULA_TRANS = prove
  (`!p q r. p SUBFORMULA q /\ q SUBFORMULA r ==> p SUBFORMULA r`,
   REWRITE_TAC[SUBFORMULA; RTC_TRANS]);;
 
+let SUBFORMULA_TRANS_L = prove
+ (`!p q r. p SUBFORMULA q /\ q IN MINOR r ==> p SUBFORMULA r`,
+  REWRITE_TAC[SUBFORMULA] THEN MESON_TAC[RTC_TRANS_L]);;
+
+let SUBFORMULA_TRANS_R = prove
+ (`!p q r. p IN MINOR q /\ q SUBFORMULA r ==> p SUBFORMULA r`,
+  REWRITE_TAC[SUBFORMULA] THEN MESON_TAC[RTC_TRANS_R]);;
+
+let SUBFORMULA_CASES = prove
+ (`!p q. p SUBFORMULA q <=> p = q \/ (?r. p SUBFORMULA r /\ r SUBFORMULA q)`,
+  REWRITE_TAC[SUBFORMULA] THEN MESON_TAC[RTC_CASES]);;
+
 let SUBFORMULA_CASES_L = prove
  (`!p q. p SUBFORMULA q <=> p = q \/ (?r. p SUBFORMULA r /\ r IN MINOR q)`,
   REWRITE_TAC[SUBFORMULA] THEN MESON_TAC[RTC_CASES_L]);;
+
+let SUBFORMULA_CASES_R = prove
+ (`!p q. p SUBFORMULA q <=> p = q \/ (?r. p IN MINOR r /\ r SUBFORMULA q)`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[SUBFORMULA] THEN
+  GEN_REWRITE_TAC LAND_CONV [SUBFORMULA; RTC_CASES_R] THEN
+  REWRITE_TAC[]);;
+
+let MINOR_SUBFORMULA = prove
+ (`(!p q. Not p SUBFORMULA q ==> p SUBFORMULA q) /\
+   (!p1 p2 q. p1 && p2 SUBFORMULA q ==> p1 SUBFORMULA q) /\
+   (!p1 p2 q. p1 && p2 SUBFORMULA q ==> p2 SUBFORMULA q) /\
+   (!p1 p2 q. p1 || p2 SUBFORMULA q ==> p1 SUBFORMULA q) /\
+   (!p1 p2 q. p1 || p2 SUBFORMULA q ==> p2 SUBFORMULA q) /\
+   (!p1 p2 q. p1 --> p2 SUBFORMULA q ==> p1 SUBFORMULA q) /\
+   (!p1 p2 q. p1 --> p2 SUBFORMULA q ==> p2 SUBFORMULA q) /\
+   (!p1 p2 q. p1 <-> p2 SUBFORMULA q ==> p1 SUBFORMULA q) /\
+   (!p1 p2 q. p1 <-> p2 SUBFORMULA q ==> p2 SUBFORMULA q) /\
+   (!p q. Box p SUBFORMULA q ==> p SUBFORMULA q)`,
+   REPEAT CONJ_TAC THEN REPEAT GEN_TAC THEN DISCH_TAC THEN
+   MATCH_MP_TAC SUBFORMULA_TRANS_R THEN ASM_MESON_TAC[IN_MINOR_RULES]);;
 
 let FINITE_SUBFORMULA = prove
  (`!p. FINITE {q | q SUBFORMULA p}`,

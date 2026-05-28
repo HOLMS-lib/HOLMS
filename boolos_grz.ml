@@ -22,9 +22,6 @@ needs "HOLMS/translations.ml";;
 (* Definition of the axiomatic calculus Grz.                                 *)
 (* ------------------------------------------------------------------------- *)
 
-let GRZ_SCHEMA_DEF = new_definition
-  `GRZ_SCHEMA p = (Box (Box (p --> Box p) --> p) --> p)`;;
-
 let GRZ_AX = new_definition
   `GRZ_AX = {GRZ_SCHEMA p| p IN (:form)}`;;
 
@@ -263,7 +260,7 @@ let RATF_SUBSET_RTWN = prove
 (* Correspondence Theory: RTWN Frames are characteristic for S4GRZ.          *)
 (* ------------------------------------------------------------------------- *)
 
-let MODAL_RTWN = prove
+let MODAL_RTWN_IMP = prove
  (`!W:W->bool R.
      (!x y. R x y ==> x IN W /\ y IN W)
      ==> REFLEXIVE W R /\ TRANSITIVE W R /\ WWF (\x y. R y x)
@@ -439,7 +436,7 @@ let RTWN_SUBSET_CHAR_S4GRZ = prove
   [ASM_REWRITE_TAC[];
    ASM_MESON_TAC[MODAL_TRANS];
    ASM_MESON_TAC[MODAL_REFL];
-   ASM_MESON_TAC[MODAL_RTWN; IN_FRAME]]);;
+   ASM_MESON_TAC[MODAL_RTWN_IMP; IN_FRAME]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Soundness Lemma for S4GRZ.                                                *)

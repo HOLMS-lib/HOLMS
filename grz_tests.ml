@@ -2,7 +2,7 @@
 (* Tests for the Grzegorczyk Logic (Grz).                                    *)
 (*                                                                           *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025-26.                               *)
+(*                Cosimo Perini Brogi 2026.                                  *)
 (* ========================================================================= *)
 
 needs "HOLMS/grz.ml";;
@@ -16,13 +16,34 @@ HOLMS_RULE `[GRZ_AX . {}
                 --> Atom "p"]`;;
 
 HOLMS_BUILD_COUNTERMODEL
-  `[GRZ_AX . {} |~  Box(Box Atom "p" --> Atom "p") --> Box Atom "p"]`;;
+  `[GRZ_AX . {} |~ Box (Box Atom "p" --> Atom "p") --> Box Atom "p"]`;;
 
 GRZ_CONV `[GRZ_AX . {}
            |~ Box (Box (Atom "p" --> Box Atom "p") --> Atom "p")
               --> Atom "p"]`;;
 
-GRZ_CONV `[GRZ_AX . {} |~  Box(Box Atom "p" --> Atom "p") --> Box Atom "p"]`;;
+GRZ_CONV `[GRZ_AX . {} |~ Box(Box Atom "p" --> Atom "p") --> Box Atom "p"]`;;
+
+(* ------------------------------------------------------------------------- *)
+(* A simple example of countermodel.                                         *)
+(* ------------------------------------------------------------------------- *)
+
+let tm = `[GRZ_AX . {} |~ Box(Box Atom "p" --> Atom "p") --> Box Atom "p"]`;;
+g tm;;
+can e GRZ_TAC;;
+let ctm = !the_HOLMS_countermodel;;
+GRZ_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
+
+(* ------------------------------------------------------------------------- *)
+(* Example show in the paper.                                                *)
+(* ------------------------------------------------------------------------- *)
+
+let tm = `[GRZ_AX . {} |~ Diam Box Atom "a" --> Box Diam Atom "a"]`;;
+g tm;;
+e (REWRITE_TAC[diam_DEF]);;
+can e GRZ_TAC;;
+let ctm = !the_HOLMS_countermodel;;
+GRZ_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
 
 (* ------------------------------------------------------------------------- *)
 (* Examples from "Grzegorczyk Logic Unlocked" , Woloszyn 2025                *)
@@ -39,10 +60,9 @@ g `[GRZ_AX . {}
                 Diam (Penultimate (Atom "p") || 
                       Penultimate (Not (Atom "p")))]`;;  
 e (REWRITE_TAC[Contingent_DEF; Penultimate_DEF]);;
+e (REWRITE_TAC[diam_DEF]);;
 e HOLMS_TAC;;
-
-HOLMS_RULE `[GRZ_AX . {}
-             |~ Diam Box (Atom "p") --> Box Diam (Atom "p") ]`;;  
+top_thm();;
 
 HOLMS_BUILD_COUNTERMODEL
   `[GRZ_AX . {} |~  Box (Box Atom "p" --> Atom "p") --> Box Atom "p"]`;;

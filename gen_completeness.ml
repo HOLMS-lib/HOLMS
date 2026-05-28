@@ -5,7 +5,7 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-26.                               *)
 (* ========================================================================= *)
 
 needs "HOLMS/consistent.ml";;
@@ -14,13 +14,43 @@ needs "HOLMS/consistent.ml";;
 (* Standard Frame.                                                           *)
 (* ------------------------------------------------------------------------- *)
 
-let GEN_STANDARD_FRAME_DEF = new_definition
-  `GEN_STANDARD_FRAME S p =
+let PARAMETRIC_STD_WORLD = new_definition
+  `PARAMETRIC_STD_WORLD S P p = {w | MAXIMAL_CONSISTENT S p w /\
+                                     (!q. MEM q w ==> q IN P p)}`;;
+
+let PARAMETRIC_STANDARD_FRAME_DEF = new_definition
+  `PARAMETRIC_STANDARD_FRAME S P p =
    APPR S INTER
-   {(W,R) | W = {w | MAXIMAL_CONSISTENT S p w /\
-            (!q. MEM q w ==> q SUBSENTENCE p)} /\
+   {(W,R) | W = PARAMETRIC_STD_WORLD S P p /\
             (!q w. Box q SUBFORMULA p /\ w IN W
                    ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))}`;;
+
+let STD_FRAME_SCHEMA = new_definition
+  `STD_FRAME_SCHEMA p = {q | q SUBSENTENCE p}`;;
+
+let GEN_STANDARD_WORLD_DEF = new_definition
+  `GEN_STANDARD_WORLD S p = PARAMETRIC_STD_WORLD S STD_FRAME_SCHEMA p`;;
+
+let GEN_STANDARD_WORLD = prove
+ (`GEN_STANDARD_WORLD S p = {w | MAXIMAL_CONSISTENT S p w /\
+                                 (!q. MEM q w ==> q SUBSENTENCE p)}`,
+  REWRITE_TAC[GEN_STANDARD_WORLD_DEF; PARAMETRIC_STD_WORLD;
+              STD_FRAME_SCHEMA; IN_ELIM_THM]);;
+
+let GEN_STANDARD_FRAME = new_definition
+  `GEN_STANDARD_FRAME S p =
+   PARAMETRIC_STANDARD_FRAME S STD_FRAME_SCHEMA p`;;
+
+let GEN_STANDARD_FRAME_DEF = prove
+ (`GEN_STANDARD_FRAME S p =
+   APPR S INTER
+   {(W,R) | W = {w | MAXIMAL_CONSISTENT S p w /\
+                     (!q. MEM q w ==> q SUBSENTENCE p)} /\
+            (!q w. Box q SUBFORMULA p /\ w IN W
+                   ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))}`,
+  REWRITE_TAC[GEN_STANDARD_FRAME; PARAMETRIC_STANDARD_FRAME_DEF;
+              GEN_STANDARD_WORLD; PARAMETRIC_STD_WORLD;
+              STD_FRAME_SCHEMA; IN_ELIM_THM]);;
 
 let IN_GEN_STANDARD_FRAME = prove
  (`(W,R) IN GEN_STANDARD_FRAME S p <=>

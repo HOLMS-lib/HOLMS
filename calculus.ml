@@ -4,6 +4,8 @@
 (* (c) Copyright, Marco Maggesi, Cosimo Perini Brogi 2020-2022.              *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
+(* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
+(*                Cosimo Perini Brogi 2026.                                  *)
 (*                                                                           *)
 (* The initial part of this code has been adapted from the proof of the      *)
 (* Godel incompleteness theorems formalized by John Harrison, distributed    *)
@@ -81,6 +83,26 @@ let MODPROVES_RULES,MODPROVES_INDUCT,MODPROVES_CASES =
    (!H p q. [S . H |~ p --> q] /\ [S . H |~ p] ==> [S . H |~ q]) /\
    (!H p. [S . {} |~ p] ==> [S . H |~ Box p])`;;
 
+let MODPROVES_KAXIOM = prove
+ (`!S H p. KAXIOM p ==> [S . H |~ p]`,
+  REWRITE_TAC[MODPROVES_RULES]);;
+
+let MODPROVES_AX = prove
+ (`!S H p. p IN S ==> [S . H |~ p]`,
+  REWRITE_TAC[MODPROVES_RULES]);;
+
+let MODPROVES_HP = prove
+ (`!S H p. p IN H ==> [S . H |~ p]`,
+  REWRITE_TAC[MODPROVES_RULES]);;
+
+let MLK_modusponens = prove
+ (`!S H p. [S . H |~ p --> q] /\ [S . H |~ p] ==> [S . H |~ q]`,
+  MESON_TAC[MODPROVES_RULES]);;
+
+let MLK_necessitation = prove
+ (`!S H p. [S . {} |~ p] ==> [S . H |~ Box p]`,
+  MESON_TAC[MODPROVES_RULES]);;
+
 let MODPROVES_INDUCT_STRONG =
   derive_strong_induction(MODPROVES_RULES,MODPROVES_INDUCT);;
 
@@ -137,14 +159,6 @@ let MLK_axiom_boximp = prove
  (`!S H p q. [S . H |~ Box (p --> q) --> Box p --> Box q]`,
   MESON_TAC[MODPROVES_RULES; KAXIOM_RULES]);;
 
-let MLK_modusponens = prove
- (`!S H p. [S . H |~ p --> q] /\ [S . H |~ p] ==> [S . H |~ q]`,
-  MESON_TAC[MODPROVES_RULES]);;
-
-let MLK_necessitation = prove
- (`!S H p. [S . {} |~ p] ==> [S . H |~ Box p]`,
-  MESON_TAC[MODPROVES_RULES]);;
-
 (* ------------------------------------------------------------------------- *)
 (* Monotonicity.                                                             *)
 (* ------------------------------------------------------------------------- *)
@@ -159,13 +173,6 @@ let MODPROVES_MONO1 = prove
     (fun th -> MESON_TAC[th]) THEN
   MATCH_MP_TAC MODPROVES_INDUCT THEN
   MESON_TAC[MODPROVES_RULES; SUBSET]);;
-g `!S S' H p. S SUBSET S' /\ [S . H |~ p] ==> [S' . H |~ p]`;;
-e GEN_TAC;;
-e (SUBGOAL_THEN
-    `!H p. [S . H |~ p] ==> !S'. S SUBSET S' ==> [S' . H |~ p]`
-    (fun th -> MESON_TAC[th]));;
-e ( MATCH_MP_TAC MODPROVES_INDUCT);;
-
 
 let MODPROVES_MONO2 = prove
  (`!S H H' p. [S . H |~ p] /\ H SUBSET H' ==> [S . H' |~ p]`,
@@ -390,6 +397,10 @@ let MLK_iff_refl_th = prove
  (`!p. [S . H |~ p <-> p]`,
   MESON_TAC[MLK_imp_antisym; MLK_imp_refl_th]);;
 
+let MLK_boximp = prove
+ (`!S H p q. [S . H |~ Box (p --> q)] ==> [S . H |~ Box p --> Box q]`,
+  MESON_TAC[MLK_modusponens; MLK_axiom_boximp]);;
+
 let MLK_imp_box = prove
  (`!p q. [S . {} |~ p --> q] ==> [S . H |~ Box p --> Box q]`,
   MESON_TAC[MLK_modusponens; MLK_necessitation; MLK_axiom_boximp;
@@ -472,6 +483,11 @@ let MLK_not_false = prove
 let MLK_NC = prove
  (`!p. [S . H |~ p  && Not p] <=> [S . H |~ False]`,
   MESON_TAC[MLK_not_def; MLK_modusponens; MLK_and; MLK_ex_falso]);;
+
+let MLK_NC_ALT = prove
+ (`!p q. [S . H |~ p] /\ [S . H |~ Not p] ==> [S . H |~ q]`,
+  REPEAT STRIP_TAC THEN MATCH_MP_TAC MLK_ex_falso THEN
+  ASM_REWRITE_TAC[GSYM MLK_NC; MLK_and]);;
 
 let MLK_nc_th = prove
  (`!p. [S . H |~ p && Not p --> False]`,
@@ -557,6 +573,10 @@ let MLK_DOUBLENEG = prove
  (`!p. [S . H |~ p] ==> [S . H |~ Not(Not p)]`,
   MESON_TAC[MLK_not_not_th; MLK_modusponens; MLK_iff_imp1; MLK_iff_imp2]);;
 
+let MLK_DOUBLENEG_IFF = prove
+ (`!S H p. [S . H |~ Not Not p] <=> [S . H |~ p]`,
+  MESON_TAC[MLK_DOUBLENEG; MLK_DOUBLENEG_CL]);;
+
 let MLK_and_eq_or = prove
  (`!p q. [S . H |~ p || q ]<=> [S . H |~ Not(Not p && Not q)]`,
   MESON_TAC[MLK_modusponens; MLK_axiom_or; MLK_iff_imp1; MLK_iff_imp2]);;
@@ -606,6 +626,10 @@ let MLK_not_subst_th = prove
   REPEAT STRIP_TAC THEN
    CLAIM_TAC "not_eq" `[S . H |~ Not p <-> Not q]` THENL [MATCH_MP_TAC MLK_not_subst; ALL_TAC] THENL
    [ASM_MESON_TAC[]; ALL_TAC] THEN ASM_MESON_TAC [MLK_iff_mp]);;
+
+let MLK_iff_not = prove
+ (`!S H p q. [S . H |~ Not p <-> Not q] <=> [S . H |~ p <-> q]`,
+  MESON_TAC[MLK_not_not_th; MLK_not_subst; MLK_iff_trans;  MLK_iff_sym]);;
 
 let MLK_and_rigth_true_th = prove
  (`!p. [S . H |~ p && True <-> p]`,
@@ -861,6 +885,60 @@ let MLK_crysippus_th = prove
   [MESON_TAC[MLK_not_not_th; MLK_iff_sym]; MATCH_ACCEPT_TAC MLK_axiom_not]);;
 
 (* ------------------------------------------------------------------------- *)
+(* Basic rules for proving standard connectives.                             *)
+(* ------------------------------------------------------------------------- *)
+
+(* && *)
+MLK_and;;
+
+(* || *)
+MLK_or_introl;;
+MLK_or_intror;;
+
+(* --> *)
+MLK_add_assum;;  (* |- [S . H |~ q] ==> [S . H |~ p --> q] *)
+
+let MLK_imp_introl = prove
+ (`!S H p q. [S . H |~ Not p] ==> [S . H |~ p --> q]`,
+  REPEAT GEN_TAC THEN DISCH_TAC THEN TRANS_TAC MLK_imp_trans `False` THEN
+  ASM_REWRITE_TAC[MLK_ex_falso_th; GSYM MLK_not_def]);;
+
+(* <-> *)
+let MLK_proves_iff_pos = prove
+ (`!S H p q. [S . H |~ p] /\ [S . H |~ q] ==> [S . H |~ p <-> q]`,
+  REPEAT GEN_TAC THEN INTRO_TAC "p q" THEN MATCH_MP_TAC MLK_imp_antisym THEN
+  ASM_MESON_TAC[MLK_add_assum]);;
+
+let MLK_proves_iff_neg = prove
+ (`!S H p q. [S . H |~ Not p] /\ [S . H |~ Not q] ==> [S . H |~ p <-> q]`,
+  REPEAT GEN_TAC THEN INTRO_TAC "p q" THEN
+  GEN_REWRITE_TAC I [GSYM MLK_iff_not] THEN
+  MATCH_MP_TAC MLK_proves_iff_pos THEN ASM_REWRITE_TAC[]);;
+
+(* ------------------------------------------------------------------------- *)
+(* Basic rules for proving negated standard connectives.                     *)
+(* ------------------------------------------------------------------------- *)
+
+(* True *)
+let MLK_not_true = prove
+ (`!S H. [S . H |~ Not True] <=> [S . H |~ False]`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[MLK_iff] THEN
+  MESON_TAC[MLK_not_true_th; MLK_iff_mp; MLK_iff_sym]);;
+
+(* || *)
+let MLK_proves_not_or = prove
+ (`!S H p q. [S . H |~ Not p] /\ [S . H |~ Not q] ==> [S . H |~ Not (p || q)]`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[GSYM MLK_and] THEN DISCH_TAC THEN
+  MATCH_MP_TAC MLK_iff_mp THEN
+  ASM_MESON_TAC[MLK_de_morgan_or_th; MLK_iff_sym]);;
+
+let MLK_proves_not_imp = prove
+ (`!S H p q. [S . H |~ p] /\ [S . H |~ Not q] ==> [S . H |~ Not (p --> q)]`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[GSYM MLK_and] THEN DISCH_TAC THEN
+  MATCH_MP_TAC MLK_iff_mp THEN
+  ASM_MESON_TAC[MLK_crysippus_th; MLK_iff_sym]);;
+
+(* ------------------------------------------------------------------------- *)
 (* Substitution.                                                             *)
 (* ------------------------------------------------------------------------- *)
 
@@ -1059,3 +1137,11 @@ let MODPROVES_DEDUCTION_LEMMA = prove
   [ASM SET_TAC []; ALL_TAC] THEN
   MATCH_MP_TAC MODPROVES_DEDUCTION_LEMMA_DELETE THEN
   ASM_REWRITE_TAC[IN_INSERT]);;
+
+let MODPROVES_EX_FALSO = prove
+ (`!S H p. False IN H ==> [S . H |~ p]`,
+  REPEAT STRIP_TAC THEN
+  CLAIM_TAC "@H'. H" `?H'. H = False INSERT H'` THENL
+  [ASM SET_TAC[]; POP_ASSUM SUBST_VAR_TAC] THEN
+  REWRITE_TAC[GSYM MODPROVES_DEDUCTION_LEMMA] THEN
+  REWRITE_TAC[MLK_ex_falso_th]);;

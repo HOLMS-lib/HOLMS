@@ -5,7 +5,7 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-26.                               *)
 (* ========================================================================= *)
 
 needs "HOLMS/calculus.ml";;
@@ -183,6 +183,24 @@ let MODPROVES_DEDUCTION_LEMMA_CONJLIST = prove
   ASM_REWRITE_TAC[SET_RULE
     `h:form INSERT H UNION set_of_list t =
      h INSERT (H UNION set_of_list t)`]);;
+
+let MODPROVES_DEDUCTION_LEMMA_CONJLIST_EMPTY = prove
+ (`!S K p. [S . {} |~ CONJLIST K --> p] <=> [S . set_of_list K |~ p]`,
+  REWRITE_TAC[MODPROVES_DEDUCTION_LEMMA_CONJLIST; UNION_EMPTY]);;
+
+let MODPROVES_DEDUCTION_LEMMA_CONJLIST_ALT = prove
+  (`!S H K p.
+      FINITE K
+      ==> ([S . H |~ CONJLIST (list_of_set K) --> p] <=> [S . H UNION K |~ p])`,
+   REWRITE_TAC[MODPROVES_DEDUCTION_LEMMA_CONJLIST] THEN
+   SIMP_TAC[SET_OF_LIST_OF_SET]);;
+
+let MODPROVES_DEDUCTION_LEMMA_CONJLIST_EMPTY_ALT = prove
+  (`!S K p.
+      FINITE K
+      ==> ([S . {} |~ CONJLIST (list_of_set K) --> p] <=> [S . K |~ p])`,
+   SIMP_TAC[MODPROVES_DEDUCTION_LEMMA_CONJLIST_ALT] THEN
+   REWRITE_TAC[UNION_EMPTY]);;
 
 let MLK_BOX_CONJLIST = prove
  (`!S X. [S . {} |~ Box (CONJLIST X) <-> CONJLIST (MAP (Box) X)]`,

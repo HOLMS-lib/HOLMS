@@ -2,7 +2,7 @@
 (* Tools for the generation of certified countermodels.                      *)
 (*                                                                           *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-26.                               *)
 (* ========================================================================= *)
 
 loadt "HOLMS/gen_decid.ml";;
@@ -365,6 +365,23 @@ let MK_ACCREL_IRREFL_THM : thm -> thm =
     let gl = mk_imp(r_induct,gl_tm) in
     UNDISCH (prove (gl, tac));;
 
+let MK_ACCREL_ANTISYM_THM : thm -> thm =
+  let gl_tm = `!x y:num. R x y /\ R y x ==> x = y` in
+  let tac =
+    DISCH_THEN (LABEL_TAC "R_induct") THEN
+    DISCH_THEN (LABEL_TAC "R_cases") THEN
+    DISCH_THEN (LABEL_TAC "R_rules") THEN
+    REWRITE_TAC[IMP_CONJ] THEN
+    REMOVE_THEN "R_induct" MATCH_MP_TAC THEN
+    USE_THEN "R_cases" (fun th -> GEN_REWRITE_TAC ONCE_DEPTH_CONV [th]) THEN
+    NUM_REDUCE_TAC THEN
+    USE_THEN "R_rules" (fun th ->
+      REWRITE_TAC[th; IMP_DISJ; FORALL_AND_THM; FORALL_UNWIND_THM2]) in
+  fun eth ->
+    let _,(r_rules,r_induct,r_cases),_ = dest_exists_countermodel_thm eth in
+    let gl = mk_imp(r_induct,mk_imp(r_cases,mk_imp(r_rules,gl_tm))) in
+    UNDISCH_ALL (prove (gl, tac));;
+
 let MK_ACCREL_TRANS_THM : thm -> thm =
   let gl_tm = `!x y z:num. R x y /\ R y z ==> R x z` in
   let tac =
@@ -594,7 +611,7 @@ let MK_IN_FRAMES_TAC : thm -> tactic =
     match try Some (assoc s !in_frames_assoc)
           with Failure _ -> None
     with
-      None -> failwith "IN_FRAMES_CONV"
+      None -> failwith ("MK_IN_FRAMES_TAC: Not found: "^string_of_term s)
     | Some f -> ACCEPT_TAC (f eth) gl;;
 
 let mk_not_valid_ptm : term -> term -> term =

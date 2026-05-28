@@ -4,7 +4,7 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-26.                               *)
 (* ========================================================================= *)
 
 needs "HOLMS/gen_completeness.ml";;
@@ -220,7 +220,6 @@ let MATCH_BOX_RIGHT_TAC : tactic =
    MATCH_MP_TAC HOLDS_RIGHT_BOX_ALT_NUM) THEN
   CONJ_TAC THENL [FIRST_ASSUM MATCH_ACCEPT_TAC; GEN_TAC];;
 
-(* TODO: Si può semplificare ptac (?ridurre a SATURATE_TAC?) *)
 let BOX_RIGHT_THEN : (tactic * thm_tactic) -> int -> tactic =
   fun (MATCH_BOX_RIGHT_TAC,SATURATE_TAC) ->
     fun n -> CHECK_NUM_WORLD_TAC n THEN
@@ -231,7 +230,6 @@ let HOLMS_RIGHT_TAC (SATURATE_TAC : thm_tactic) : tactic =
                        AND_CLAUSES; OR_CLAUSES; NOT_CLAUSES] THEN
   CONV_TAC (NNFC_CONV THENC CNF_CONV) THEN
   REPEAT CONJ_TAC THEN
-  (* TODO: TRY è superfluo(?) *)
   TRY (NEG_RIGHT_TAC SATURATE_TAC);;
 
 (* ------------------------------------------------------------------------- *)
@@ -279,7 +277,6 @@ let SORT_BOX_TAC : tactic = CONV_TAC SORT_BOX_CONV;;
 (* The work horse of the tactic.                                             *)
 (* ------------------------------------------------------------------------- *)
 
-(* TODO: Cosa mettere in coda a intro_tac?  Forse SATURATE_TAC? *)
 let HOLMS_PREPARE_TAC : thm_tactic =
   let rewr_tac = REWRITE_TAC[diam_DEF; dotbox_DEF]
   and intro_tac = INTRO_TAC "![W] [R]; frame; ![V] [w]" THEN STRIP_TAC in
@@ -332,14 +329,38 @@ let holms_dispatch_tac : term -> tactic =
 let HOLMS_DISPATCH_TAC : tactic =
   fun (asl,w) as gl -> holms_dispatch_tac w gl;;
 
-let HOLMS_TAC : tactic =
+let HOLMS_PROOF_SEARCH_TAC : tactic =
   REPEAT (GEN_TAC ORELSE CONV_TAC (CHANGED_CONV let_CONV)) THEN
   REWRITE_TAC[diam_DEF; dotbox_DEF] THEN HOLMS_DISPATCH_TAC;;
 
-let HOLMS_RULE (tm : term) : thm =
-  prove(tm,HOLMS_TAC);;
+(* ------------------------------------------------------------------------- *)
+(* User friendly tactics: prove the goal or generate a countermode.          *)
+(* ------------------------------------------------------------------------- *)
 
 let the_HOLMS_countermodel : term ref = ref `no_countermodel:bool`;;
+
+let is_holds_literal : term -> bool =
+  let is_holds_const = function Const("holds",_) -> true | _ -> false in
+  let is_holds_atom = is_holds_const o fst o strip_comb in
+  fun tm -> try is_holds_atom (dest_neg tm)
+            with Failure _ -> is_holds_atom  tm;;
+
+let HOLMS_COLLECT_COUNTERMODEL : tactic =
+  let negate tm = try dest_neg tm
+                  with Failure _ -> mk_neg tm in
+  fun asl,w ->
+    let pos_lits = map (concl o snd) asl
+    and neg_lits = map negate (striplist dest_disj w) in
+    (* let l = filter (not o is_holds_literal) (pos_lits @ neg_lits) in *)
+    let l = pos_lits @ neg_lits in
+    the_HOLMS_countermodel := end_itlist (curry mk_conj) l;
+    failwith "Countermodel stored in reference the_HOLMS_countermodel.";;
+
+let HOLMS_TAC : tactic =
+  HOLMS_PROOF_SEARCH_TAC THEN HOLMS_COLLECT_COUNTERMODEL;;
+
+let HOLMS_RULE (tm : term) : thm =
+  prove(tm,HOLMS_TAC);;
 
 let HOLMS_BUILD_COUNTERMODEL tm =
   let proved = try ignore (HOLMS_RULE tm); true

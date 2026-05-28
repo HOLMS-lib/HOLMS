@@ -5,7 +5,7 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-26.                               *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
@@ -14,12 +14,14 @@
 
 needs "Library/card.ml";;                    (* Cardinality                 *)
 needs "Library/rstc.ml";;                    (* Refl, sym, trans closure    *)
+loadt "HOLMS/dep_choice.ml";;                (* Axiom of dependent choice   *)
 
 (* ------------------------------------------------------------------------- *)
 (* Syntax, semantics and calculus.                                           *)
 (* ------------------------------------------------------------------------- *)
 
 loadt "HOLMS/misc.ml";;                      (* Miscellanea                 *)
+loadt "HOLMS/proofflow.ml";;                 (* Further proof-flow tactics  *)
 loadt "HOLMS/modal.ml";;                     (* Syntax and semantics        *)
 loadt "HOLMS/calculus.ml";;                  (* Axiomatic calculus          *)
 
@@ -34,9 +36,10 @@ loadt "HOLMS/ad_hoc_correspondence.ml";;       (* Ad hoc polimorphic code    *)
 (* Meta-theory.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-loadt "HOLMS/conjlist.ml";;                  (* Iterated conjunctions       *)
-loadt "HOLMS/consistent.ml";;                (* Consistent sets of formulae *)
-loadt "HOLMS/gen_completeness.ml";;          (* Lemmata about completeness  *)
+loadt "HOLMS/conjlist.ml";;                 (* Iterated conjunctions        *)
+loadt "HOLMS/setconsistent.ml";;            (* Consistent sets of formulae  *)
+loadt "HOLMS/consistent.ml";;               (* Consistent lists of formulae *)
+loadt "HOLMS/gen_completeness.ml";;         (* Lemmata about completeness   *)
 
 (* ------------------------------------------------------------------------- *)
 (* Soundness and completeness results specific to each logic.                *)
@@ -74,6 +77,7 @@ loadt "HOLMS/gl_decid.ml";;
 (* decision procedure (via translation to GL).                               *)
 (* ------------------------------------------------------------------------- *)
 
+loadt "HOLMS/wwf.ml";;                       (* Weakly wellfoundness        *)
 loadt "HOLMS/translations.ml";;
 loadt "HOLMS/grz.ml";;
 loadt "HOLMS/grz_tests.ml";;
