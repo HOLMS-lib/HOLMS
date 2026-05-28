@@ -491,14 +491,6 @@ let S4GRZ_STANDARD_WORLDS_DEF = new_definition
                                (q = Box (C --> Box C) \/
                                 q = Not Box (C --> Box C))))}`;;
 
-let GEN_STANDARD_FRAME_DEF = new_definition
-  `GEN_STANDARD_FRAME S p =
-   APPR S INTER
-   {(W,R) | W = {w | MAXIMAL_CONSISTENT S p w /\
-            (!q. MEM q w ==> q SUBSENTENCE p)} /\
-            (!q w. Box q SUBFORMULA p /\ w IN W
-                   ==> (MEM (Box q) w <=> !x. R w x ==> MEM q x))}`;;
-
 let Q_REL_DEF = new_definition
   `Q_REL p w x <=>
     w IN S4GRZ_STANDARD_WORLDS p  /\
