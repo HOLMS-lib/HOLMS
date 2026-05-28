@@ -57,8 +57,8 @@ loadt "HOLMS/gl_completeness.ml";;
 (* General tools for decidability and countermodel generation.               *)
 (* ------------------------------------------------------------------------- *)
 
-loadt "HOLMS/gen_decid.ml";;
-loadt "HOLMS/gen_countermodel.ml";;
+loadt "HOLMS/gen_decid.ml";;                 (* Decision procedures          *)
+loadt "HOLMS/gen_countermodel.ml";;          (* Countermodel construction    *)
 
 (* ------------------------------------------------------------------------- *)
 (* Decision procedures and countermodel generators specific to each logic.   *)
@@ -72,13 +72,16 @@ loadt "HOLMS/b_decid.ml";;
 loadt "HOLMS/s5_decid.ml";;
 loadt "HOLMS/gl_decid.ml";;
 
+loadt "HOLMS/tests.ml";;                     (* Tests for these logics       *)
+
 (* ------------------------------------------------------------------------- *)
 (* Grzegorczyk Logic (GRZ): Meta-theory, translations to GL,                 *)
 (* decision procedure (via translation to GL).                               *)
 (* ------------------------------------------------------------------------- *)
 
-loadt "HOLMS/wwf.ml";;                       (* Weakly wellfoundness        *)
-loadt "HOLMS/translations.ml";;
-loadt "HOLMS/grz.ml";;
-loadt "HOLMS/grz_tests.ml";;
-loadt "HOLMS/god_transl.ml";;
+loadt "HOLMS/wwf.ml";;                  (* Weakly wellfoundness              *)
+loadt "HOLMS/translations.ml";;         (* Splitting Translation             *)
+loadt "HOLMS/grz_modular.ml";;          (* Grz with Modular Completeness     *) 
+(*loadt "HOLMS/grz_boolos.ml";;*)       (* Grz with Boolos Completeness      *)
+loadt "HOLMS/grz_tests.ml";;            (* Tests for Grz                     *)
+loadt "HOLMS/god_transl.ml";;           (* Godel-McKinsey-Tarski Translation *)
