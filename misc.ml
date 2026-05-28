@@ -16,6 +16,13 @@ let string_ty = `:string`;;
 let true_tm = concl TRUTH;;
 let false_tm = lhs (concl F_DEF);;
 
+let partitionfilter (f : 'a -> 'b) : 'a list -> 'b list * 'a list =
+  let rec recur = function
+      [] -> [],[]
+    | h :: t -> let yes,no = recur t in
+                try (f h :: yes),no with Failure _ -> yes,(h :: no) in
+  recur;;
+
 (* Run a conversion.  Do not test whether the conversion is correct. *)
 let run_conv (conv:conv) tm =
   let etm =
@@ -60,11 +67,31 @@ let int_pow a b =
   int_pow a b;;
 
 (* ------------------------------------------------------------------------- *)
-(* Handy tactics.                                                            *)
+(* Tactics for the proof flow.                                               *)
 (* ------------------------------------------------------------------------- *)
+
+let BY (tac : tactic) : tactic =
+  tac THEN FAIL_TAC "BY";;
+
+let SUFFICE_WITH_TAC tm (tac : thm list -> tactic) (thl : thm list) : tactic =
+  SUBGOAL_THEN tm
+    (fun th -> tac (th :: thl) THEN FAIL_TAC "SUFFICE_WITH_TAC");;
+
+let SUFFICE_TAC tm thl : tactic =
+  SUBGOAL_THEN tm (fun th -> MESON_TAC(th :: thl));;
+
+let ASM_SUFFICE_TAC tm thl : tactic =
+  ASM (SUFFICE_TAC tm) thl;;
+
+let HYP_SUFFICE_TAC tm s thl : tactic =
+  HYP (SUFFICE_TAC tm) s thl;;
 
 let LABEL_ASM_CASES_TAC (s : string) (tm : term) : tactic =
   ASM_CASES_TAC tm THEN POP_ASSUM (LABEL_TAC s);;
+
+(* ------------------------------------------------------------------------- *)
+(* Handy tactics.                                                            *)
+(* ------------------------------------------------------------------------- *)
 
 let RELABEL_TAC (s : string) : thm_tactic =
   fun th -> UNDISCH_THEN (concl th) (LABEL_TAC s) ORELSE LABEL_TAC s th;;
@@ -157,12 +184,31 @@ let ASM_IMP_RES_THEN (thl : thm list) : thm_tactical = fun ttac imp ->
 let ANTE_RES_THEN' : thm_tactical =
   fun ttac ante -> ASSUM_LIST (fun asl -> LIST_ANTE_RES_THEN asl ttac ante);;
 
-(* Variant of IMP_RES_THEN that fails whan called on the theorem
+(* Variant of IMP_RES_THEN that fails when called on the theorem
    only if the theorem is not implicative. *)
 let IMP_RES_THEN' : thm_tactical =
   fun ttac imp ->
     let res_then = LIST_IMP_RES_THEN imp in
     ASSUM_LIST (fun asl -> res_then asl ttac);;
+
+(* ------------------------------------------------------------------------- *)
+(* Further variants of ANTE_RES_THEN and IMP_RES_THEN that remove the
+   assumption used from the goal.                                            *)
+(* ------------------------------------------------------------------------- *)
+
+let X_ANTE_RES_THEN: thm_tactical =
+  fun ttac ante ->
+   fun (asl,w) as gl ->
+    let tacs,asl' =
+      partitionfilter (fun (_,imp) -> ttac (MATCH_MP imp ante)) asl in
+    EVERY tacs (asl',w);;
+
+let X_IMP_RES_THEN: thm_tactical =
+  fun ttac imp ->
+   fun (asl,w) as gl ->
+    let tacs,asl' =
+      partitionfilter (fun (_,ante) -> ttac (MATCH_MP imp ante)) asl in
+    EVERY tacs (asl',w);;
 
 (* ------------------------------------------------------------------------- *)
 (* Further lemmas on lists.                                                  *)
@@ -247,6 +293,10 @@ let LISTDIFF_SUBLIST = prove
 (* ------------------------------------------------------------------------- *)
 (* Lists without duplicates.                                                 *)
 (* ------------------------------------------------------------------------- *)
+
+let FINITE_EXISTS_SET_OF_LIST = prove
+ (`!s:A->bool. FINITE s ==> ?l. s = set_of_list l`,
+  MESON_TAC[LIST_OF_SET_PROPERTIES]);;
 
 let NOREPETITION = new_definition
   `NOREPETITION l <=> PAIRWISE (\x y:A. ~(x = y)) l`;;

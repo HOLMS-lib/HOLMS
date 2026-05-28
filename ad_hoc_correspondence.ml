@@ -68,6 +68,30 @@ let EUCLIDEAN = new_definition
                  R w w' /\ R w w''
                  ==> R w'' w')`;;
 
+let WWF = new_definition
+  `WWF (<<) <=>
+   (!P. (?x:W. P x) /\ (!x. P x ==> x IN fld (<<))
+        ==> (?x. P x /\ (!y. ~(x = y) /\ y << x ==> ~P y)))`;;
+
+let WWF_EQ = prove
+ (`!(<<). WWF (<<) <=>
+          !P. (!x. P x ==> x IN fld (<<))
+              ==> ((?x:A. P(x)) <=>
+                   (?x. P(x) /\ (!y. ~(x = y) /\ y << x ==> ~P(y))))`,
+  GEN_TAC THEN REWRITE_TAC[WWF] THEN EQ_TAC THENL
+  [MESON_TAC[];
+   INTRO_TAC "hp; !P; ne sub" THEN
+   HYP_TAC "hp: +" (SPEC `P:A->bool`) THEN
+   ASM_MESON_TAC[]]);;
+
+let WWF_IND = prove
+ (`!(<<). WWF(<<) <=>
+          !P. (!x:A. ~P x ==> x IN fld (<<))
+              ==> (!x. (!y. y << x /\ ~(x = y) ==> P y) ==> P x) ==> !x. P x`,
+  GEN_TAC THEN REWRITE_TAC[WWF] THEN EQ_TAC THEN REPEAT STRIP_TAC THEN
+  FIRST_X_ASSUM(MP_TAC o SPEC `\x:A. ~P(x)`) THEN BETA_TAC THEN
+  ASM_MESON_TAC[]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Correspondence Lemmata.                                                   *)
 (* ------------------------------------------------------------------------- *)
