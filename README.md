@@ -18,9 +18,9 @@ This repository contains HOLMS (HOL-Light Library for Modal Systems), a modular 
 - **GL** provability logic is developed in `gl_completeness.ml`;
 - **Grz** features two adequacy proofs: the first in `grz_boolos.ml`, following Boolos's proof for this system, and the second in `grz_modular.ml`, where we extend the modular proof strategy to this system using axiom of dependent choice (`dep_choice.ml`).
 
-HOLMS lays the foundation for a comprehensive tool for modal reasoning in HOL, offering a high level of confidence and full automation by providing the essential mathematical components of principled decision algorithms for modal systems.
+HOLMS provides a robust framework for modal reasoning in HOL, offering both high confidence and full automation. It implements the essential mathematical components for principled decision algorithms across various modal systems.
 
-The prototypical automated theorem prover and certified countermodel constructor for GL and the modal cube (implemented for example in `k_decid.ml`, `t_decid.ml`, `k4_decid.ml`, and `gl_decid.ml`) shows how proof assistants can be successfully combined with enriched sequent calculi, and formalised mathematics. 
+The prototypical automated theorem prover and certified countermodel constructor for GL and the modal cube (implemented for example in `k_decid.ml`, `t_decid.ml`, and `gl_decid.ml`) shows how proof assistants can be successfully combined with enriched sequent calculi, and formalised mathematics. 
 
 Moreover we have experimented with an other implementation technique for decision: modal translation. This approach is illustrated for Grz (`grz_modular.ml`, `translations.ml`) by embedding Grz into GL and repurposing GL's decision procedure.
 
