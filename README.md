@@ -715,7 +715,7 @@ When the tactic halts witout reaching a proof, the proof state holds a countermo
 Here we report two basic examples.
 More examples of proofs and countermodels can be found in the file `tests.ml`.
 
-### Example of automatic theorem syntesis
+#### Example of automatic theorem syntesis
 
 Automatic proof of the Formal Second Incompleteness Theorem in the Gödel–Löb modal logic:
 ```
@@ -725,7 +725,7 @@ Automatic proof of the Formal Second Incompleteness Theorem in the Gödel–Löb
 val it : thm = |- [GL_AX . {} |~ Not Box False --> Not Box Diam True]
 ```
 
-### Example of countermodel generation
+#### Example of countermodel generation
 
 Generation of a countermodel to the Löb schema in the modal logic K:
 ```
@@ -746,3 +746,85 @@ val ctm : term =
 # T_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
 val it : thm = |- ~(forall a. RF |= a --> Box Diam a)
 ```
+
+### Translation Technique for Grz
+Instead then shallow embedding the labelled sequent calculus for Grz (G3Grz) and performing a root-first proof search in this calculus, we experiment with a different technique.
+
+In particular, we mechanise a full and faithful embedding of Grz into Gödel-Löb provability logic (GL) in two steps:
+- Implementing the standard _splitting translation_ within HOL Light and proving its fullness and faithfulness;
+  ```
+  let TRANSL = define
+  `(!s. TRANSL (Atom s) = Atom s) /\
+   TRANSL True = True /\
+   TRANSL False = False /\
+   (!p. TRANSL (Not p) = Not (TRANSL p)) /\
+   (!p q. TRANSL (p && q) = TRANSL p && TRANSL q) /\
+   (!p q. TRANSL (p || q) = TRANSL p || TRANSL q) /\
+   (!p q. TRANSL (p --> q) = TRANSL p --> TRANSL q) /\
+   (!p q. TRANSL (p <-> q) = TRANSL p <-> TRANSL q) /\
+   (!p. TRANSL (Box p) = Dotbox (TRANSL p))`;;
+     ```
+    ```
+    GRZ_TRANSL 
+    |- `!p. [GRZ_AX . {} |~ p] <=> [GL_AX . {} |~ TRANSL (p)]`
+    ```
+- Reducing validity problems in Grz to corresponding validity problems in GL.
+  ```
+  let GRZ_TAC : tactic =
+   let vsubst_rplus = vsubst [`R_PLUS (W:num->bool) R`,`R:num->num->bool`] in
+   let tac =
+     GEN_REWRITE_TAC I [GRZ_TRANSL] THEN
+     CONV_TAC (RAND_CONV TRANSL_CONV) THEN
+     REWRITE_TAC[dotbox_DEF] THEN
+     GL_TAC in
+   (* Call tac and translate countermodel in case of failure *)
+   fun gl ->
+     try tac gl with Failure s ->
+       the_HOLMS_countermodel := vsubst_rplus !the_HOLMS_countermodel;
+       FAIL_TAC s gl;;
+  ```
+
+By doing so, we directly reuse HOLMS's existing verified decision procedure for GL to decide Grz-theoremhood automatically.
+
+Here we report two interesting example of decision and countermodel construction in Grz.
+ ```
+let Contingent_DEF = new_definition 
+  `Contingent p  = Diam p && Diam Not p` ;;
+
+let Penultimate_DEF = new_definition 
+  `Penultimate p = p && Diam Not p && Box (Not p --> Box Not p)`;;
+
+# g `[GRZ_AX . {}
+             |~ Contingent (Atom "p") --> 
+                Diam (Penultimate (Atom "p") || 
+                      Penultimate (Not (Atom "p")))]`;;  
+# e (REWRITE_TAC[Contingent_DEF; Penultimate_DEF]);;
+# e (REWRITE_TAC[diam_DEF]);;
+# e HOLMS_TAC;;
+|- [GRZ_AX . {}
+      |~ Contingent (Atom "p") -->
+         Diam (Penultimate (Atom "p") || Penultimate (Not Atom "p"))]
+ ```
+
+ ```
+let tm = `[GRZ_AX . {} |~ Diam Box Atom "a" --> Box Diam Atom "a"]`;;
+
+# HOLMS_RULE tm;;
+Exception: Failure "GRZ_TAC: Proof not found".
+
+# let ctm = HOLMS_BUILD_COUNTERMODEL tm;;
+1 worlds
+1 worlds
+1 worlds
+2 worlds
+3 worlds
+val ctm : term =
+  ` w IN W /\ y IN W /\  y' IN W /\
+    W,R IN RATF /\
+    R y' y' /\ R y y /\ R w w /\ R w y' /\ R w y /\
+    V "a" y' /\   ~V "a" y`
+
+# GRZ_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
+val it : thm = |- ~(RATF |= Diam Box Atom "a" --> Box Diam Atom "a")
+ ```
+
