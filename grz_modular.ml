@@ -57,8 +57,6 @@ let S4GRZ_AX_GRZ = prove
 (* See Boolos §12 p.157-158.                                                 *)
 (* ------------------------------------------------------------------------- *)
 
-(* Nuova dimostrazione che non usa CONJ_TAC. *)
-(* TODO: Aggiustare o cancellare. *)
 let GRZ_PROVES_T = prove
  (`!H p. [GRZ_AX . H |~ T_SCHEMA p]`,
   REPEAT GEN_TAC THEN
@@ -298,14 +296,10 @@ let S4GRZ_STANDARD_WORLDS_DEF = prove
   REWRITE_TAC[S4GRZ_STANDARD_WORLDS; PARAMETRIC_STD_WORLD;
               S4GRZ_FRAME_SCHEMA; IN_ELIM_THM]);;
 
-(* TODO: Questo dovrebbe chiamarsi invece S4GRZ_STANDARD_FRAMES (S finale) *)
-(* TODO: Dopo la rinomina di questo, rinominare anche S4GRZ_STD_FRAME. *)
 let S4GRZ_STANDARD_FRAME = new_definition
   `S4GRZ_STANDARD_FRAME p =
    PARAMETRIC_STANDARD_FRAME S4GRZ_AX S4GRZ_FRAME_SCHEMA p`;;
 
-(* TODO: Usare questo teorema per rimpiazzare il teorema subito sotto
-   S4GRZ_STANDARD_FRAME_DEF.  *)
 let S4GRZ_STANDARD_FRAME_ALT = prove
  (`!p. S4GRZ_STANDARD_FRAME p =
        APPR S4GRZ_AX INTER
@@ -315,7 +309,6 @@ let S4GRZ_STANDARD_FRAME_ALT = prove
   REWRITE_TAC[S4GRZ_STANDARD_FRAME; S4GRZ_STANDARD_WORLDS;
               PARAMETRIC_STANDARD_FRAME_DEF]);;
 
-(* TODO: Usare S4GRZ_STANDARD_WORLDS, vedi S4GRZ_STANDARD_FRAME_ALT sopra.  *)
 let S4GRZ_STANDARD_FRAME_DEF = prove
  (`S4GRZ_STANDARD_FRAME p =
    APPR S4GRZ_AX INTER
@@ -330,7 +323,6 @@ let S4GRZ_STANDARD_FRAME_DEF = prove
   REWRITE_TAC[S4GRZ_STANDARD_FRAME; S4GRZ_FRAME_SCHEMA;
     PARAMETRIC_STANDARD_FRAME_DEF; PARAMETRIC_STD_WORLD; IN_ELIM_THM]);;
 
-(* TODO: Valutazione standard. *)
 let S4GRZ_STANDARD_MODEL_DEF = new_definition
  `S4GRZ_STANDARD_MODEL p (W,R) V <=>
   (W,R) IN S4GRZ_STANDARD_FRAME p /\
@@ -354,7 +346,6 @@ let S4GRZ_STANDARD_REL_DEF = new_definition
     x IN S4GRZ_STANDARD_WORLDS p  /\
     Q_REL p w x /\ (Q_REL p x w ==> w = x)`;;
 
-(* TODO; Questo dovrebbe invece chiamarsi S4GRZ_STANDARD_FRAME, ma per il momento c'è un conflitto di nomi. *)
 let S4GRZ_STD_FRAME = new_definition
   `S4GRZ_STD_FRAME p = (S4GRZ_STANDARD_WORLDS p, S4GRZ_STANDARD_REL p)`;;
 
@@ -488,7 +479,6 @@ let S4GRZ_EXTEND_MAXIMAL_SETCONSISTENT = prove
   ASM_REWRITE_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
-(* TODO: Rimuovere questo e il successivo?                                   *)
 (* Versione che usa le liste anziché gli insiemi finiti.                     *)
 (* ------------------------------------------------------------------------- *)
 
@@ -680,7 +670,6 @@ let S4GRZ_STD_FRAME_IN_RATF = prove
 (* Truth Lemma.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-(* TODO: Aggiustare con la nuova definizione di S4GRZ_STANDARD_FRAME *)
 let S4GRZ_TRUTH_LEMMA = prove
  (`!W R p V q.
      ~[S4GRZ_AX . {} |~ p] /\

@@ -52,6 +52,7 @@ loadt "HOLMS/s4_completeness.ml";;
 loadt "HOLMS/b_completeness.ml";;
 loadt "HOLMS/s5_completeness.ml";;
 loadt "HOLMS/gl_completeness.ml";;
+loadt "HOLMS/d_completeness.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* General tools for decidability and countermodel generation.               *)
