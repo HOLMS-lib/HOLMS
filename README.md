@@ -3,20 +3,26 @@
 (c) Copyright, Antonella Bilotta, Marco Maggesi, Cosimo Perini Brogi, Leonardo Quartini 2024. <br>
 (c) Copyright, Antonella Bilotta, Marco Maggesi, Cosimo Perini Brogi 2025-2026.
 
-See the [website](https://holms-lib.github.io/) for a brief overview of our [HOLMS library](https://github.com/HOLMS-lib/HOLMS) for the [HOL Light](https://hol-light.github.io/) theorem prover.
+See the [website](https://holms-lib.github.io/) for a brief overview of our [HOLMS library](https://github.com/HOLMS-lib/HOLMS), its evolution, and an introductory guide to the [HOL Light](https://hol-light.github.io/) theorem prover.
 
 This repository contains HOLMS (HOL-Light Library for Modal Systems), a modular framework designed to implement modal reasoning within the HOL Light proof assistant.
 
-Extending our [previous work on Gödel-Löb logic (GL)](https://doi.org/10.1007/s10817-023-09677-z), we generalise our approach to formalise modal adequacy proofs for axiomatic calculi, thereby enabling the coverage of a broader range of normal modal systems. If the first version of HOLMS, [presented at Overlay 2024](https://ceur-ws.org/Vol-3904/paper5.pdf), partially parametrised the completeness proof for GL and added the minimal system K, the current version of HOLMS fully generalises our method and, as a demonstration of the flexibility of our methodology, seven modal system and their adequacy proofs are now implemented in HOLMS:
-- **K**: the minimal system is developed in `k_completeness.ml`;
+ At its current stage, nine modal system and their adequacy proofs are now implemented in HOLMS:
+- **K** the minimal system is developed in `k_completeness.ml`;
+- **D** in `d_completeness.ml`;
 - **T** in `t_completeness.ml`;
 - **K4** in `k4_completeness.ml`;
 - **S4** in `s4_completeness.ml`;
 - **B** in `b_completeness.ml`;
 - **S5** in `s5_completeness.ml`;
-- **GL**: provability logic is developed in `gl_completeness.ml`.
+- **GL** provability logic is developed in `gl_completeness.ml`;
+- **Grz** features two adequacy proofs: the first in `grz_boolos.ml`, following Boolos's proof for this system, and the second in `grz_modular.ml`, where we extend the modular proof strategy to this system using axiom of dependent choice (`dep_choice.ml`).
 
-HOLMS lays the foundation for a comprehensive tool for modal reasoning in HOL, offering a high level of confidence and full automation by providing the essential mathematical components of principled decision algorithms for modal systems. The prototypical automated theorem prover and countermodel constructor for K, T, K4, and GL (implemented in `k_decid.ml`, `t_decid.ml`, `k4_decid.ml`, and `gl_decid.ml`, resp.) serve as evidence of the feasibility of this approach merging general purpose proof assistants, enriched sequent calculi, and formalised mathematics.
+HOLMS lays the foundation for a comprehensive tool for modal reasoning in HOL, offering a high level of confidence and full automation by providing the essential mathematical components of principled decision algorithms for modal systems.
+
+The prototypical automated theorem prover and certified countermodel constructor for GL and the modal cube (implemented for example in `k_decid.ml`, `t_decid.ml`, `k4_decid.ml`, and `gl_decid.ml`) shows how proof assistants can be successfully combined with enriched sequent calculi, and formalised mathematics. 
+
+Moreover we have experimented with an other implementation technique for decision: modal translation. This approach is illustrated for Grz (`grz_modular.ml`, `translations.ml`) by embedding Grz into GL and repurposing GL's decision procedure.
 
 The top-level file is `make.ml`.
 
@@ -151,6 +157,21 @@ We prove that the set of **finite frames** is the one appropriate to **$K$**.
 FINITE_FRAME_APPR_K
 |- FINITE_FRAME:(W->bool)#(W->W->bool)->bool = APPR {}
 ```
+### D-Finite Serial Frames (SERF)
+We prove that the set of **finite serial frames** is the one appropriate to **$D$**.
+```
+let D_AX = new_definition
+  `D_AX = {Box p --> Diam p | p IN (:form)}`;;
+
+let SERF_DEF = new_definition
+ `SERF =
+  {(W:W->bool,R:W->W->bool) |
+    (W,R) IN FINITE_FRAME /\
+    (!w:W. w IN W ==> ?y:W. y IN W /\ (R w y))}`;;
+
+SERF_APPR_D
+|- SERF: (W->bool)#(W->W->bool)->bool = APPR D_AX
+```
 ### T-Finite Reflexive Frames (RF)
 We prove that the set of **finite reflexive frames** is the one appropriate to **$T$**.
 ```
@@ -260,6 +281,33 @@ let ITF_DEF = new_definition
 
 ITF_APPR_GL
 |- ITF: (W->bool)#(W->W->bool)->bool = APPR GL_AX
+```
+### Grz-Finite Reflexive Antisymmetric and Transitive Frames (RATF)
+We prove that the set of **finite reflexive antisymmetric and transitive frames** is the appropriate to **$S4Grz$**, an alternative axiomatization for  **$Grz$**.
+```
+let GRZ_AX = new_definition
+  `GRZ_AX = {Box (Box (p --> Box p) --> p) --> p| p IN (:form)}`;;
+
+let S4GRZ_AX = new_definition
+  `S4GRZ_AX = {Box p --> Box Box p | p IN (:form)} UNION
+              {Box p --> p |p IN (:form)} UNION
+              {Box (Box (p --> Box p) --> p) --> p | p IN (:form)}`;;
+
+GRZ_EQ_S4GRZ 
+|- !H p. [GRZ_AX . H |~ p] <=> [S4GRZ_AX . H |~ p]
+
+let RATF_DEF = new_definition
+ `RATF =
+  {(W:W->bool,R:W->W->bool) |
+    ~(W = {}) /\
+    (!x y:W. R x y ==> x IN W /\ y IN W) /\
+    FINITE W /\
+    (!x. x IN W ==> R x x) /\
+    (!x y z. x IN W /\ y IN W /\ z IN W /\ R x y /\ R y z ==> R x z) /\
+    (!w w':W. w IN W /\ w' IN W /\ R w w' /\ R w' w ==> w = w')}`;;
+
+RATF_APPR_S4GRZ
+|- RATF: (W->bool)#(W->W->bool)->bool = APPR S4GRZ_AX
 ```
 
 ## Soundness and Consistency
@@ -471,6 +519,12 @@ let GEN_STANDARD_REL = new_definition
 let K_STANDARD_REL_DEF = new_definition
   `K_STANDARD_REL p = GEN_STANDARD_REL {} p`;;
 ```
+#### B.D: Definition of the standard relation for D in `d_completeness.ml`.
+```
+let D_STANDARD_REL_DEF = new_definition
+  `D_STANDARD_REL p w x <=>
+   GEN_STANDARD_REL D_AX p w x`;;
+```
 
 #### B.T: Definition of the standard relation for T in `t_completeness.ml`.
 ```
@@ -519,6 +573,22 @@ let GL_STANDARD_REL_DEF = new_definition
    GEN_STANDARD_REL GL_AX p w x /\
    (!B. MEM (Box B) w ==> MEM (Box B) x) /\
    (?E. MEM (Box E) x /\ MEM (Not (Box E)) w)`;;
+```
+#### B.Grz: Definition of the standard relation for S4Grz in `grz_modular.ml`.
+```
+let S4GRZ_STANDARD_REL_DEF = new_definition
+  `S4GRZ_STANDARD_REL p w x <=>
+    w IN S4GRZ_STANDARD_WORLDS p  /\
+    x IN S4GRZ_STANDARD_WORLDS p  /\
+    Q_REL p w x /\ (Q_REL p x w ==> w = x)`;;
+
+let Q_REL_DEF = new_definition
+  `Q_REL p w x <=>
+   w IN S4GRZ_STANDARD_WORLDS p  /\
+   x IN S4GRZ_STANDARD_WORLDS p  /\
+   (!B. B SUBSENTENCE p \/
+        (?C. Box C SUBFORMULA p /\ (Box B = Box(C --> Box C)))
+        ==> (MEM (Box B) w ==> MEM (Box B) x))`;;
 ```
 
 **Accessibility Lemma for GL** that ensures the most difficult verse of R1's implication.
@@ -639,8 +709,8 @@ GL_COMPLETENESS_THM_GEN
 
 ## Automated theorem proving and countermodel construction
 
-Our tactic `HOLMS_TAC` and its associated rule `HOLMS_RULE` can automatically prove theorems in the modal logics K, T, K4 and GL by performing a root-first proof search in the associated labelled sequent calculus.
-When the tactic halts witout reaching a proof, the proof state holds a countermodel.  The procedure `HOLMS_BUILD_COUNTERMODEL` outputs the generated countermodel.
+Our tactic `HOLMS_TAC` and its associated rule `HOLMS_RULE` can automatically prove theorems in the modal logics above by performing a root-first proof search in the associated labelled sequent calculus.
+When the tactic halts witout reaching a proof, the proof state holds a countermodel.  The procedure `HOLMS_BUILD_COUNTERMODEL` outputs the generated countermodel and `*_CERTIFY_TAC` verifies that the candidate countermodel falsifies the input formula in the logic `*`.
 
 Here we report two basic examples.
 More examples of proofs and countermodels can be found in the file `tests.ml`.
@@ -650,20 +720,29 @@ More examples of proofs and countermodels can be found in the file `tests.ml`.
 Automatic proof of the Formal Second Incompleteness Theorem in the Gödel–Löb modal logic:
 ```
 # HOLMS_RULE `[GL_AX . {} |~ Not Box False --> Not Box Diam True]`;;
+1 worlds
+2 worlds
+val it : thm = |- [GL_AX . {} |~ Not Box False --> Not Box Diam True]
 ```
 
 ### Example of countermodel generation
 
 Generation of a countermodel to the Löb schema in the modal logic K:
 ```
-# HOLMS_BUILD_COUNTERMODEL `[{} . {} |~ Box (Box a --> a) --> Box a]`;;
-Countermodel found:
-R y y' /\
-y' IN W /\
-R w y /\
-y IN W /\
-holds (W,R) V (Box (Box a --> a)) w /\
-w IN W /\
-~holds (W,R) V a y /\
-~holds (W,R) V a y'
+# let tm = `!a. [T_AX . {} |~ a --> Box Diam a[T_AX . {} |~ a --> Box Diam a]`;;
+# let ctm = HOLMS_BUILD_COUNTERMODEL tm;;
+1 worlds
+2 worlds
+val ctm : term =
+  `holds (W,R) V (Box Not a) y /\
+   R w y /\
+   R y y /\
+   y IN W /\
+   holds (W,R) V a w /\
+   R w w /\
+   w IN W /\
+   W,R IN RF /\
+   ~holds (W,R) V a y`
+# T_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
+val it : thm = |- ~(forall a. RF |= a --> Box Diam a)
 ```
