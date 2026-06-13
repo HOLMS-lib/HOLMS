@@ -4,7 +4,7 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025-26.                               *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (* ========================================================================= *)
 
 needs "HOLMS/gen_completeness.ml";;
@@ -186,7 +186,11 @@ let RES_THEN : thm_tactical = fun ttac imp ->
 
 let HOLMS_STRIP_THEN (thl : thm list) : thm_tactical =
   let RW_TAC = GEN_REWRITE_THEN I thl in
-  FIRST_TCL[CONJUNCTS_THEN; DISJ_CASES_THEN; RES_THEN; RW_TAC];;
+  FIRST_TCL[CONJUNCTS_THEN;
+            DISJ_CASES_THEN;
+            CHOOSE_THEN;
+            RES_THEN;
+            RW_TAC];;
 
 (* HOLMS_SATURATE_TAC : thm list -> thm_tactic *)
 (* Main recursive saturation tactic.  Never fails. *)
@@ -220,6 +224,7 @@ let MATCH_BOX_RIGHT_TAC : tactic =
    MATCH_MP_TAC HOLDS_RIGHT_BOX_ALT_NUM) THEN
   CONJ_TAC THENL [FIRST_ASSUM MATCH_ACCEPT_TAC; GEN_TAC];;
 
+(* TODO: Si può semplificare ptac (?ridurre a SATURATE_TAC?) *)
 let BOX_RIGHT_THEN : (tactic * thm_tactic) -> int -> tactic =
   fun (MATCH_BOX_RIGHT_TAC,SATURATE_TAC) ->
     fun n -> CHECK_NUM_WORLD_TAC n THEN
@@ -230,6 +235,7 @@ let HOLMS_RIGHT_TAC (SATURATE_TAC : thm_tactic) : tactic =
                        AND_CLAUSES; OR_CLAUSES; NOT_CLAUSES] THEN
   CONV_TAC (NNFC_CONV THENC CNF_CONV) THEN
   REPEAT CONJ_TAC THEN
+  (* TODO: TRY è superfluo(?) *)
   TRY (NEG_RIGHT_TAC SATURATE_TAC);;
 
 (* ------------------------------------------------------------------------- *)
@@ -277,6 +283,7 @@ let SORT_BOX_TAC : tactic = CONV_TAC SORT_BOX_CONV;;
 (* The work horse of the tactic.                                             *)
 (* ------------------------------------------------------------------------- *)
 
+(* TODO: Cosa mettere in coda a intro_tac?  Forse SATURATE_TAC? *)
 let HOLMS_PREPARE_TAC : thm_tactic =
   let rewr_tac = REWRITE_TAC[diam_DEF; dotbox_DEF]
   and intro_tac = INTRO_TAC "![W] [R]; frame; ![V] [w]" THEN STRIP_TAC in
@@ -295,6 +302,25 @@ let HOLMS_STEP_TAC (MATCH_BOX_RIGHT_TAC,SATURATE_TAC) : int -> tactic =
 let INNER_HOLMS_TAC (MATCH_BOX_RIGHT_TAC,SATURATE_TAC) : int -> tactic =
   let STEP_TAC = HOLMS_STEP_TAC (MATCH_BOX_RIGHT_TAC,SATURATE_TAC) in
   fun  (n : int) -> REPEAT (STEP_TAC n);;
+
+(* ------------------------------------------------------------------------- *)
+(* Top-level invocation.                                                     *)
+(* ------------------------------------------------------------------------- *)
+
+(* TODO: Move elsewhere *)
+let TOP_HOLMS_TAC MATCH_BOX_RIGHT_TAC (compl_thm : thm) (rules : thm list) : int -> tactic =
+  let PREPARE_TAC = HOLMS_PREPARE_TAC compl_thm
+  and SATURATE_TAC = HOLMS_SATURATE_TAC rules in
+  let INNER_TAC = INNER_HOLMS_TAC (MATCH_BOX_RIGHT_TAC,SATURATE_TAC) in
+  fun (n : int) ->
+    PREPARE_TAC THEN INNER_TAC n;;
+
+let GEN_HOLMS_TAC MATCH_BOX_RIGHT_TAC (compl_thm : thm) (rules : thm list) : tactic =
+  let TOP_TAC = TOP_HOLMS_TAC MATCH_BOX_RIGHT_TAC compl_thm rules in
+  fun (_,w) as gl ->
+    let fm = rand (snd (strip_forall w)) in
+    let n = count_modal_subformulas fm in
+    TOP_TAC (int_pow 2 n) gl;;
 
 (* ------------------------------------------------------------------------- *)
 (* Dispatch mechanism.                                                       *)

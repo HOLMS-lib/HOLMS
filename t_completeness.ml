@@ -2,7 +2,7 @@
 (* Proof of the consistency and modal completeness of T.                     *)
 (*                                                                           *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (* ========================================================================= *)
 
 needs "HOLMS/gen_completeness.ml";;

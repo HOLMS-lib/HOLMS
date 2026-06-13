@@ -9,10 +9,6 @@
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
-(* TODO: Sarebbe meglio se questo file non dipendensse da CONJLIST.          *)
-(* ------------------------------------------------------------------------- *)
-
-(* ------------------------------------------------------------------------- *)
 (* Consistent sets of formulae.                                              *)
 (* ------------------------------------------------------------------------- *)
 
@@ -33,17 +29,9 @@ let SETCONSISTENT_SUBSET = prove
   REPEAT GEN_TAC THEN REWRITE_TAC[SETCONSISTENT] THEN
   MESON_TAC[MODPROVES_MONO2]);;
 
-(* TODO: Eliminare? *)
-let NOT_SETCONSISTENT_SUBSET = prove
- (`!S X Y. ~SETCONSISTENT S X /\ X SUBSET Y ==> ~SETCONSISTENT S Y`,
-  MESON_TAC[SETCONSISTENT_SUBSET]);;
-
 let SETCONSISTENT_SING = prove
  (`!S p. SETCONSISTENT S {p} <=> ~[S . {} |~ Not p]`,
-  REPEAT GEN_TAC THEN REWRITE_TAC[SETCONSISTENT] THEN
-  REWRITE_TAC[GSYM (REWRITE_CONV[set_of_list] `set_of_list [p]`)] THEN
-  REWRITE_TAC[GSYM MODPROVES_DEDUCTION_LEMMA_CONJLIST_EMPTY] THEN
-  REWRITE_TAC[CONJLIST; MLK_not_def]);;
+  REWRITE_TAC[SETCONSISTENT; GSYM MODPROVES_DEDUCTION_LEMMA; MLK_not_def]);;
 
 let SETCONSISTENT_EXTEND_CASES = prove
  (`!S p X. SETCONSISTENT S X

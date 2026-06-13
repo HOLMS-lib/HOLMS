@@ -59,35 +59,20 @@ let S4GRZ_AX_GRZ = prove
 
 let GRZ_PROVES_T = prove
  (`!H p. [GRZ_AX . H |~ T_SCHEMA p]`,
-  REPEAT GEN_TAC THEN
-  MATCH_MP_TAC MODPROVES_MONO2 THEN
+  REPEAT GEN_TAC THEN MATCH_MP_TAC MODPROVES_MONO2 THEN
   EXISTS_TAC `{}:form->bool` THEN
-  SHOW_TAC `{} SUBSET H:form->bool` THENL [REWRITE_TAC[EMPTY_SUBSET]; ALL_TAC] THEN
+  SHOW_TAC `{} SUBSET H:form->bool` THENL
+  [REWRITE_TAC[EMPTY_SUBSET]; ALL_TAC] THEN
   SHOW_TAC `[GRZ_AX . {} |~ T_SCHEMA p]` THEN
-  REWRITE_TAC[T_SCHEMA_DEF] THEN
-  MATCH_MP_TAC MLK_imp_trans THEN
+  REWRITE_TAC[T_SCHEMA_DEF] THEN MATCH_MP_TAC MLK_imp_trans THEN
   EXISTS_TAC `Box (Box (p --> Box p) --> p)` THEN
   SHOW_TAC `[GRZ_AX . {} |~ Box (Box (p --> Box p) --> p) --> p]` THENL
   [ASM_MESON_TAC[MODPROVES_RULES; GRZ_IN_GRZ_AX]; ALL_TAC] THEN
   SHOW_TAC `[GRZ_AX . {} |~ Box p --> Box (Box (p --> Box p) --> p)]` THEN
-  MATCH_MP_TAC MODPROVES_MONO1 THEN
-  EXISTS_TAC `{}:form->bool` THEN
+  MATCH_MP_TAC MODPROVES_MONO1 THEN EXISTS_TAC `{}:form->bool` THEN
   SHOW_TAC `{} SUBSET GRZ_AX` THENL [ASM_MESON_TAC[EMPTY_SUBSET]; ALL_TAC] THEN
-  SHOW_TAC `[{} . {} |~ Box p --> Box (Box (p --> Box p) --> p)]` THEN HOLMS_TAC);;
-
-(* Dimostrazione originaria. *)
-let GRZ_PROVES_T = prove
- (`!H p. [GRZ_AX . H |~ T_SCHEMA p]`,
-  REPEAT GEN_TAC THEN MATCH_MP_TAC MODPROVES_MONO2 THEN
-  EXISTS_TAC `{}:form->bool` THEN
-  REWRITE_TAC[EMPTY_SUBSET; T_SCHEMA_DEF] THEN
-  MATCH_MP_TAC MLK_imp_trans THEN
-  EXISTS_TAC `Box (Box (p --> Box p) --> p)` THEN
-  CONJ_TAC THENL
-  [MATCH_MP_TAC MODPROVES_MONO1 THEN
-   EXISTS_TAC `{}:form->bool` THEN
-   CONJ_TAC THENL [ASM_MESON_TAC[EMPTY_SUBSET]; HOLMS_TAC];
-   ASM_MESON_TAC[MODPROVES_RULES; GRZ_IN_GRZ_AX]]);;
+  SHOW_TAC `[{} . {} |~ Box p --> Box (Box (p --> Box p) --> p)]` THEN
+  HOLMS_TAC);;
 
 let GRZ_PROVES_4 = prove
  (`!H p.[GRZ_AX . H |~ FOUR_SCHEMA p]`,
@@ -296,36 +281,23 @@ let S4GRZ_STANDARD_WORLDS_DEF = prove
   REWRITE_TAC[S4GRZ_STANDARD_WORLDS; PARAMETRIC_STD_WORLD;
               S4GRZ_FRAME_SCHEMA; IN_ELIM_THM]);;
 
-let S4GRZ_STANDARD_FRAME = new_definition
-  `S4GRZ_STANDARD_FRAME p =
+let S4GRZ_STANDARD_FRAMES = new_definition
+  `S4GRZ_STANDARD_FRAMES p =
    PARAMETRIC_STANDARD_FRAME S4GRZ_AX S4GRZ_FRAME_SCHEMA p`;;
 
-let S4GRZ_STANDARD_FRAME_ALT = prove
- (`!p. S4GRZ_STANDARD_FRAME p =
+let S4GRZ_STANDARD_FRAMES_ALT = prove
+ (`!p. S4GRZ_STANDARD_FRAMES p =
        APPR S4GRZ_AX INTER
        {W,R | W = S4GRZ_STANDARD_WORLDS p /\
               (!q w. Box q SUBFORMULA p /\ w IN W
                      ==> (MEM (Box q) w <=> (!x. R w x ==> MEM q x)))}`,
-  REWRITE_TAC[S4GRZ_STANDARD_FRAME; S4GRZ_STANDARD_WORLDS;
+  REWRITE_TAC[S4GRZ_STANDARD_FRAMES; S4GRZ_STANDARD_WORLDS;
               PARAMETRIC_STANDARD_FRAME_DEF]);;
 
-let S4GRZ_STANDARD_FRAME_DEF = prove
- (`S4GRZ_STANDARD_FRAME p =
-   APPR S4GRZ_AX INTER
-   {W,R | W = {w | MAXIMAL_CONSISTENT S4GRZ_AX p w /\
-                   (!q. MEM q w
-                        ==> q SUBSENTENCE p \/
-                            (?C. Box C SUBFORMULA p /\
-                                 (q = Box (C --> Box C) \/
-                                  q = Not Box (C --> Box C))))} /\
-          (!q w. Box q SUBFORMULA p /\ w IN W
-                 ==> (MEM (Box q) w <=> (!x. R w x ==> MEM q x)))}`,
-  REWRITE_TAC[S4GRZ_STANDARD_FRAME; S4GRZ_FRAME_SCHEMA;
-    PARAMETRIC_STANDARD_FRAME_DEF; PARAMETRIC_STD_WORLD; IN_ELIM_THM]);;
-
+(* TODO: Valutazione standard. *)
 let S4GRZ_STANDARD_MODEL_DEF = new_definition
  `S4GRZ_STANDARD_MODEL p (W,R) V <=>
-  (W,R) IN S4GRZ_STANDARD_FRAME p /\
+  (W,R) IN S4GRZ_STANDARD_FRAMES p /\
   (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`;;
 
 let Q_REL_DEF = new_definition
@@ -346,8 +318,8 @@ let S4GRZ_STANDARD_REL_DEF = new_definition
     x IN S4GRZ_STANDARD_WORLDS p  /\
     Q_REL p w x /\ (Q_REL p x w ==> w = x)`;;
 
-let S4GRZ_STD_FRAME = new_definition
-  `S4GRZ_STD_FRAME p = (S4GRZ_STANDARD_WORLDS p, S4GRZ_STANDARD_REL p)`;;
+let S4GRZ_STANDARD_FRAME = new_definition
+  `S4GRZ_STANDARD_FRAME p = (S4GRZ_STANDARD_WORLDS p, S4GRZ_STANDARD_REL p)`;;
 
 (* ------------------------------------------------------------------------- *)
 (* The standard relation for S4GRZ is Reflexive, Antisymmetric               *)
@@ -479,6 +451,7 @@ let S4GRZ_EXTEND_MAXIMAL_SETCONSISTENT = prove
   ASM_REWRITE_TAC[]);;
 
 (* ------------------------------------------------------------------------- *)
+(* TODO: Rimuovere questo e il successivo?                                   *)
 (* Versione che usa le liste anziché gli insiemi finiti.                     *)
 (* ------------------------------------------------------------------------- *)
 
@@ -579,7 +552,7 @@ let GRZ_NONEMPTY_MAXIMAL_CONSISTENT = prove
   ASM_REWRITE_TAC[] THEN ASM_MESON_TAC[SUBLIST; MEM]);;
 
 (* ------------------------------------------------------------------------- *)
-(* S4GRZ_STD_FRAME_IN_RATF                                                   *)
+(* S4GRZ_STANDARD_FRAME_IN_RATF                                              *)
 (* ------------------------------------------------------------------------- *)
 
 let S4GRZ_STANDARD_WORLDS_NONEMPTY = prove
@@ -652,24 +625,26 @@ let FINITE_S4GRZ_STANDARD_WORLDS = prove
    REWRITE_TAC[FINITE_S4GRZ_FRAME_SCHEMA];
    REWRITE_TAC[MAXIMAL_CONSISTENT] THEN SET_TAC[]]);;
 
-let S4GRZ_STD_FRAME_IN_FINITE_FRAME = prove
- (`!p. ~[S4GRZ_AX . {} |~ p] ==> S4GRZ_STD_FRAME p IN FINITE_FRAME`,
-  INTRO_TAC "!p; p" THEN REWRITE_TAC[S4GRZ_STD_FRAME; IN_FINITE_FRAME] THEN
+let S4GRZ_STANDARD_FRAME_IN_FINITE_FRAME = prove
+ (`!p. ~[S4GRZ_AX . {} |~ p] ==> S4GRZ_STANDARD_FRAME p IN FINITE_FRAME`,
+  INTRO_TAC "!p; p" THEN
+  REWRITE_TAC[S4GRZ_STANDARD_FRAME; IN_FINITE_FRAME] THEN
   REWRITE_TAC[FINITE_S4GRZ_STANDARD_WORLDS] THEN
   ASM_SIMP_TAC[S4GRZ_STANDARD_WORLDS_NONEMPTY] THEN
   REWRITE_TAC[S4GRZ_STANDARD_REL_DEF] THEN
   MESON_TAC[]);;
 
-let S4GRZ_STD_FRAME_IN_RATF = prove
- (`!p. ~[S4GRZ_AX . {} |~ p] ==> S4GRZ_STD_FRAME p IN RATF`,
+let S4GRZ_STANDARD_FRAME_IN_RATF = prove
+ (`!p. ~[S4GRZ_AX . {} |~ p] ==> S4GRZ_STANDARD_FRAME p IN RATF`,
   INTRO_TAC "!p; p" THEN REWRITE_TAC[IN_RATF_ALT] THEN
-  ASM_SIMP_TAC[S4GRZ_STD_FRAME_IN_FINITE_FRAME] THEN
-  REWRITE_TAC[S4GRZ_STD_FRAME; UNCURRY_DEF; S4GRZ_STANDARD_REL_PROP]);;
+  ASM_SIMP_TAC[S4GRZ_STANDARD_FRAME_IN_FINITE_FRAME] THEN
+  REWRITE_TAC[S4GRZ_STANDARD_FRAME; UNCURRY_DEF; S4GRZ_STANDARD_REL_PROP]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Truth Lemma.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
+(* TODO: Aggiustare con la nuova definizione di S4GRZ_STANDARD_FRAMES *)
 let S4GRZ_TRUTH_LEMMA = prove
  (`!W R p V q.
      ~[S4GRZ_AX . {} |~ p] /\
@@ -677,7 +652,7 @@ let S4GRZ_TRUTH_LEMMA = prove
      S4GRZ_STANDARD_MODEL p (W,R) V
      ==> !w. w IN W ==> (MEM q w <=> holds (W,R) V q w)`,
   REPEAT GEN_TAC THEN
-  REWRITE_TAC[S4GRZ_STANDARD_MODEL_DEF; S4GRZ_STANDARD_FRAME_ALT] THEN
+  REWRITE_TAC[S4GRZ_STANDARD_MODEL_DEF; S4GRZ_STANDARD_FRAMES_ALT] THEN
   REWRITE_TAC[IN_INTER; IN_ELIM_PAIR_THM; GSYM RATF_APPR_S4GRZ] THEN
   INTRO_TAC "np q (ratf W wd) val" THEN
   GEN_FORM_INDUCT_TAC `q:form` THEN INTRO_TAC "sub" THEN
@@ -977,50 +952,15 @@ let S4GRZ_ACCESSIBILITY_LEMMA = prove
        ASM_REWRITE_TAC[CONJLIST; NOT_CONS_NIL] THEN MATCH_MP_TAC S4GRZ_prove_S4 THEN
       HOLMS_TAC]]);;
 
-(* let NOT_HOLDS_S4GRZ_STANDARD_FRAME = prove
- (`!p. ~[S4GRZ_AX . {} |~ p]
-       ==> ?w. w IN S4GRZ_STANDARD_WORLDS p /\
-               ~holds (S4GRZ_STD_FRAME p) (STANDARD_EVAL' p) p w`,
-  INTRO_TAC "!p; p" THEN
-  CLAIM_TAC "@w. max_cons hp sub"
-     `?M. MAXIMAL_CONSISTENT S4GRZ_AX p M /\
-          (!q. MEM q M
-               ==> q SUBSENTENCE p \/
-                   (?C.
-                        Box C SUBFORMULA p /\
-                        (q = Box (C --> Box C) \/
-                         q = Not Box (C --> Box C)))) /\
-          [Not p] SUBLIST M` THENL
-   [MATCH_MP_TAC S4GRZ_EXTEND_MAXIMAL_CONSISTENT THEN
-    CONJ_TAC THENL [
-     REWRITE_TAC[CONSISTENT_IFF_SETCONSISTENT; set_of_list] THEN
-     ASM_REWRITE_TAC[SETCONSISTENT_SING; MLK_DOUBLENEG_IFF];
-     REWRITE_TAC[MEM; SUBSENTENCE_CASES] THEN
-     MESON_TAC[SUBFORMULA_REFL]];
-    ALL_TAC]
-  EXISTS_TAC `w:form list`
-
-  HYP_TAC "sub" (REWRITE_RULE[CONS_SUBLIST; NIL_SUBLIST]) *)
-
-
-
-(* let NOT_HOLDS_IN_S4GRZ_STANDARD_FRAME = prove
- (`!p. ~[S4GRZ_AX . {} |~ p] ==> ~holds_in (S4GRZ_STD_FRAME p) p`,
-  REWRITE_TAC[S4GRZ_STD_FRAME; HOLDS_IN]
-  INTRO_TAC "!p; hp" THEN
-  REWRITE_TAC[WORLDS]
-  REWRITE_TAC[NOT_FORALL_THM; NOT_IMP]
-  EXISTS_TAC `STANDARD_EVAL' p` *)
-
-
 let S4GRZ_STD_IN_S4GRZ_STANDARD_FRAME = prove
  (`!p. ~ [S4GRZ_AX . {} |~ p]
-       ==> (S4GRZ_STD_FRAME p) IN S4GRZ_STANDARD_FRAME p`,
+       ==> (S4GRZ_STANDARD_FRAME p) IN S4GRZ_STANDARD_FRAMES p`,
   INTRO_TAC "!p; not_theor_p" THEN
-  REWRITE_TAC [S4GRZ_STANDARD_FRAME; PARAMETRIC_STANDARD_FRAME_DEF; IN_INTER] THEN
+  REWRITE_TAC [S4GRZ_STANDARD_FRAMES;
+    PARAMETRIC_STANDARD_FRAME_DEF; IN_INTER] THEN
   CONJ_TAC THENL
-  [ASM_MESON_TAC[RATF_APPR_S4GRZ; S4GRZ_STD_FRAME_IN_RATF]; ALL_TAC] THEN
-   REWRITE_TAC[IN_ELIM_PAIR_THM; S4GRZ_STD_FRAME] THEN
+  [ASM_MESON_TAC[RATF_APPR_S4GRZ; S4GRZ_STANDARD_FRAME_IN_RATF]; ALL_TAC] THEN
+   REWRITE_TAC[IN_ELIM_PAIR_THM; S4GRZ_STANDARD_FRAME] THEN
   CONJ_TAC THENL
   [REWRITE_TAC[S4GRZ_STANDARD_WORLDS]; ALL_TAC] THEN
   INTRO_TAC "!q w; boxq stdw" THEN
@@ -1058,7 +998,7 @@ let S4GRZ_COUNTERMODEL = prove
   ASM_REWRITE_TAC[SUBFORMULA_REFL] THEN
   DISCH_THEN (MP_TAC o SPEC `M:form list`) THEN
  ANTS_TAC THEN
-  HYP_TAC "standard_model" (REWRITE_RULE[S4GRZ_STANDARD_MODEL_DEF; S4GRZ_STANDARD_FRAME_ALT]) THEN
+  HYP_TAC "standard_model" (REWRITE_RULE[S4GRZ_STANDARD_MODEL_DEF; S4GRZ_STANDARD_FRAMES_ALT]) THEN
   HYP_TAC "standard_model: (appr w 1) 2" (REWRITE_RULE[IN_INTER; IN_ELIM_PAIR_THM]) THEN
   REMOVE_THEN "w" SUBST_ALL_TAC THEN
   HYP REWRITE_TAC "stdworld" [] THEN
@@ -1070,7 +1010,7 @@ let STANDARD_EVAL = new_definition
   `STANDARD_EVAL p a w <=> Atom a SUBFORMULA p /\ MEM (Atom a) w`;;
 
 let S4GRZ_COUNTERMODEL_ALT = prove
- (`!W R p. ~[S4GRZ_AX . {} |~ p] /\ W,R IN S4GRZ_STANDARD_FRAME p
+ (`!W R p. ~[S4GRZ_AX . {} |~ p] /\ W,R IN S4GRZ_STANDARD_FRAMES p
            ==> ~holds_in (W,R) p`,
   INTRO_TAC "!W R p; p_not_theor stand_fm" THEN
   REWRITE_TAC[HOLDS_IN; NOT_FORALL_THM; NOT_IMP] THEN
@@ -1080,7 +1020,7 @@ let S4GRZ_COUNTERMODEL_ALT = prove
   EXISTS_TAC `M:form list` THEN ASM_REWRITE_TAC[] THEN
   SHOW_TAC `M:form list IN WORLDS (W,R)` THENL
   [REWRITE_TAC[WORLDS; IN_ELIM_THM] THEN
-  HYP_TAC "stand_fm" (REWRITE_RULE[S4GRZ_STANDARD_FRAME_ALT]) THEN
+  HYP_TAC "stand_fm" (REWRITE_RULE[S4GRZ_STANDARD_FRAMES_ALT]) THEN
   HYP_TAC "stand_fm: appr w_wd w_subs" (REWRITE_RULE[IN_INTER; IN_ELIM_PAIR_THM]) THEN
   REMOVE_THEN "w_wd" SUBST_ALL_TAC THEN
   HYP REWRITE_TAC "max subs" [S4GRZ_STANDARD_WORLDS_DEF; IN_ELIM_THM]; ALL_TAC] THEN
@@ -1094,14 +1034,14 @@ let S4GRZ_COMPLETENESS_THM = prove
   GEN_TAC THEN GEN_REWRITE_TAC I [GSYM CONTRAPOS_THM] THEN
   INTRO_TAC "p_not_theor" THEN
   REWRITE_TAC[valid; NOT_FORALL_THM] THEN
-  EXISTS_TAC `S4GRZ_STD_FRAME p` THEN
+  EXISTS_TAC `S4GRZ_STANDARD_FRAME p` THEN
   REWRITE_TAC[NOT_IMP] THEN 
   CONJ_TAC THENL
-  [ASM_MESON_TAC[S4GRZ_STD_FRAME_IN_RATF];
-   REWRITE_TAC[S4GRZ_STD_FRAME] THEN
-    MATCH_MP_TAC S4GRZ_COUNTERMODEL_ALT THEN
-    ASM_REWRITE_TAC[] THEN
-    ASM_MESON_TAC [S4GRZ_STD_FRAME; S4GRZ_STD_IN_S4GRZ_STANDARD_FRAME]]);;
+  [ASM_MESON_TAC[S4GRZ_STANDARD_FRAME_IN_RATF];
+   REWRITE_TAC[S4GRZ_STANDARD_FRAME] THEN
+   MATCH_MP_TAC S4GRZ_COUNTERMODEL_ALT THEN
+   ASM_REWRITE_TAC[] THEN
+   ASM_MESON_TAC [S4GRZ_STANDARD_FRAME; S4GRZ_STD_IN_S4GRZ_STANDARD_FRAME]]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Completeness Theorem for S4Grz on a generic (infinite) domain.            *)

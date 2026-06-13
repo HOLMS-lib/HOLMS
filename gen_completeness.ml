@@ -5,7 +5,7 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025-26.                               *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (* ========================================================================= *)
 
 needs "HOLMS/consistent.ml";;
@@ -111,7 +111,7 @@ let GEN_TRUTH_LEMMA = prove
      DISCH_THEN (SUBST1_TAC o GSYM) THEN
      CLAIM_TAC "rmk"
        `!q. q SUBFORMULA p ==> (MEM q w <=> [S. {} |~ CONJLIST w --> q])` THENL
-     [ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE];
+     [ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE_OLD];
       ALL_TAC]) THENL
   [
    (* q = False *)
@@ -141,7 +141,7 @@ let GEN_TRUTH_LEMMA = prove
   ;
    (* q = q1 && q2 *)
    ASM_SIMP_TAC[] THEN
-   ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE;
+   ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE_OLD;
     MLK_and_intro; MLK_and_left_th; MLK_and_right_th; MLK_imp_trans]
   ;
    (* Case || *)
@@ -160,7 +160,7 @@ let GEN_TRUTH_LEMMA = prove
     REFUTE_THEN (K ALL_TAC)] THEN
    SUBGOAL_THEN `~ ([S . {} |~ (CONJLIST w --> False)])` MP_TAC THENL
    [REWRITE_TAC[GSYM MLK_not_def] THEN
-    ASM_MESON_TAC[MAXIMAL_CONSISTENT; CONSISTENT];
+    ASM_MESON_TAC[MAXIMAL_CONSISTENT; CONSISTENT_ALT];
     REWRITE_TAC[]] THEN
    MATCH_MP_TAC MLK_frege THEN EXISTS_TAC `q1 || q2` THEN
    ASM_SIMP_TAC[CONJLIST_IMP_MEM] THEN MATCH_MP_TAC MLK_imp_swap THEN
@@ -449,7 +449,7 @@ e (CLAIM_TAC "consistent_X"
  e (INTRO_TAC "PA");;
  e (SUBGOAL_THEN `MEM (Box q) w ==> F` (fun(th) -> (MATCH_MP_TAC th)));;
   e (ASM_MESON_TAC[]);;
- e (REMOVE_THEN "PA" MP_TAC THEN REWRITE_TAC[CONSISTENT]);;
+ e (REMOVE_THEN "PA" MP_TAC THEN REWRITE_TAC[CONSISTENT_ALT]);;
  e (INTRO_TAC "PA");;
  e (SUBGOAL_THEN
      `[S . {}
@@ -741,7 +741,7 @@ let SET_OF_LIST_EQ_CONJLIST_EQ = prove
 let SET_OF_LIST_EQ_CONSISTENT = prove
  (`!S X Y. set_of_list X = set_of_list Y /\ CONSISTENT S X
            ==> CONSISTENT S Y`,
-  REWRITE_TAC[CONSISTENT] THEN INTRO_TAC "!S X Y; eq hp; p" THEN
+  REWRITE_TAC[CONSISTENT_ALT] THEN INTRO_TAC "!S X Y; eq hp; p" THEN
   REMOVE_THEN "hp" MP_TAC THEN REWRITE_TAC[] THEN
   MATCH_MP_TAC MLK_modusponens THEN EXISTS_TAC `Not (CONJLIST Y)` THEN
   ASM_REWRITE_TAC[] THEN MATCH_MP_TAC MLK_contrapos THEN

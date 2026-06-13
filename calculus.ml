@@ -5,7 +5,7 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2026.                                  *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (*                                                                           *)
 (* The initial part of this code has been adapted from the proof of the      *)
 (* Godel incompleteness theorems formalized by John Harrison, distributed    *)

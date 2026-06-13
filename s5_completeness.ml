@@ -2,7 +2,7 @@
 (* Proof of the consistency and modal completeness of S5.                    *)
 (*                                                                           *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (* ========================================================================= *)
 
 needs "HOLMS/gen_completeness.ml";;
@@ -310,7 +310,7 @@ e (CLAIM_TAC "consistent_X"
                (FLATMAP (\x. match x with Not Box e -> [Not Box e] | _ -> [])
                         w)))`);;
   e (REMOVE_THEN "contra" MP_TAC);;
-  e (REWRITE_TAC[CONSISTENT; CONTRAPOS_THM]);;
+  e (REWRITE_TAC[CONSISTENT_ALT; CONTRAPOS_THM]);;
   e (INTRO_TAC "incons" THEN MATCH_MP_TAC MAXIMAL_CONSISTENT_LEMMA);;
   e (MAP_EVERY EXISTS_TAC
      [`S5_AX`;
@@ -379,7 +379,7 @@ e (CLAIM_TAC "consistent_X"
           e (MESON_TAC[MLK_axiom_not;MLK_iff_imp2]);;
           e (MESON_TAC[MLK_imp_refl_th]);;
      e (POP_ASSUM MATCH_MP_TAC);;
-    e (HYP_TAC "incons" (REWRITE_RULE[CONSISTENT]));;
+    e (HYP_TAC "incons" (REWRITE_RULE[CONSISTENT_ALT]));;
     e (HYP_TAC "incons" (ONCE_REWRITE_RULE[CONJLIST]));;
     e (POP_ASSUM MP_TAC);;
     e (COND_CASES_TAC);;
@@ -490,7 +490,7 @@ e (INTRO_TAC "@X. maxX subX subl");;
       e (REFUTE_THEN (LABEL_TAC "contra_not"));;
       e (ASM_MESON_TAC[form_DISTINCT]);;
     e (ASM_MESON_TAC[MAXIMAL_CONSISTENT_MEM_NOT]);;
-  e (ASM_MESON_TAC[MAXIMAL_CONSISTENT; CONSISTENT; CONSISTENT_LEMMA]);;
+  e (ASM_MESON_TAC[MAXIMAL_CONSISTENT; CONSISTENT_ALT; CONSISTENT_LEMMA]);;
 let S5_ACCESSIBILITY_LEMMA = top_thm();;
 
 (* ------------------------------------------------------------------------- *)

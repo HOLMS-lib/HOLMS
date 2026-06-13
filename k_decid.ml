@@ -5,29 +5,11 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (* ========================================================================= *)
 
 needs "HOLMS/k_completeness.ml";;
 needs "HOLMS/gen_countermodel.ml";;
-
-(* ------------------------------------------------------------------------- *)
-(* Top-level invocation.                                                     *)
-(* ------------------------------------------------------------------------- *)
-
-let TOP_HOLMS_TAC MATCH_BOX_RIGHT_TAC (compl_thm : thm) (rules : thm list) : int -> tactic =
-  let PREPARE_TAC = HOLMS_PREPARE_TAC compl_thm
-  and SATURATE_TAC = HOLMS_SATURATE_TAC rules in
-  let INNER_TAC = INNER_HOLMS_TAC (MATCH_BOX_RIGHT_TAC,SATURATE_TAC) in
-  fun (n : int) ->
-    PREPARE_TAC THEN INNER_TAC n;;
-
-let GEN_HOLMS_TAC MATCH_BOX_RIGHT_TAC (compl_thm : thm) (rules : thm list) : tactic =
-  let TOP_TAC = TOP_HOLMS_TAC MATCH_BOX_RIGHT_TAC compl_thm rules in
-  fun (_,w) as gl ->
-    let fm = rand (snd (strip_forall w)) in
-    let n = count_modal_subformulas fm in
-    TOP_TAC (int_pow 2 n) gl;;
 
 (* ------------------------------------------------------------------------- *)
 (* Lemmata.                                                                  *)

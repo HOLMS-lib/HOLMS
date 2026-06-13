@@ -5,7 +5,7 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (* ========================================================================= *)
 
 needs "HOLMS/gen_completeness.ml";;
@@ -322,7 +322,7 @@ let GL_ACCESSIBILITY_LEMMA =
   CLAIM_TAC "consistent_X"
     `CONSISTENT GL_AX (CONS (Not q) (CONS (Box q)
        (FLATMAP (\x. match x with Box c -> [c; Box c] | _ -> []) w)))` THENL
-  [REMOVE_THEN "contra" MP_TAC THEN REWRITE_TAC[CONSISTENT; CONTRAPOS_THM] THEN
+  [REMOVE_THEN "contra" MP_TAC THEN REWRITE_TAC[CONSISTENT_ALT; CONTRAPOS_THM] THEN
    INTRO_TAC "incons" THEN MATCH_MP_TAC MAXIMAL_CONSISTENT_LEMMA THEN
    MAP_EVERY EXISTS_TAC [`GL_AX`; `p:form`;
      `FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) w`] THEN
@@ -354,7 +354,7 @@ let GL_ACCESSIBILITY_LEMMA =
                 MLK_iff_imp2; MLK_iff_imp1; MLK_imp_trans]]];
     ALL_TAC] THEN
    POP_ASSUM MATCH_MP_TAC THEN
-   HYP_TAC "incons" (REWRITE_RULE[CONSISTENT]) THEN
+   HYP_TAC "incons" (REWRITE_RULE[CONSISTENT_ALT]) THEN
    HYP_TAC "incons" (ONCE_REWRITE_RULE[CONJLIST]) THEN
    HYP_TAC "incons" (REWRITE_RULE[NOT_CONS_NIL]) THEN
    POP_ASSUM MATCH_ACCEPT_TAC;

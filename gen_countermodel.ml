@@ -2,17 +2,18 @@
 (* Tools for the generation of certified countermodels.                      *)
 (*                                                                           *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025-26.                               *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (* ========================================================================= *)
 
-loadt "HOLMS/t_completeness.ml";;
-loadt "HOLMS/k4_completeness.ml";;
-loadt "HOLMS/s4_completeness.ml";;
-loadt "HOLMS/b_completeness.ml";;
-loadt "HOLMS/s5_completeness.ml";;
-loadt "HOLMS/gl_completeness.ml";;
+(* ToDo: Make this file independent from these. *)
+needs "HOLMS/t_completeness.ml";;
+needs "HOLMS/k4_completeness.ml";;
+needs "HOLMS/s4_completeness.ml";;
+needs "HOLMS/b_completeness.ml";;
+needs "HOLMS/s5_completeness.ml";;
+needs "HOLMS/gl_completeness.ml";;
 
-loadt "HOLMS/gen_decid.ml";;
+needs "HOLMS/gen_decid.ml";;
 
 (* ------------------------------------------------------------------------- *)
 (* Miscellanea.                                                              *)

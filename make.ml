@@ -5,7 +5,7 @@
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
 (*                Cosimo Perini Brogi, Leonardo Quartini 2024.               *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025-26.                               *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (* ========================================================================= *)
 
 (* ------------------------------------------------------------------------- *)
@@ -36,8 +36,8 @@ loadt "HOLMS/ad_hoc_correspondence.ml";;       (* Ad hoc polimorphic code    *)
 (* Meta-theory.                                                              *)
 (* ------------------------------------------------------------------------- *)
 
-loadt "HOLMS/conjlist.ml";;                 (* Iterated conjunctions        *)
 loadt "HOLMS/setconsistent.ml";;            (* Consistent sets of formulae  *)
+loadt "HOLMS/conjlist.ml";;                 (* Iterated conjunctions        *)
 loadt "HOLMS/consistent.ml";;               (* Consistent lists of formulae *)
 loadt "HOLMS/gen_completeness.ml";;         (* Lemmata about completeness   *)
 

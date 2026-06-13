@@ -2,7 +2,7 @@
 (* Proof of the consistency and modal completeness of B.                     *)
 (*                                                                           *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025.                                  *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (* ========================================================================= *)
 
 needs "HOLMS/gen_completeness.ml";;
@@ -266,7 +266,7 @@ e (CLAIM_TAC "consistent_X"
                                     else []
                                 | _ -> []) w)))`);;
   e (REMOVE_THEN "contra" MP_TAC);;
-  e (REWRITE_TAC[CONSISTENT; CONTRAPOS_THM]);;
+  e (REWRITE_TAC[CONSISTENT_ALT; CONTRAPOS_THM]);;
   e (INTRO_TAC "incons" THEN MATCH_MP_TAC MAXIMAL_CONSISTENT_LEMMA);;
   e (MAP_EVERY EXISTS_TAC
        [`B_AX`;
@@ -489,7 +489,7 @@ e (INTRO_TAC "@X. maxX subX subl");;
           e (REFUTE_THEN MP_TAC);;
            e (ASM_MESON_TAC[form_DISTINCT]);;
        e (ASM_MESON_TAC[MAXIMAL_CONSISTENT_MEM_NOT]);;
-  e (ASM_MESON_TAC[MAXIMAL_CONSISTENT; CONSISTENT; CONSISTENT_LEMMA]);;
+  e (ASM_MESON_TAC[MAXIMAL_CONSISTENT; CONSISTENT_ALT; CONSISTENT_LEMMA]);;
   e (HYP_TAC "subl" (REWRITE_RULE[SUBLIST]));;
   e (HYP_TAC "subl: +" (SPEC `Not q:form` o REWRITE_RULE[SUBLIST]));;
   e (IMP_REWRITE_TAC[GSYM MAXIMAL_CONSISTENT_MEM_NOT]);;

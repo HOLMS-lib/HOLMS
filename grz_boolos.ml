@@ -6,7 +6,7 @@
 (* Decision procedure via the translation.                                   *)
 (*                                                                           *)
 (* (c) Copyright, Antonella Bilotta, Marco Maggesi,                          *)
-(*                Cosimo Perini Brogi 2025-26.                               *)
+(*                Cosimo Perini Brogi 2025-2026.                             *)
 (* ========================================================================= *)
 
 needs "HOLMS/k_decid.ml";;       (* Used in GRZ_EQ_S4GRZ and its lemmas     *)
@@ -534,13 +534,13 @@ let S4GRZ_STANDARD_REL_PROP = prove
      ASM_MESON_TAC[]]]]);;
 
 let S4GRZ_STANDARD_FRAME_DEF = new_definition
- `S4GRZ_STANDARD_FRAME p =
+ `S4GRZ_STANDARD_FRAMES p =
   {(W,R) | W = S4GRZ_STANDARD_WORLDS p /\
            R = S4GRZ_STANDARD_REL p}`;;
 
 let S4GRZ_STANDARD_MODEL_DEF = new_definition
  `S4GRZ_STANDARD_MODEL p (W,R) V <=>
-  (W,R) IN S4GRZ_STANDARD_FRAME p /\
+  (W,R) IN S4GRZ_STANDARD_FRAMES p /\
   (!a w. w IN W
          ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`;;
 
@@ -684,7 +684,7 @@ let S4GRZ_TRUTH_LEMMA = prove
      CLAIM_TAC "rmk"
        `!q. q SUBFORMULA p
             ==> (MEM q w <=> [S4GRZ_AX. {} |~ CONJLIST w --> q])` THENL
-     [ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE];
+     [ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE_OLD];
       ALL_TAC]) THENL
   [
    (* q = False *)
@@ -717,7 +717,7 @@ let S4GRZ_TRUTH_LEMMA = prove
   ;
    (* q = q1 && q2 *)
    ASM_SIMP_TAC[] THEN
-   ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE;
+   ASM_MESON_TAC[MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE_OLD;
     MLK_and_intro; MLK_and_left_th; MLK_and_right_th; MLK_imp_trans]
   ;
    (* q = q1 || q2 *)
@@ -733,27 +733,27 @@ let S4GRZ_TRUTH_LEMMA = prove
       ASM_REWRITE_TAC[]; REFUTE_THEN (K ALL_TAC)] THEN
      SUBGOAL_THEN `~ ([S4GRZ_AX . {} |~ (CONJLIST w --> False)])` MP_TAC THENL
      [REWRITE_TAC[GSYM MLK_not_def] THEN
-      HYP_TAC "max_cons : not norep sub" (REWRITE_RULE[MAXIMAL_CONSISTENT; CONSISTENT]) THEN
+      HYP_TAC "max_cons : not norep sub" (REWRITE_RULE[MAXIMAL_CONSISTENT; CONSISTENT_ALT]) THEN
       ASM_REWRITE_TAC[]; ALL_TAC] THEN
      ASM_REWRITE_TAC[] THEN MATCH_MP_TAC MLK_frege THEN EXISTS_TAC `q1 || q2` THEN
      ASM_SIMP_TAC[CONJLIST_IMP_MEM] THEN MATCH_MP_TAC MLK_imp_swap THEN
      REWRITE_TAC[MLK_disj_imp] THEN CONJ_TAC THEN MATCH_MP_TAC MLK_imp_swap THEN
      ASM_MESON_TAC[CONJLIST_IMP_MEM; MLK_axiom_not; MLK_iff_imp1; MLK_imp_trans];
     ASM_MESON_TAC[MLK_or_left_th; MLK_or_right_th; MLK_imp_trans;
-                  MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE]]
+                  MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE_OLD]]
   ;
   (* q = q1 --> q2 *)
   EQ_TAC THENL
   [ASM_MESON_TAC[MLK_frege; CONJLIST_IMP_MEM;
-                 MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE];
+                 MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE_OLD];
    INTRO_TAC "imp" THEN
     CLAIM_TAC "hq1 | hq1" `MEM q1 w \/ MEM (Not q1) w` THENL
     [ASM_MESON_TAC[MAXIMAL_CONSISTENT_MEM_CASES];
      ASM_MESON_TAC[CONJLIST_IMP_MEM; MLK_imp_swap; MLK_add_assum;
-     MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE];
+     MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE_OLD];
      ALL_TAC] THEN
     MP_TAC (SPECL[`S4GRZ_AX`; `p:form`; `w:form list`; `q1 --> q2`]
-            MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE) THEN
+            MAXIMAL_CONSISTENT_SUBFORMULA_MEM_EQ_DERIVABLE_OLD) THEN
     ASM_REWRITE_TAC[] THEN DISCH_TAC THEN ASM_REWRITE_TAC[] THEN
     MATCH_MP_TAC MLK_shunt THEN MATCH_MP_TAC MLK_imp_trans THEN
           EXISTS_TAC `q1 && Not q1` THEN CONJ_TAC THENL
@@ -851,7 +851,7 @@ let S4GRZ_TRUTH_LEMMA = prove
                              [Box (q --> Box q)]))` THENL
    [REFUTE_THEN MP_TAC THEN
     INTRO_TAC "non_cons" THEN
-    HYP_TAC "non_cons" (REWRITE_RULE[CONSISTENT; CONJLIST; APPEND_EQ_NIL; NOT_CONS_NIL]) THEN
+    HYP_TAC "non_cons" (REWRITE_RULE[CONSISTENT_ALT; CONJLIST; APPEND_EQ_NIL; NOT_CONS_NIL]) THEN
     CLAIM_TAC "1" `[S4GRZ_AX . {} |~ Not (Not q &&
                                           (CONJLIST (FLATMAP (\x. match x with Box c -> [Box c] | _ -> []) w) &&
                                            CONJLIST [Box (q --> Box q)]))]` THENL
@@ -929,7 +929,7 @@ let S4GRZ_TRUTH_LEMMA = prove
                                         [Box (q --> Box q)]))
                    SUBLIST x` THENL
    [MATCH_MP_TAC (EXTEND_MAXIMAL_CONSISTENT'') THEN
-    ASM_REWRITE_TAC[MEM; MEM_APPEND; CONSISTENT] THEN
+    ASM_REWRITE_TAC[MEM; MEM_APPEND; CONSISTENT_ALT] THEN
     REPEAT STRIP_TAC THENL
     [DISJ1_TAC THEN
       ASM_REWRITE_TAC[SUBSENTENCE_CASES] THEN
