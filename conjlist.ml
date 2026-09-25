@@ -160,6 +160,26 @@ let CONJLIST_MAP_BOX = prove
   MATCH_MP_TAC MLK_box_iff THEN MATCH_MP_TAC MLK_necessitation THEN
   ONCE_REWRITE_TAC[MLK_iff_sym] THEN MATCH_ACCEPT_TAC CONJLIST_CONS);;
 
+let CONJLIST_MAP_BOX_DIAM = prove
+ (`!l. [S . H |~ (Box Diam (CONJLIST l) -->
+                  CONJLIST (MAP (Box) (MAP (Diam) l)))]`,
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC[CONJLIST; MAP] THEN SIMP_TAC[MLK_add_assum; MLK_truth_th];
+   ASM_REWRITE_TAC[CONJLIST; MAP] THEN
+   COND_CASES_TAC THENL
+   [ASM_REWRITE_TAC[CONJLIST; MAP; MLK_imp_refl_th];
+    ASM_REWRITE_TAC[CONJLIST; MAP] THEN
+    COND_CASES_TAC THENL
+    [CLAIM_TAC "false" `t:form list = []` THENL
+     [ASM_MESON_TAC [MAP_EQ_NIL]; ASM_MESON_TAC[]];
+     MATCH_MP_TAC MLK_imp_trans THEN
+     EXISTS_TAC `Box Diam h && Box Diam (CONJLIST t)` THEN CONJ_TAC THENL
+     [MATCH_MP_TAC MLK_imp_trans THEN
+      EXISTS_TAC `Box (Diam h && Diam (CONJLIST t))` THEN CONJ_TAC THENL
+      [MATCH_MP_TAC MLK_imp_box THEN MESON_TAC[MLK_diam_and_th];
+       MESON_TAC[MLK_box_and_th]];
+      ASM_MESON_TAC[MLK_and_imp; MLK_imp_refl_th]]]]]);;
+
 let APPEND_MAP_BOX = prove
  (`!l m. [S . H |~ CONJLIST (MAP (Box) (APPEND l m)) <->
                    CONJLIST (APPEND (MAP (Box) l) (MAP (Box) m))]`,
@@ -201,6 +221,26 @@ let MODPROVES_DEDUCTION_LEMMA_CONJLIST_EMPTY_ALT = prove
       ==> ([S . {} |~ CONJLIST (list_of_set K) --> p] <=> [S . K |~ p])`,
    SIMP_TAC[MODPROVES_DEDUCTION_LEMMA_CONJLIST_ALT] THEN
    REWRITE_TAC[UNION_EMPTY]);;
+
+let MODPROVES_UNION_CONJLIST_THM = prove
+ (`!S A B p:form. FINITE A /\ FINITE B ==>
+   ([S . H |~ CONJLIST (list_of_set (A UNION B)) <->
+              (CONJLIST (list_of_set A) &&
+               CONJLIST (list_of_set B))])`,
+  INTRO_TAC "!S A B p; finA finB" THEN
+  REWRITE_TAC [MLK_iff_def] THEN
+  HYP_SUFFICE_TAC `[S . H UNION (A UNION B) |~
+                    CONJLIST (list_of_set A) && CONJLIST (list_of_set B)] /\
+                   [S . (H UNION A) UNION B |~
+                    CONJLIST (list_of_set (A UNION B))]`
+                  "finA finB"
+                  [MLK_ante_conj; FINITE_UNION;
+                   MODPROVES_DEDUCTION_LEMMA_CONJLIST_ALT] THEN
+  HYP_SUFFICE_TAC `(H:form->bool UNION A) UNION B = H UNION (A UNION B)`
+                  "finA finB"
+                  [MLK_imp_refl_th; MLK_shunt; FINITE_UNION;
+                   MODPROVES_DEDUCTION_LEMMA_CONJLIST_ALT] THEN
+   SET_TAC[]);;
 
 let MLK_BOX_CONJLIST = prove
  (`!S X. [S . {} |~ Box (CONJLIST X) <-> CONJLIST (MAP (Box) X)]`,

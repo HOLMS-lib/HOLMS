@@ -73,6 +73,12 @@ let GEN_STANDARD_MODEL_DEF = new_definition
    (W,R) IN GEN_STANDARD_FRAME S p /\
    (!a w. w IN W ==> (V a w <=> MEM (Atom a) w /\ Atom a SUBFORMULA p))`;;
 
+let STANDARD_EVAL = new_definition
+ `STANDARD_EVAL p a w <=> Atom a SUBFORMULA p /\ MEM (Atom a) w`;;
+
+let SET_STANDARD_EVAL = new_definition
+ `SET_STANDARD_EVAL p a w <=> Atom a SUBFORMULA p /\ (Atom a) IN w`;;
+
 (* ------------------------------------------------------------------------- *)
 (* Truth Lemma.                                                              *)
 (* ------------------------------------------------------------------------- *)
@@ -737,6 +743,143 @@ let SET_OF_LIST_EQ_CONJLIST_EQ = prove
  (`!S X Y. set_of_list X = set_of_list Y
            ==> [S . {} |~ CONJLIST X <-> CONJLIST Y]`,
   REWRITE_TAC[MLK_iff_def] THEN MESON_TAC[SET_OF_LIST_EQ_CONJLIST]);;
+
+let MEM_EQ_CONJLIST_IMP = prove
+ (`!S X Y. (!y. MEM y Y ==> ?x. MEM x X /\ [S . {} |~ x --> y])
+           ==> [S . {} |~ CONJLIST X --> CONJLIST Y]`,
+ GEN_TAC THEN LIST_INDUCT_TAC THENL
+ [LIST_INDUCT_TAC THENL
+  [REWRITE_TAC[MEM; MLK_imp_refl_th];
+  ASM_MESON_TAC[MEM]];
+  LIST_INDUCT_TAC THENL
+  [REWRITE_TAC[CONJLIST; MLK_imp_clauses];
+   REWRITE_TAC[MEM; CONJLIST] THEN
+   INTRO_TAC "b" THEN
+   COND_CASES_TAC THENL
+   [COND_CASES_TAC THENL
+    [USE_THEN "b" (MP_TAC o SPEC `h':form`) THEN
+     ASM_MESON_TAC[MEM];
+     REWRITE_TAC [MODPROVES_DEDUCTION_LEMMA; MLK_and] THEN
+     REWRITE_TAC[GSYM MODPROVES_DEDUCTION_LEMMA] THEN
+     CONJ_TAC THENL
+     [USE_THEN "b" (MP_TAC o SPEC `h':form`) THEN
+      ASM_MESON_TAC[MEM];
+      UNDISCH_TAC `(!y. MEM y t' ==> (?x. MEM x (CONS h t) /\ [S . {} |~ x --> y]))
+                   ==> [S . {} |~ CONJLIST (CONS h t) --> CONJLIST t']` THEN
+      ASM_REWRITE_TAC[CONJLIST; MEM] THEN
+      ANTS_TAC THENL
+      [GEN_TAC THEN DISCH_TAC THEN
+       EXISTS_TAC `h:form` THEN ASM_REWRITE_TAC[] THEN
+       USE_THEN "b" (MP_TAC o SPEC `y:form`) THEN
+       ASM_MESON_TAC[MEM];
+       REWRITE_TAC[]]]];
+    COND_CASES_TAC THENL
+    [USE_THEN "b" (MP_TAC o SPEC `h':form`) THEN
+     REWRITE_TAC[] THEN
+     STRIP_TAC THENL
+     [MATCH_MP_TAC MLK_ante_conj2 THEN
+      SUFFICE_TAC `[S . {} |~ h --> h']`
+                   [MODPROVES_DEDUCTION_LEMMA;MODPROVES_MONO2; EMPTY_SUBSET]
+      THEN USE_THEN "b" (MP_TAC o SPEC `h':form`) THEN
+      ASM_MESON_TAC[MEM];
+      MATCH_MP_TAC MLK_ante_conj THEN
+      SUFFICE_TAC `[S . {} |~ CONJLIST t --> h']`
+                   [MODPROVES_DEDUCTION_LEMMA;MODPROVES_MONO2; EMPTY_SUBSET]
+      THEN FIRST_X_ASSUM (MP_TAC o SPEC `[h':form]`) THEN
+       REWRITE_TAC [MEM; CONJLIST] THEN
+       ASM_MESON_TAC[]];
+      REWRITE_TAC [MODPROVES_DEDUCTION_LEMMA; MLK_and] THEN
+      REWRITE_TAC [GSYM MODPROVES_DEDUCTION_LEMMA] THEN
+      CONJ_TAC THENL
+      [USE_THEN "b" (MP_TAC o SPEC `h':form`) THEN
+      REWRITE_TAC[] THEN STRIP_TAC THENL
+      [MATCH_MP_TAC MLK_ante_conj2 THEN
+      SUFFICE_TAC `[S . {} |~ h --> h']`
+                   [MODPROVES_DEDUCTION_LEMMA;MODPROVES_MONO2; EMPTY_SUBSET]
+       THEN USE_THEN "b" (MP_TAC o SPEC `h':form`) THEN
+       ASM_MESON_TAC[MEM];
+       MATCH_MP_TAC MLK_ante_conj THEN
+       SUFFICE_TAC `[S . {} |~ CONJLIST t --> h']`
+                    [MODPROVES_DEDUCTION_LEMMA;MODPROVES_MONO2; EMPTY_SUBSET]
+       THEN FIRST_X_ASSUM (MP_TAC o SPEC `[h':form]`) THEN
+       REWRITE_TAC [MEM; CONJLIST] THEN
+       ASM_MESON_TAC[]];
+      UNDISCH_TAC `(!y. MEM y t' ==> (?x. MEM x (CONS h t) /\ [S . {} |~ x --> y]))
+                   ==> [S . {} |~ CONJLIST (CONS h t) --> CONJLIST t']` THEN
+      ASM_REWRITE_TAC[CONJLIST; MEM] THEN
+      ASM_MESON_TAC[MEM]]]]]]);;
+
+let MEM_EQ_CONJLIST_EQ = prove
+(`!S X Y. (!x:form. MEM x X ==> ?y. MEM y Y /\ [S . {} |~ x <-> y]) /\
+          (!y. MEM y Y ==> ?x. MEM x X /\ [S . {} |~ x <-> y])
+           ==> [S . {} |~ CONJLIST X <-> CONJLIST Y]`,
+ GEN_TAC THEN LIST_INDUCT_TAC THENL
+ [LIST_INDUCT_TAC THENL
+ [REWRITE_TAC[MEM; MLK_iff_refl_th];
+ ASM_MESON_TAC[MEM]];
+ LIST_INDUCT_TAC THENL
+ [ASM_MESON_TAC[MEM];
+  ALL_TAC]] THEN
+ REWRITE_TAC[CONJLIST; MEM] THEN
+ INTRO_TAC "a b" THEN
+ COND_CASES_TAC THENL
+ [COND_CASES_TAC THENL
+  [USE_THEN "a" (MP_TAC o SPEC `h:form`) THEN
+   ASM_MESON_TAC[MEM];
+   MATCH_MP_TAC MLK_and_imp_th THEN
+   CONJ_TAC THENL
+   [USE_THEN "a" (MP_TAC) THEN
+    ASM_MESON_TAC[MEM];
+    UNDISCH_TAC `(!x. MEM x (CONS h t) ==>
+                  (?y. MEM y t' /\ [S . {} |~ x <-> y])) /\
+                 (!y. MEM y t' ==>
+                  (?x. MEM x (CONS h t) /\ [S . {} |~ x <-> y]))
+                 ==> [S . {} |~ CONJLIST (CONS h t) <-> CONJLIST t']` THEN
+    ASM_REWRITE_TAC[CONJLIST; MEM] THEN
+    ANTS_TAC THENL
+    [CONJ_TAC THENL
+     [GEN_TAC THEN DISCH_TAC THEN
+      MP_TAC (ISPEC `t':form list` list_CASES) THEN
+      ASM_REWRITE_TAC[] THEN INTRO_TAC "@y l. t'" THEN
+      EXISTS_TAC `y:form` THEN ASM_REWRITE_TAC[] THEN
+      USE_THEN "b" (MP_TAC o SPEC `y:form`) THEN
+      ASM_MESON_TAC[MEM];
+      GEN_TAC THEN DISCH_TAC THEN
+      EXISTS_TAC `h:form` THEN ASM_REWRITE_TAC[] THEN
+      USE_THEN "b" (MP_TAC o SPEC `y:form`) THEN
+      ASM_MESON_TAC[MEM]];
+     REWRITE_TAC[]]]];
+  COND_CASES_TAC THENL
+  [REWRITE_TAC[MLK_iff_sym] THEN
+   MATCH_MP_TAC MLK_and_imp_th THEN
+   CONJ_TAC THENL
+   [USE_THEN "a" (MP_TAC o SPEC `h:form`) THEN
+    ASM_MESON_TAC[MEM; MLK_iff_sym];
+    FIRST_X_ASSUM (MP_TAC o SPEC `CONS h' (t':form list)`) THEN
+    ASM_REWRITE_TAC[MEM; CONJLIST] THEN
+    ANTS_TAC THENL
+    [CONJ_TAC THENL
+     [GEN_TAC THEN DISCH_TAC THEN
+      EXISTS_TAC `h':form` THEN ASM_REWRITE_TAC[] THEN
+      USE_THEN "a" (MP_TAC o SPEC `x:form`) THEN
+      ASM_MESON_TAC[MEM];
+      GEN_TAC THEN DISCH_TAC THEN
+      MP_TAC (ISPEC `t:form list` list_CASES) THEN
+      ASM_REWRITE_TAC[] THEN INTRO_TAC "@x l. t" THEN
+      EXISTS_TAC `x:form` THEN ASM_REWRITE_TAC[] THEN
+      USE_THEN "a" (MP_TAC o SPEC `x:form`) THEN
+      ASM_MESON_TAC[MEM]];
+     REWRITE_TAC[MLK_iff_sym]]];
+   UNDISCH_TAC `~(t:form list = [])` THEN INTRO_TAC "non_empty_t" THEN
+   UNDISCH_TAC `~(t':form list = [])` THEN INTRO_TAC "non_empty_t'" THEN
+   HYP_SUFFICE_TAC `[S . {} |~ CONJLIST (CONS (h:form) t) <->
+                              CONJLIST (CONS (h':form) t')]`
+                   "non_empty_t non_empty_t'" [CONJLIST] THEN
+   REWRITE_TAC[MLK_iff_def] THEN
+   CONJ_TAC THEN
+   MATCH_MP_TAC MEM_EQ_CONJLIST_IMP THEN
+   REWRITE_TAC[MEM] THEN
+   ASM_MESON_TAC[MLK_iff_def]]]);;
 
 let SET_OF_LIST_EQ_CONSISTENT = prove
  (`!S X Y. set_of_list X = set_of_list Y /\ CONSISTENT S X

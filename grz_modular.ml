@@ -728,20 +728,6 @@ let S4GRZ_TRUTH_LEMMA = prove
 (* Proof of Completeness w.r.t. RATF.                                        *)
 (* ------------------------------------------------------------------------- *)
 
-let MAXIMAL_SETCONSISTENT_LEMMA = prove
- (`!S p X A b. MAXIMAL_SETCONSISTENT S p X /\
-               A SUBSET X /\
-               b SUBFORMULA p /\
-               [S . A |~ b]
-               ==> b IN X`,
-  REPEAT GEN_TAC THEN INTRO_TAC "X A b hp" THEN
-  HYP_SUFFICE_TAC `[S . X |~ b]` "X b"
-    [MAXIMAL_SETCONSISTENT_SUBFORMULA_MEMBER_IFF_DERIVABLE] THEN
-  HYP MESON_TAC "A hp" [MODPROVES_MONO2]);;
-
-let dest_box_fun = new_recursive_definition form_RECURSION
-  `dest_box_fun (Box C) = C`;;
-
 let S4GRZ_ACCESSIBILITY_SETCONSISTENT = prove
  (`!p w q. ~[S4GRZ_AX . {} |~ p] /\
            Box q SUBFORMULA p /\
@@ -805,7 +791,7 @@ let S4GRZ_ACCESSIBILITY_SETCONSISTENT = prove
     SHOW_TAC `[S4GRZ_AX . {} |~ Box CONJLIST (list_of_set {C | Box C IN w}) -->
                Box Box CONJLIST (list_of_set {C | Box C IN w})]` THENL
     [MESON_TAC[GRZ_EQ_S4GRZ; GRZ_PROVES_4; FOUR_SCHEMA_DEF]; ALL_TAC] THEN
-    SUFFICE_TAC `[S4GRZ_AX . {} |~ Box CONJLIST (list_of_set {C | Box C IN w}) 
+    SUFFICE_TAC `[S4GRZ_AX . {} |~ Box CONJLIST (list_of_set {C | Box C IN w})
                   <-> CONJLIST (list_of_set {Box C | Box C IN w})]` [MLK_box_subst] THEN
     MATCH_MP_TAC MLK_iff_trans THEN
     EXISTS_TAC `CONJLIST (MAP (Box) (list_of_set {C | Box C IN w}))` THEN
@@ -813,21 +799,21 @@ let S4GRZ_ACCESSIBILITY_SETCONSISTENT = prove
     [MESON_TAC [CONJLIST_MAP_BOX; MLK_iff_sym]; ALL_TAC] THEN
     MATCH_MP_TAC SET_OF_LIST_EQ_CONJLIST_EQ THEN
     ASM_REWRITE_TAC[ SET_OF_LIST_MAP] THEN
-    SUFFICE_TAC `FINITE {Box C | Box C IN w} /\ FINITE {C | Box C IN w} /\ 
+    SUFFICE_TAC `FINITE {Box C | Box C IN w} /\ FINITE {C | Box C IN w} /\
                  IMAGE (Box) {C | Box C IN w} = {Box C | Box C IN w}`
                [SET_OF_LIST_OF_SET] THEN
     ASM_REWRITE_TAC[] THEN
     CONJ_TAC THENL [ALL_TAC; SET_TAC[]]  THEN
     MATCH_MP_TAC FINITE_SUBSET THEN
     EXISTS_TAC `{y | ?x. x IN w /\ y = dest_box_fun x}` THEN
-    CONJ_TAC THENL 
+    CONJ_TAC THENL
     [MATCH_MP_TAC FINITE_IMAGE_EXPAND THEN ASM_REWRITE_TAC[];
      REWRITE_TAC[SUBSET; IN_ELIM_THM] THEN
       GEN_TAC THEN DISCH_TAC THEN
       EXISTS_TAC `Box x` THEN ASM_REWRITE_TAC[dest_box_fun]]; ALL_TAC] THEN
   HYP_SUFFICE_TAC `FINITE {Box C | Box C IN w}` "7"
     [MODPROVES_DEDUCTION_LEMMA_CONJLIST_EMPTY; SET_OF_LIST_OF_SET] THEN
-  HYP REWRITE_TAC "finboxw" []);; 
+  HYP REWRITE_TAC "finboxw" []);;
 
 let S4GRZ_ACCESSIBILITY_LEMMA = prove
  (`!p w q. ~[S4GRZ_AX . {} |~ p] /\
@@ -1006,9 +992,6 @@ let S4GRZ_COUNTERMODEL = prove
  HYP_TAC "stdworld: maxcons _" (REWRITE_RULE[S4GRZ_STANDARD_WORLDS_DEF; IN_ELIM_THM]) THEN
  ASM_MESON_TAC[MAXIMAL_CONSISTENT; CONSISTENT_NC]);;
 
-let STANDARD_EVAL = new_definition
-  `STANDARD_EVAL p a w <=> Atom a SUBFORMULA p /\ MEM (Atom a) w`;;
-
 let S4GRZ_COUNTERMODEL_ALT = prove
  (`!W R p. ~[S4GRZ_AX . {} |~ p] /\ W,R IN S4GRZ_STANDARD_FRAMES p
            ==> ~holds_in (W,R) p`,
@@ -1035,7 +1018,7 @@ let S4GRZ_COMPLETENESS_THM = prove
   INTRO_TAC "p_not_theor" THEN
   REWRITE_TAC[valid; NOT_FORALL_THM] THEN
   EXISTS_TAC `S4GRZ_STANDARD_FRAME p` THEN
-  REWRITE_TAC[NOT_IMP] THEN 
+  REWRITE_TAC[NOT_IMP] THEN
   CONJ_TAC THENL
   [ASM_MESON_TAC[S4GRZ_STANDARD_FRAME_IN_RATF];
    REWRITE_TAC[S4GRZ_STANDARD_FRAME] THEN
@@ -1240,7 +1223,7 @@ let ITF_TO_RATF_TAC : tactic =
   fun gl ->
     the_HOLMS_countermodel := itf_to_ratf !the_HOLMS_countermodel;
     ALL_TAC gl;;
-  
+
 (* Call GRZ_PROOF_SEARCH_TAC and translate countermodel in case of failure *)
 let GRZ_TAC : tactic =
   GRZ_PROOF_SEARCH_TAC THEN

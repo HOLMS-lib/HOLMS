@@ -329,12 +329,21 @@ let MLK_and_elim = prove
            ==> [S . H |~ r --> q] /\ [S . H |~ r --> p]`,
   MESON_TAC[MLK_and_left_th; MLK_and_right_th; MLK_imp_trans]);;
 
+let MLK_and_add = prove
+ (`!p q r. [S . H |~ r --> q] /\ [S . H |~ r --> p] ==>
+           [S . H |~ r --> p && q]`,
+  MESON_TAC[MLK_imp_trans_chain_2; MLK_and_pair_th]);;
+
 let MLK_shunt = prove
  (`!p q r. [S . H |~ p && q --> r] ==> [S . H |~ p --> q --> r]`,
   MESON_TAC[MLK_modusponens; MLK_imp_add_assum; MLK_and_pair_th]);;
 
 let MLK_ante_conj = prove
  (`!p q r. [S . H |~ p --> q --> r] ==> [S . H |~ p && q --> r]`,
+  MESON_TAC[MLK_imp_trans_chain_2; MLK_and_left_th; MLK_and_right_th]);;
+
+let MLK_ante_conj2 = prove
+ (`!p q r. [S . H |~ q --> p --> r] ==> [S . H |~ p && q --> r]`,
   MESON_TAC[MLK_imp_trans_chain_2; MLK_and_left_th; MLK_and_right_th]);;
 
 let MLK_imp_imp = prove
@@ -651,6 +660,15 @@ let MLK_and_assoc_th = prove
   MATCH_MP_TAC MLK_and_intro THEN
   MESON_TAC[MLK_and_left_th; MLK_and_right_th; MLK_imp_trans; MLK_and_intro]);;
 
+let MLK_and_imp = prove
+  (`!p p' q q'. [S . H |~ p --> p'] /\ [S . H |~ q --> q']
+                 ==> [S . H |~ p && q --> p' && q']`,
+   REPEAT STRIP_TAC THEN MATCH_MP_TAC MLK_and_intro THEN CONJ_TAC THENL
+   [MATCH_MP_TAC MLK_imp_trans THEN EXISTS_TAC `p:form` THEN
+    ASM_REWRITE_TAC[MLK_and_left_th] THEN ASM_SIMP_TAC[MLK_iff_imp1];
+    MATCH_MP_TAC MLK_imp_trans THEN EXISTS_TAC `q:form` THEN
+    ASM_REWRITE_TAC[MLK_and_right_th] THEN ASM_SIMP_TAC[MLK_iff_imp1]]);;
+
 let MLK_and_subst_th = prove
  (`!p p' q q'. [S . H |~ p <-> p'] /\ [S . H |~ q <-> q']
                ==> [S . H |~ p && q <-> p' && q']`,
@@ -663,6 +681,37 @@ let MLK_and_subst_th = prove
    REWRITE_TAC[MLK_and_left_th] THEN ASM_SIMP_TAC[MLK_iff_imp1];
    MATCH_MP_TAC MLK_imp_trans THEN EXISTS_TAC `q:form` THEN
    REWRITE_TAC[MLK_and_right_th] THEN ASM_SIMP_TAC[MLK_iff_imp1]]);;
+
+let MLK_iff_and_refl = prove
+ (`!p.  [S . H |~ p <-> p && p]`,
+  GEN_TAC THEN
+  SUFFICE_TAC `[S . H |~ p --> p && p] /\
+               [S . H |~ (p && p )--> p]`
+               [MLK_iff_def] THEN
+  CONJ_TAC THENL
+  [MATCH_MP_TAC MLK_and_add THEN
+   MESON_TAC[MLK_imp_refl_th];
+   MATCH_ACCEPT_TAC MLK_and_left_th]);;
+
+let MLK_and_imp_th1 = prove
+(`!p q q'.  [S . H |~ p --> q] /\ [S . H |~ p --> q']
+               ==> [S . H |~ p --> q && q']`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC MLK_imp_trans THEN
+  EXISTS_TAC `p && p` THEN
+  CONJ_TAC THENL
+  [MESON_TAC[MLK_iff_and_refl; MLK_iff_imp1];
+   ASM_MESON_TAC [MLK_and_imp]]);;
+
+let MLK_and_imp_th = prove
+ (`!p q q'.  [S . H |~ p <-> q] /\ [S . H |~ p <-> q']
+               ==> [S . H |~ p <-> q && q']`,
+  REPEAT STRIP_TAC THEN
+  MATCH_MP_TAC MLK_iff_trans THEN
+  EXISTS_TAC `p && p` THEN
+  CONJ_TAC THENL
+  [MATCH_ACCEPT_TAC MLK_iff_and_refl;
+   ASM_MESON_TAC [MLK_and_subst_th]]);;
 
 let MLK_imp_subst = prove
  (`!p p' q q'. [S . H |~ p <-> p'] /\ [S . H |~ q <-> q']
@@ -1079,9 +1128,9 @@ let SUBST_IFF = prove
    MATCH_MP_TAC MLK_iff_subst THEN ASM_REWRITE_TAC[];
    MATCH_MP_TAC MLK_box_subst THEN POP_ASSUM MATCH_ACCEPT_TAC]);;
 
-(* ----------------------------------------------------------------------- *)
-(* Some modal propositional schemas and derived rules.                     *)
-(* ----------------------------------------------------------------------- *)
+(* ------------------------------------------------------------------------- *)
+(* Some modal propositional schemas and derived rules.                       *)
+(* ------------------------------------------------------------------------- *)
 
 let MLK_box_and_th = prove
  (`!p q. [S . H |~ Box(p && q) --> (Box p && Box q)]`,
@@ -1091,6 +1140,13 @@ let MLK_box_and_inv_th = prove
  (`!p q. [S . H |~ (Box p && Box q) --> Box (p && q)]`,
   MESON_TAC[MLK_ante_conj; MLK_imp_trans; MLK_imp_box; MLK_and_pair_th;
             MLK_axiom_boximp; MLK_shunt]);;
+
+let MLK_diam_and_th = prove
+ (`!p q. [S . H |~ Diam (p && q) --> (Diam p && Diam q)]`,
+  REPEAT GEN_TAC THEN REWRITE_TAC[diam_DEF] THEN
+  MATCH_MP_TAC MLK_and_imp_th1 THEN REWRITE_TAC [MLK_contrapos_eq] THEN
+  CONJ_TAC THEN MATCH_MP_TAC MLK_imp_box THEN
+  REWRITE_TAC [MLK_contrapos_eq; MLK_and_left_th; MLK_and_right_th]);;
 
 (* ------------------------------------------------------------------------- *)
 (* Deduction lemma.                                                          *)

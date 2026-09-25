@@ -49,6 +49,7 @@ loadt "HOLMS/k_completeness.ml";;
 loadt "HOLMS/t_completeness.ml";;
 loadt "HOLMS/k4_completeness.ml";;
 loadt "HOLMS/s4_completeness.ml";;
+loadt "HOLMS/kb_completeness.ml";;
 loadt "HOLMS/b_completeness.ml";;
 loadt "HOLMS/s5_completeness.ml";;
 loadt "HOLMS/gl_completeness.ml";;
@@ -82,7 +83,7 @@ loadt "HOLMS/tests.ml";;                     (* Tests for these logics       *)
 
 loadt "HOLMS/wwf.ml";;                  (* Weakly wellfoundness              *)
 loadt "HOLMS/translations.ml";;         (* Splitting Translation             *)
-loadt "HOLMS/grz_modular.ml";;          (* Grz with Modular Completeness     *) 
+loadt "HOLMS/grz_modular.ml";;          (* Grz with Modular Completeness     *)
 (*loadt "HOLMS/grz_boolos.ml";;*)       (* Grz with Boolos Completeness      *)
 loadt "HOLMS/grz_tests.ml";;            (* Tests for Grz                     *)
 loadt "HOLMS/god_transl.ml";;           (* Godel-McKinsey-Tarski Translation *)

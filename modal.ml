@@ -128,6 +128,12 @@ let dest_modal_binop =
   fun tm -> try tryfind (fun f -> f tm) binops
             with Failure _ -> failwith "dest_modal_binop";;
 
+let dest_box_fun = new_recursive_definition form_RECURSION
+  `dest_box_fun (Box C) = C`;;
+
+let dest_not_fun = new_recursive_definition form_RECURSION
+  `dest_not_fun (Not C) = C`;;
+
 let atomicals =
   let rec recur atoms tml =
     match tml with
