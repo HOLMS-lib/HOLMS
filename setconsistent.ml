@@ -109,6 +109,17 @@ let MAXIMAL_SETCONSISTENT_NOT_SUBFORMULA_MEMBER_IFF_DERIVABLE = prove
   MESON_TAC[MAXIMAL_SETCONSISTENT_IMP_SETCONSISTENT;
     IN_MAXIMAL_SETCONSISTENT_CASES; SETCONSISTENT_NC; MODPROVES_HP]);;
 
+let MAXIMAL_SETCONSISTENT_LEMMA = prove
+ (`!S p X A b. MAXIMAL_SETCONSISTENT S p X /\
+               A SUBSET X /\
+               b SUBFORMULA p /\
+               [S . A |~ b]
+               ==> b IN X`,
+  REPEAT GEN_TAC THEN INTRO_TAC "X A b hp" THEN
+  HYP_SUFFICE_TAC `[S . X |~ b]` "X b"
+    [MAXIMAL_SETCONSISTENT_SUBFORMULA_MEMBER_IFF_DERIVABLE] THEN
+  HYP MESON_TAC "A hp" [MODPROVES_MONO2]);;
+
 (* ------------------------------------------------------------------------- *)
 (* Maximal consistent sets are closed wrt minors.                            *)
 (* ------------------------------------------------------------------------- *)
@@ -222,17 +233,21 @@ let MAXIMAL_SETCONSISTENT_IFF_CLOSED = prove
 
 let EXTEND_MAXIMAL_SETCONSISTENT = prove
  (`!S p X. SETCONSISTENT S X /\
+           FINITE X /\
            (!q. q IN X ==> q SUBSENTENCE p)
            ==> ?M. MAXIMAL_SETCONSISTENT S p M /\
+                   FINITE M /\
                    (!q. q IN M ==> q SUBSENTENCE p) /\
                    X SUBSET M`,
   FIX_TAC "S p" THEN CLAIM_TAC "rmk"
     `!s. FINITE s
          ==> !X. SETCONSISTENT S X /\
+                 FINITE X /\
                  (!q. q IN X ==> q SUBSENTENCE p) /\
                  (!q. q IN s ==> q SUBFORMULA p) /\
                  (!q. q SUBFORMULA p ==> q IN s \/ q IN X \/ Not q IN X)
                  ==> ?M. MAXIMAL_SETCONSISTENT S p M /\
+                         FINITE M /\
                          (!q. q IN M ==> q SUBSENTENCE p) /\
                          X SUBSET M` THENL
   [MATCH_MP_TAC FINITE_INDUCT_STRONG THEN CONJ_TAC THENL
@@ -241,20 +256,21 @@ let EXTEND_MAXIMAL_SETCONSISTENT = prove
     ALL_TAC] THEN
    INTRO_TAC "!x s; s_ind x_fresh _" THEN REWRITE_TAC[FORALL_IN_INSERT] THEN
    REWRITE_TAC[IN_INSERT] THEN
-   INTRO_TAC "!X; X_cons X_sub (x_sub s_sub) X_max" THEN
-   CLAIM_TAC "@y. y y_cons"
-     `?y. (y = x \/ y = Not x) /\ SETCONSISTENT S (y INSERT X)` THENL
-   [IMP_RES_THEN MP_TAC SETCONSISTENT_EXTEND_CASES THEN MESON_TAC[]; ALL_TAC] THEN
+   INTRO_TAC "!X; X_cons X_fin X_sub (x_sub s_sub) X_max" THEN
+   CLAIM_TAC "@y. y y_cons y_fin"
+     `?y. (y = x \/ y = Not x) /\ SETCONSISTENT S (y INSERT X) /\ FINITE (y INSERT X)` THENL
+   [IMP_RES_THEN MP_TAC SETCONSISTENT_EXTEND_CASES THEN
+    ASM_MESON_TAC[FINITE_INSERT]; ALL_TAC] THEN
    HYP_TAC "s_ind: +" (SPEC `y:form INSERT X`) THEN
    ASM_REWRITE_TAC[FORALL_IN_INSERT] THEN REWRITE_TAC[IN_INSERT] THEN
    ANTS_TAC THENL
    [CONJ_TAC THENL
     [REWRITE_TAC[SUBSENTENCE_CASES] THEN HYP MESON_TAC "x_sub y" [];
      HYP MESON_TAC "y X_max x_sub" []];
-    REWRITE_TAC[INSERT_SUBSET] THEN INTRO_TAC "@M. M_max M_sub y_M X_M"] THEN
-   EXISTS_TAC `M:form->bool` THEN HYP REWRITE_TAC "M_max M_sub X_M" [];
+    REWRITE_TAC[INSERT_SUBSET] THEN INTRO_TAC "@M. M_max M_fin M_sub y_M X_M"] THEN
+   EXISTS_TAC `M:form->bool` THEN HYP REWRITE_TAC "M_max M_fin M_sub X_M" [];
    ALL_TAC] THEN
-  INTRO_TAC "!X; X_cons X_sub" THEN
+  INTRO_TAC "!X; X_fin X_cons X_sub" THEN
   SUBGOAL_THEN `FINITE {q | q SUBFORMULA p}` (X_ANTE_RES_THEN MP_TAC) THENL
   [MATCH_ACCEPT_TAC FINITE_SUBFORMULA; ALL_TAC] THEN
   DISCH_THEN (MP_TAC o SPEC `X:form->bool`) THEN
@@ -269,7 +285,7 @@ let NONEMPTY_MAXIMAL_SETCONSISTENT = prove
   MP_TAC (SPECL [`S:form->bool`; `p:form`; `{Not p}`]
     EXTEND_MAXIMAL_SETCONSISTENT) THEN
   ANTS_TAC THENL
-  [ASM_REWRITE_TAC[SETCONSISTENT_SING; MLK_DOUBLENEG_IFF] THEN
+  [ASM_REWRITE_TAC[SETCONSISTENT_SING; MLK_DOUBLENEG_IFF; FINITE_SING] THEN
    SET_TAC[SUBSENTENCE_CASES; injectivity "form"; SUBFORMULA_REFL];
    INTRO_TAC "@M. +"] THEN
   REWRITE_TAC[INSERT_SUBSET; EMPTY_SUBSET] THEN STRIP_TAC THEN
