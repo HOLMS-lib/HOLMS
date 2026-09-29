@@ -1,5 +1,6 @@
 import HOLMS.Modal
 import HOLMS.Calculus
+import HOLMS.AdHocCorrespondence
 
 /-!
 # HOLMS
