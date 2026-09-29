@@ -136,6 +136,64 @@ The Lean definitions of frames and models use structures with named fields.
 Relations remain predicates rather than being converted to executable graph
 representations.
 
+## Consistency: sets rather than lists
+
+The HOL Light development currently exposes two consistency predicates:
+
+- `SETCONSISTENT S X`, from `setconsistent.ml`, where `X` is a set of
+  formulas;
+- `CONSISTENT S xs`, from `consistent.ml`, where `xs` is a list of formulas.
+
+They do not express different mathematical notions. Their definitions are
+
+```text
+SETCONSISTENT S X  <=>  not (S proves False from X)
+CONSISTENT S xs    <=>  not (S proves False from set_of_list xs)
+```
+
+and HOL Light proves this identification explicitly as
+`CONSISTENT_IFF_SETCONSISTENT`. Consequently, list order and repeated
+formulas carry no logical information for `CONSISTENT`; they are discarded by
+`set_of_list`. The same duplication occurs at the maximal-consistency level:
+`MAXIMAL_CONSISTENT` is the list presentation corresponding to
+`MAXIMAL_SETCONSISTENT`, with an additional no-repetition condition needed
+only because the carrier is a list.
+
+Experience with the HOL Light library has shown that the set formulation is
+the more useful interface. It matches the hypothesis parameter of
+`ModProves`, makes weakening an ordinary subset argument, removes irrelevant
+ordering and duplicate-management obligations, and avoids repeatedly moving
+through `set_of_list`. The long-term intention for the HOL Light development
+is therefore to retire `CONSISTENT` and retain `SETCONSISTENT` as the canonical
+notion.
+
+The Lean port will adopt that intended final design immediately:
+
+- consistency will be defined only for `Set Form`, following
+  `SETCONSISTENT`;
+- maximal consistent collections will likewise be sets, following
+  `MAXIMAL_SETCONSISTENT`;
+- the future translation should start from `setconsistent.ml` and should not
+  reproduce `CONSISTENT` or `MAXIMAL_CONSISTENT` as independent public
+  definitions on `List Form`;
+- results from `consistent.ml` that are still needed downstream should be
+  reformulated and proved for sets, preferably by reusing the corresponding
+  results already translated from `setconsistent.ml`;
+- `List Form` may still be used locally for finite enumeration, structural
+  induction, executable traversal, or an iterated conjunction such as
+  `CONJLIST`, but such a list is converted to a set before consistency is
+  stated;
+- if interoperability with a list-based construction is genuinely needed, a
+  bridge lemma about `xs.toFinset` or `{p | p ∈ xs}` may be provided. Such a
+  lemma is an interface to the single set-based notion, not a second notion of
+  consistency.
+
+This is an intentional departure from a file-by-file mechanical port, but not
+from the mathematics: it removes a representation-level duplication whose
+equivalence is already proved in HOL Light. It should also simplify later
+canonical-model and maximal-extension arguments by using the same carrier
+type, `Set Form`, throughout.
+
 ## Proof style
 
 HOL Light proofs in the original development frequently use tactic
