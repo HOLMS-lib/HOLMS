@@ -27,6 +27,8 @@ This is a Lake project:
 - `HOLMS/*.lean` contains the implementation modules.
 - `HOLMS/Modal.lean` corresponds to `../modal.ml` and contains syntax, Kripke
   semantics, subformulas, countability, and bisimulation.
+- `TRANSLATION.md` documents conceptual, stylistic, and technical choices
+  used in the Lean port of HOLMS from HOL Light.
 
 Run Lake commands from this directory. Do not treat the Lean port as part of
 the HOL Light `make.ml` load sequence.
