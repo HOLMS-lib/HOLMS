@@ -17,6 +17,10 @@ Light library.
 - `HOLMS/Calculus.lean` translates the Hilbert calculus for normal modal
   logics, including its derived propositional and modal rules, uniform
   substitution, and the deduction theorem.
+- `HOLMS/ParametricCorrespondence.lean` defines characteristic and appropriate
+  frame classes and proves the general semantic soundness theorem.
+- `HOLMS/AdHocCorrespondence.lean` proves the standard frame-correspondence
+  results for `D`, `T`, `4`, `B`, `5`, Löb, and Grzegorczyk.
 - `TRANSLATION.md` documents the main representation and proof-engineering
   differences between the HOL Light sources and the Lean port.
 - `lakefile.toml` defines the `HOLMS` Lake library.

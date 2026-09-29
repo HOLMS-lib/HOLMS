@@ -18,11 +18,22 @@ The Lean port is a Lake library:
 
 - `HOLMS/Modal.lean` corresponds to `modal.ml`;
 - `HOLMS/Calculus.lean` corresponds to `calculus.ml`;
+- `HOLMS/ParametricCorrespondence.lean` corresponds to
+  `parametric_correspondence.ml`;
+- `HOLMS/AdHocCorrespondence.lean` corresponds to
+  `ad_hoc_correspondence.ml`;
 - `HOLMS.lean` is the root import module;
 - imports replace `needs` and are checked by Lean's module system.
 
 Consequently, OCaml initialization code, parser installation, printers, and
 load-order commands are not translated as mathematical declarations.
+
+HOL Light represents a Kripke frame in the correspondence modules as a pair
+`(W,R)`. Lean reuses the structure `Frame W`, whose fields are `worlds` and
+`rel`. Thus `FRAME`, `FINITE_FRAME`, `CHAR`, and `APPR` are sets of structured
+frames rather than sets of pairs. This removes repeated pair decomposition
+without changing their membership conditions. HOL Light finiteness becomes
+`Set.Finite`, and validity over a frame class remains `Form.Valid`.
 
 ## Formulas
 
@@ -225,4 +236,3 @@ A translated result is considered complete only when these relevant modules
 compile without proof placeholders. Successful compilation establishes that
 Lean accepts the port; it does not by itself constitute a formal theorem that
 the Lean and HOL Light encodings are isomorphic.
-
