@@ -2,6 +2,7 @@ import HOLMS.Modal
 import HOLMS.Calculus
 import HOLMS.ParametricCorrespondence
 import HOLMS.AdHocCorrespondence
+import HOLMS.SetConsistent
 
 /-!
 # HOLMS
