@@ -23,6 +23,9 @@ Light library.
   results for `D`, `T`, `4`, `B`, `5`, Löb, and Grzegorczyk.
 - `HOLMS/SetConsistent.lean` formalizes consistent and maximal consistent sets,
   their closure properties, and finite maximal extension.
+- `HOLMS/GenCompleteness.lean` begins the generic completeness construction
+  with its set-based canonical worlds, standard frames, models, and
+  valuations.
 - `TRANSLATION.md` documents the main representation and proof-engineering
   differences between the HOL Light sources and the Lean port.
 - `lakefile.toml` defines the `HOLMS` Lake library.

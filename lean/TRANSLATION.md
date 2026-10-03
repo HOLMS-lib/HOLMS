@@ -23,6 +23,8 @@ The Lean port is a Lake library:
 - `HOLMS/AdHocCorrespondence.lean` corresponds to
   `ad_hoc_correspondence.ml`;
 - `HOLMS/SetConsistent.lean` corresponds to `setconsistent.ml`;
+- `HOLMS/GenCompleteness.lean` is the staged translation of
+  `gen_completeness.ml`;
 - `HOLMS.lean` is the root import module;
 - imports replace `needs` and are checked by Lean's module system.
 
@@ -385,9 +387,13 @@ The work should proceed in independently checkable stages:
 Each stage should compile without `sorry`, `admit`, new axioms, or weakened
 statements. Before later system-specific completeness files are translated,
 their uses of the discarded flat-map and permutation lemmas must be mapped to
-the new set-based interfaces. This planning section records the intended
-design only; it does not claim that `gen_completeness.ml` has already been
-translated or verified in Lean.
+the new set-based interfaces.
+
+The first implementation stage is complete: `GenCompleteness.lean` contains
+the canonical-world, standard-frame, standard-model, and canonical-valuation
+definitions preceding `GEN_TRUTH_LEMMA`, together with their elementary
+characterizations. The truth lemma and all subsequent results remain future
+stages of this plan.
 
 ## Proof style
 
