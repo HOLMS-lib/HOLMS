@@ -128,4 +128,105 @@ set-based translation. -/
 theorem SET_STANDARD_EVAL_EQ_STANDARD_EVAL (p : Form) :
     SET_STANDARD_EVAL p = STANDARD_EVAL p := rfl
 
+/-! ## Truth lemma -/
+
+/-- In a generic standard model, membership in a canonical world agrees with
+Kripke truth for every subformula of the distinguished formula.
+
+As in the HOL Light statement, the theorem assumes that `p` is not derivable
+without hypotheses.  The structural induction itself uses only the standard
+model and subformula assumptions; the nonderivability hypothesis is retained
+to preserve the original interface and for the later countermodel theorems
+that instantiate this result. -/
+theorem GEN_TRUTH_LEMMA {S : Set Form} {p q : Form}
+    (model : Model (Set Form))
+    (_hnp : ¬S ⊢ₘ[(∅ : Set Form)] p)
+    (hmodel : GEN_STANDARD_MODEL S p model) (hsub : q ⊑ p) :
+    ∀ w, w ∈ model.frame.worlds →
+      (q ∈ w ↔ Form.holds model.frame model.valuation q w) := by
+  rcases (GEN_STANDARD_MODEL_DEF S p model).mp hmodel with
+    ⟨hstandard, hvaluation⟩
+  rcases (IN_GEN_STANDARD_FRAME S p model.frame).mp hstandard with
+    ⟨hworlds, happr, hbox⟩
+  have hcanonical : ∀ {w}, w ∈ model.frame.worlds →
+      MAXIMAL_SETCONSISTENT S p w ∧ ∀ r, r ∈ w → r ⊑ₛ p := by
+    intro w hw
+    rw [hworlds] at hw
+    exact hw
+  have hclosed : ∀ x y, model.frame.rel x y →
+      x ∈ model.frame.worlds ∧ y ∈ model.frame.worlds :=
+    ((IN_FINITE_FRAME model.frame).mp ((IN_APPR S model.frame).mp happr).1).2.1
+  induction q with
+  | falsum =>
+      intro w hw
+      simp only [Form.holds]
+      constructor
+      · intro hfalse
+        exact (hcanonical hw).1.1 (.hyp hfalse)
+      · intro hfalse
+        exact hfalse.elim
+  | verum =>
+      intro w hw
+      simp only [Form.holds]
+      constructor
+      · intro _
+        trivial
+      · intro _
+        exact MAXIMAL_SETCONSISTENT_TRUE_CLOSED (hcanonical hw).1 hsub
+  | atom a =>
+      intro w hw
+      simp only [Form.holds]
+      constructor
+      · intro hatom
+        exact (hvaluation a w hw).mpr ⟨hatom, hsub⟩
+      · intro hatom
+        exact ((hvaluation a w hw).mp hatom).1
+  | neg r ih =>
+      intro w hw
+      have hrsub : r ⊑ p := Form.of_subformula_neg hsub
+      simp only [Form.holds]
+      rw [MAXIMAL_SETCONSISTENT_NOT_CLOSED (hcanonical hw).1 hsub,
+        ih hrsub w hw]
+  | conj r s ihr ihs =>
+      intro w hw
+      have hrsub : r ⊑ p := Form.of_subformula_conj_left hsub
+      have hssub : s ⊑ p := Form.of_subformula_conj_right hsub
+      simp only [Form.holds]
+      rw [MAXIMAL_SETCONSISTENT_AND_MIONOR_CLOSED (hcanonical hw).1 hsub,
+        ihr hrsub w hw, ihs hssub w hw]
+  | disj r s ihr ihs =>
+      intro w hw
+      have hrsub : r ⊑ p := Form.of_subformula_disj_left hsub
+      have hssub : s ⊑ p := Form.of_subformula_disj_right hsub
+      simp only [Form.holds]
+      rw [MAXIMAL_SETCONSISTENT_MINOR_OR_CLOSED (hcanonical hw).1 hsub,
+        ihr hrsub w hw, ihs hssub w hw]
+  | imp r s ihr ihs =>
+      intro w hw
+      have hrsub : r ⊑ p := Form.of_subformula_imp_left hsub
+      have hssub : s ⊑ p := Form.of_subformula_imp_right hsub
+      simp only [Form.holds]
+      rw [MAXIMAL_SETCONSISTENT_IMP_CLOSED (hcanonical hw).1 hsub,
+        ihr hrsub w hw, ihs hssub w hw]
+  | iff r s ihr ihs =>
+      intro w hw
+      have hrsub : r ⊑ p := Form.of_subformula_iff_left hsub
+      have hssub : s ⊑ p := Form.of_subformula_iff_right hsub
+      simp only [Form.holds]
+      rw [MAXIMAL_SETCONSISTENT_IFF_CLOSED (hcanonical hw).1 hsub,
+        ihr hrsub w hw, ihs hssub w hw]
+  | box r ih =>
+      intro w hw
+      have hrsub : r ⊑ p := Form.of_subformula_box hsub
+      simp only [Form.holds]
+      constructor
+      · intro hboxmem x hx hrel
+        have hrmem : r ∈ x := (hbox r w hsub hw).mp hboxmem x hrel
+        exact (ih hrsub x hx).mp hrmem
+      · intro hholds
+        apply (hbox r w hsub hw).mpr
+        intro x hrel
+        have hx : x ∈ model.frame.worlds := (hclosed w x hrel).2
+        exact (ih hrsub x hx).mpr (hholds x hx hrel)
+
 end HOLMS

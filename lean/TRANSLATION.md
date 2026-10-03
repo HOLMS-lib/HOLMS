@@ -272,6 +272,22 @@ appropriate.
    standard frames. Preserve hypotheses that are part of the generic public
    interface even when the set-based proof needs them only indirectly.
 
+   The resulting Lean proof is substantially simpler than the HOL Light
+   proof. In HOL Light, canonical worlds are lists, so the propositional cases
+   repeatedly pass through `CONJLIST`, derivability from the conjunction of a
+   world, list membership, and auxiliary results insensitive to ordering and
+   repetition. In Lean, a canonical world is already a `Set Form`, and the
+   closure theorems for `MAXIMAL_SETCONSISTENT` state exactly the membership
+   equivalences needed for negation, conjunction, disjunction, implication,
+   and equivalence. After applying the induction hypotheses, these cases are
+   therefore direct rewrites. The boxed case is similarly short: the defining
+   condition of a standard frame converts membership of `□q` into membership
+   of `q` at every relational successor, the induction hypothesis converts
+   that membership into semantic truth, and well-formedness of an appropriate
+   frame ensures that every successor is a designated world. Thus the shorter
+   proof reflects the removal of representation-level list machinery, not a
+   weakening of the truth lemma.
+
 3. **Standard relation and finiteness.** Translate `GEN_STANDARD_REL` and
    `GEN_FINITE_FRAME_MAXIMAL_CONSISTENT`. Finiteness should not be proved by
    enumerating no-repetition lists. Every canonical world is instead a subset
@@ -389,11 +405,11 @@ statements. Before later system-specific completeness files are translated,
 their uses of the discarded flat-map and permutation lemmas must be mapped to
 the new set-based interfaces.
 
-The first implementation stage is complete: `GenCompleteness.lean` contains
-the canonical-world, standard-frame, standard-model, and canonical-valuation
-definitions preceding `GEN_TRUTH_LEMMA`, together with their elementary
-characterizations. The truth lemma and all subsequent results remain future
-stages of this plan.
+The first two implementation stages are complete: `GenCompleteness.lean`
+contains the canonical-world, standard-frame, standard-model, and
+canonical-valuation definitions together with their elementary
+characterizations and `GEN_TRUTH_LEMMA`. The standard relation and all
+subsequent results remain future stages of this plan.
 
 ## Proof style
 
