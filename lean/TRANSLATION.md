@@ -22,6 +22,7 @@ The Lean port is a Lake library:
   `parametric_correspondence.ml`;
 - `HOLMS/AdHocCorrespondence.lean` corresponds to
   `ad_hoc_correspondence.ml`;
+- `HOLMS/SetConsistent.lean` corresponds to `setconsistent.ml`;
 - `HOLMS.lean` is the root import module;
 - imports replace `needs` and are checked by Lean's module system.
 

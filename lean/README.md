@@ -21,6 +21,8 @@ Light library.
   frame classes and proves the general semantic soundness theorem.
 - `HOLMS/AdHocCorrespondence.lean` proves the standard frame-correspondence
   results for `D`, `T`, `4`, `B`, `5`, Löb, and Grzegorczyk.
+- `HOLMS/SetConsistent.lean` formalizes consistent and maximal consistent sets,
+  their closure properties, and finite maximal extension.
 - `TRANSLATION.md` documents the main representation and proof-engineering
   differences between the HOL Light sources and the Lean port.
 - `lakefile.toml` defines the `HOLMS` Lake library.
