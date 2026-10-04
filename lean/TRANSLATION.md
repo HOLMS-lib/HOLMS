@@ -23,8 +23,7 @@ The Lean port is a Lake library:
 - `HOLMS/AdHocCorrespondence.lean` corresponds to
   `ad_hoc_correspondence.ml`;
 - `HOLMS/SetConsistent.lean` corresponds to `setconsistent.ml`;
-- `HOLMS/GenCompleteness.lean` is the staged translation of
-  `gen_completeness.ml`;
+- `HOLMS/GenCompleteness.lean` corresponds to `gen_completeness.ml`;
 - `HOLMS.lean` is the root import module;
 - imports replace `needs` and are checked by Lean's module system.
 
@@ -170,15 +169,15 @@ through `set_of_list`. The long-term intention for the HOL Light development
 is therefore to retire `CONSISTENT` and retain `SETCONSISTENT` as the canonical
 notion.
 
-The Lean port will adopt that intended final design immediately:
+The Lean port adopts that intended final design:
 
-- consistency will be defined only for `Set Form`, following
+- consistency is defined only for `Set Form`, following
   `SETCONSISTENT`;
-- maximal consistent collections will likewise be sets, following
+- maximal consistent collections are likewise sets, following
   `MAXIMAL_SETCONSISTENT`;
-- the future translation should start from `setconsistent.ml` and should not
-  reproduce `CONSISTENT` or `MAXIMAL_CONSISTENT` as independent public
-  definitions on `List Form`;
+- `SetConsistent.lean` translates `setconsistent.ml` and does not reproduce
+  `CONSISTENT` or `MAXIMAL_CONSISTENT` as independent public definitions on
+  `List Form`;
 - results from `consistent.ml` that are still needed downstream should be
   reformulated and proved for sets, preferably by reusing the corresponding
   results already translated from `setconsistent.ml`;
@@ -193,24 +192,24 @@ The Lean port will adopt that intended final design immediately:
 
 This is an intentional departure from a file-by-file mechanical port, but not
 from the mathematics: it removes a representation-level duplication whose
-equivalence is already proved in HOL Light. It should also simplify later
-canonical-model and maximal-extension arguments by using the same carrier
-type, `Set Form`, throughout.
+equivalence is already proved in HOL Light. It simplifies canonical-model and
+maximal-extension arguments by using the same carrier type, `Set Form`,
+throughout.
 
-## Translation plan for `gen_completeness.ml`
+## Translation of `gen_completeness.ml`
 
 The translation of `gen_completeness.ml` is the first substantial consumer of
 the decision to use sets for consistency. The HOL Light file constructs a
 finite canonical model around a formula, proves a truth lemma, extracts
 countermodels, and supplies the generic semantic argument used by the
-completeness files for individual modal systems. Its Lean counterpart should
-preserve these mathematical stages, but it should not preserve the original
-list representation of canonical worlds.
+completeness files for individual modal systems. `GenCompleteness.lean`
+preserves these mathematical stages while replacing the original list
+representation of canonical worlds with sets.
 
-### Intended module and dependencies
+### Module and dependencies
 
-The new module will be `HOLMS/GenCompleteness.lean`. Its direct project
-dependencies are expected to be:
+The translated module is `HOLMS/GenCompleteness.lean`. Its direct project
+dependencies are:
 
 - `HOLMS.SetConsistent`, for maximal consistent extensions and their closure
   properties;
@@ -218,28 +217,25 @@ dependencies are expected to be:
 - transitively, `HOLMS.Calculus` and `HOLMS.Modal`, for derivability,
   semantics, frames, models, and bisimulation.
 
-The import must be added to `HOLMS.lean` only after the module compiles. The
-corresponding entry in the module list in this document and in `README.md`
-should likewise be added when the translation exists, not during the planning
-stage.
+After the module was verified independently, it was added to the root import
+`HOLMS.lean` and to the module lists in this document and `README.md`.
 
 ### Canonical objects
 
-Canonical worlds will be sets of formulas:
+Canonical worlds are sets of formulas:
 
 ```lean
 Set Form
 ```
 
-Accordingly, the principal objects will have the following conceptual Lean
-types:
+Accordingly, the principal objects have the following conceptual Lean types:
 
-| HOL Light object | Planned Lean representation |
+| HOL Light object | Lean representation |
 |---|---|
 | `PARAMETRIC_STD_WORLD S P p` | `Set (Set Form)` |
 | `GEN_STANDARD_FRAME S p` | `Set (Frame (Set Form))` |
 | `GEN_STANDARD_REL S p` | `Set Form → Set Form → Prop` |
-| `GEN_STANDARD_MODEL S V p` | `Model (Set Form)` |
+| `GEN_STANDARD_MODEL S p (W,R) V` | `GEN_STANDARD_MODEL S p model` for `model : Model (Set Form)` |
 
 A world belongs to the canonical frame when it is maximally
 `SETCONSISTENT` among the subsentences of the distinguished formula. The
@@ -252,96 +248,139 @@ This representation makes membership, equality, and inclusion extensional.
 There is no ordering of formulas and there are no duplicate formulas to
 manage.
 
-### Results to preserve
+### Why the set-based development is shorter
 
-The following groups form the public mathematical core of the source file and
-should be translated, retaining the HOL Light names where they remain
-appropriate.
+Most of the simplification in `GenCompleteness.lean` comes from representing
+canonical worlds by `Set Form`, not from an intrinsic difference between the
+Lean and HOL Light provers. A set is the mathematical object that the
+list-based HOL Light development repeatedly reconstructs through
+`set_of_list`; choosing it as the carrier removes proof obligations about
+order, repetition, enumeration, and conversion between list membership and
+set membership.
 
-1. **Standard frames and models.** Translate
+This affects almost every part of the module:
+
+- the truth lemma uses closure properties stated directly as membership
+  equivalences, instead of passing through `CONJLIST` and derivability from an
+  encoded list;
+- finiteness follows because every world is a subset of the finite set of
+  subsentences, rather than from finiteness of duplicate-free lists;
+- box contents are set comprehensions, so the `MEM_FLATMAP_LEMMA` family is
+  replaced by ordinary membership and inclusion reasoning;
+- the accessibility construction extends a set of hypotheses directly and
+  uses the boxed-derivation lifting principle, avoiding list concatenation,
+  `SUBLIST`, and boxed iterated conjunctions;
+- invariance under permutations and the auxiliary passage from list worlds to
+  set worlds disappear entirely, since equality of worlds is already set
+  extensionality;
+- the standard and set-standard valuations coincide, and the countermodel
+  theorems no longer need to move between two representations of a world.
+
+There is one important tradeoff. The type `Set Form` itself is generally
+uncountable, whereas `List Form` is countable. Consequently, the final
+validity-transport proof cannot embed the whole Lean world type into an
+arbitrary infinite domain. It instead embeds only the finite subtype of worlds
+designated by the particular canonical frame. Thus the set representation
+simplifies the canonical-model mathematics throughout the file, while making
+the cardinality step more precise rather than eliminating it.
+
+### Results preserved
+
+The following groups form the public mathematical core preserved from the
+source file, retaining the HOL Light names where they remain appropriate.
+
+1. **Standard frames and models.** The translation retains
    `PARAMETRIC_STD_WORLD`, `PARAMETRIC_STANDARD_FRAME_DEF`,
    `STD_FRAME_SCHEMA`, `GEN_STANDARD_WORLD_DEF`, `GEN_STANDARD_WORLD`,
    `GEN_STANDARD_FRAME`, `GEN_STANDARD_FRAME_DEF`,
    `IN_GEN_STANDARD_FRAME`, `GEN_STANDARD_MODEL_DEF`, `STANDARD_EVAL`,
-   and `SET_STANDARD_EVAL` using structured Lean frames and models.
+   and `SET_STANDARD_EVAL`, using structured Lean frames and models.
 
-2. **Truth lemma.** Translate `GEN_TRUTH_LEMMA` by induction on the
-   subsentence formula. The Boolean cases should use the closure theorems for
-   maximal set-consistent collections already provided by
-   `SetConsistent.lean`; the modal case should use the defining condition on
-   standard frames. Preserve hypotheses that are part of the generic public
-   interface even when the set-based proof needs them only indirectly.
+2. **Truth lemma.** `GEN_TRUTH_LEMMA` is proved by induction on the subformula.
+   The Boolean cases use the closure theorems for maximal set-consistent
+   collections from `SetConsistent.lean`; the modal case uses the defining
+   condition on standard frames. The nonderivability hypothesis from the HOL
+   Light interface is retained even though the structural induction does not
+   use it directly.
 
-   The resulting Lean proof is substantially simpler than the HOL Light
-   proof. In HOL Light, canonical worlds are lists, so the propositional cases
+   The resulting proof is substantially shorter than its HOL Light
+   counterpart because its canonical worlds are sets, not because Lean proves
+   the same statement more powerfully. In HOL Light, the propositional cases
    repeatedly pass through `CONJLIST`, derivability from the conjunction of a
    world, list membership, and auxiliary results insensitive to ordering and
-   repetition. In Lean, a canonical world is already a `Set Form`, and the
-   closure theorems for `MAXIMAL_SETCONSISTENT` state exactly the membership
-   equivalences needed for negation, conjunction, disjunction, implication,
-   and equivalence. After applying the induction hypotheses, these cases are
-   therefore direct rewrites. The boxed case is similarly short: the defining
-   condition of a standard frame converts membership of `□q` into membership
-   of `q` at every relational successor, the induction hypothesis converts
-   that membership into semantic truth, and well-formedness of an appropriate
-   frame ensures that every successor is a designated world. Thus the shorter
-   proof reflects the removal of representation-level list machinery, not a
-   weakening of the truth lemma.
+   repetition. With a `Set Form` world, the closure theorems for
+   `MAXIMAL_SETCONSISTENT` already state exactly the membership equivalences
+   needed for negation, conjunction, disjunction, implication, and
+   equivalence, so the induction hypotheses turn these cases into direct
+   rewrites. The boxed case is similarly short: the standard-frame condition
+   converts membership of `□q` into membership of `q` at every relational
+   successor, the induction hypothesis converts membership into truth, and
+   frame well-formedness ensures that every successor is a designated world.
 
-3. **Standard relation and finiteness.** Translate `GEN_STANDARD_REL` and
-   `GEN_FINITE_FRAME_MAXIMAL_CONSISTENT`. Finiteness should not be proved by
-   enumerating no-repetition lists. Every canonical world is instead a subset
-   of the finite set of subsentences, so `Set.Finite.finite_subsets` gives the
-   natural proof. Nonemptiness follows from
-   `NONEMPTY_MAXIMAL_SETCONSISTENT`.
+3. **Standard relation and finiteness.** `GEN_STANDARD_REL` and
+   `GEN_FINITE_FRAME_MAXIMAL_CONSISTENT` retain their mathematical content.
+   Finiteness is not proved by enumerating no-repetition lists: every
+   canonical world is a subset of the finite set of subsentences, so
+   `Set.Finite.finite_subsets` gives the natural proof. Nonemptiness follows
+   from `NONEMPTY_MAXIMAL_SETCONSISTENT`.
 
-4. **Accessibility lemma.** Reformulate
-   `GEN_XK_FOR_ACCESSIBILITY_LEMMA` and `GEN_ACCESSIBILITY_LEMMA` with set
-   inclusion in place of `SUBLIST`. Given a source world and a formula not
-   forced by the relevant boxed assumptions, extend the set consisting of the
-   unboxed box contents together with the negated target formula to a maximal
-   set-consistent successor. This is the key existence argument used in the
-   modal step of later completeness proofs.
+4. **Accessibility lemma.** `GEN_XK_FOR_ACCESSIBILITY_LEMMA` and
+   `GEN_ACCESSIBILITY_LEMMA` use set inclusion in place of `SUBLIST`. Given a
+   source world and a formula not forced by the relevant boxed assumptions,
+   the proof extends the set consisting of the unboxed box contents together
+   with the negated target formula to a maximal set-consistent successor. This
+   is the key existence argument used in the modal step of later completeness
+   proofs.
 
-5. **Countermodels and generic completeness.** Translate
-   `GEN_COUNTERMODEL`, `GEN_COUNTERMODEL_ALT`, and
-   `GEN_LEMMA_FOR_GEN_COMPLETENESS`. These results should construct a finite
-   canonical countermodel and then transport validity between its world type
+5. **Countermodels and generic completeness.** `GEN_COUNTERMODEL` and
+   `GEN_COUNTERMODEL_ALT` extract a finite canonical countermodel.
+   `GEN_LEMMA_FOR_GEN_COMPLETENESS` transports validity between its world type
    and the arbitrary infinite world type occurring in `APPR`.
 
-### List-specific material to replace
+### Replacement of list-specific material
 
 The block `MEM_FLATMAP_LEMMA` through `MEM_FLATMAP_LEMMA_6` is an encoding of
-set comprehensions through list filtering and flattening. It should not be
-ported literally. Introduce small set-based definitions only for the
-collections actually used in proofs; the central example is the set of box
-contents
+set comprehensions through list filtering and flattening. It is not ported
+literally. The Lean module introduces small set-based definitions only for the
+collections actually used in generic proofs; the central example is the set
+of box contents
 
 ```lean
 {q | □q ∈ w}
 ```
 
-and variants can be expressed with set comprehensions, intersections, images,
-and preimages. System-specific variants needed by later completeness modules
+and variants are expressed with set comprehensions, unions, images, and
+preimages. System-specific variants needed by later completeness modules
 should preferably be defined in those modules rather than accumulated in the
 generic file.
 
-Likewise, `XK_SUBLIST_XK4` should become an elementary subset lemma if the
-generic accessibility proof needs it. If it is used only by the translation
-of the K4 development, it belongs in that later module.
+Likewise, `XK_SUBLIST_XK4` is retained as an elementary subset lemma between
+`GEN_BOX_CONTENT` and `GEN_BOX_CONTENT_K4`; despite its historical name, its
+Lean statement contains no lists.
 
-The generic accessibility proof will probably need one reusable proof-theoretic
-helper: a derivation from a set of unboxed assumptions can be lifted under
-`box` when the corresponding boxed assumptions belong to the current world.
-This should first be proved locally in `GenCompleteness.lean`. It should be
-moved to `Calculus.lean` only if it is genuinely independent of the canonical
-model construction and reused elsewhere.
+The generic accessibility proof uses a local proof-theoretic lifting
+principle. If `S ⊢ₘ[Γ] p` and the current world `w` contains `□q` for every
+`q ∈ Γ`, then `S ⊢ₘ[w] □p`. In `GenCompleteness.lean` this is the private
+theorem `box_derivation_from_context`. Its proof is an induction on the given
+derivation: primitive and additional axioms are boxed by necessitation; a
+hypothesis is replaced by its boxed counterpart in `w`; modus ponens is lifted
+with `MLK_box_modusponens`; and a necessitation conclusion is boxed again.
+The final case relies essentially on the calculus restriction that
+necessitation premises are derivable from the empty hypothesis set.
+
+This principle replaces the HOL Light construction through `CONJLIST`, the
+list of boxed hypotheses, and distributivity of `box` over the encoded finite
+conjunction. It is used to show that inconsistency of
+`insert (¬q) (GEN_BOX_CONTENT w)` would derive `□q` from `w`, contradicting
+the assumed absence of `□q`. The theorem remains private for now because its
+only current use is the canonical accessibility argument; it should move to
+`Calculus.lean` if later translations reuse it independently.
 
 ### Material made obsolete by set worlds
 
 The source section on invariance under permutation is representation
-infrastructure, not additional modal mathematics. The following results
-should therefore not be reproduced in Lean:
+infrastructure, not additional modal mathematics. The following results are
+therefore not reproduced in Lean:
 
 - `SET_OF_LIST_EQ_IMP_MEM`;
 - `SET_OF_LIST_EQ_CONJLIST` and `SET_OF_LIST_EQ_CONJLIST_EQ`;
@@ -356,13 +395,13 @@ the semantics. For `Set Form`, this invariance is already ordinary set
 extensionality.
 
 For the same reason, the auxiliary inductive predicates `GEN_STDWORLDS` and
-`GEN_STDREL` should normally disappear. They bridge list worlds with their
-set images in the HOL Light bisimulation argument. If a named interface is
-needed downstream, it should be an ordinary predicate or definition on set
-worlds rather than an inductive wrapper recreating the discarded
-representation boundary.
+`GEN_STDREL` are omitted. They bridge list worlds with their set images in the
+HOL Light bisimulation argument. If a named interface becomes necessary in a
+later module, it should be an ordinary predicate or definition on set worlds
+rather than an inductive wrapper recreating the discarded representation
+boundary.
 
-### Validity transport and the main technical risk
+### Validity transport and the main technical tradeoff
 
 The proof of `GEN_LEMMA_FOR_GEN_COMPLETENESS` requires special care. In HOL
 Light, a countability argument embeds the list-based canonical world type into
@@ -370,8 +409,8 @@ the arbitrary infinite type used by `APPR`. In Lean, the full type `Set Form`
 is not countable, so that argument cannot be copied.
 
 Only the worlds of the particular canonical frame need to be embedded. That
-set is finite by `GEN_FINITE_FRAME_MAXIMAL_CONSISTENT`; hence its subtype can
-be injected into any infinite type. The planned proof is:
+set is finite by membership in `APPR`; hence its subtype can be injected into
+any infinite type. The implemented proof:
 
 1. equip the finite subtype of canonical worlds with its finite instance;
 2. choose an embedding of that subtype into the target infinite type;
@@ -380,36 +419,40 @@ be injected into any infinite type. The planned proof is:
 5. use `Form.valid_of_bisimilar` to transfer validity.
 
 This construction, and in particular the interaction between finite subtypes,
-embeddings, and transported relations, is the largest technical uncertainty
-in the translation. It should be prototyped before committing to the final
-statement of the generic completeness theorem. No axiom or stronger
-cardinality assumption should be introduced to bypass it.
+embeddings, and transported relations, is the principal technical complication
+introduced by choosing set worlds. The Lean proof carries it out without a new
+axiom or a stronger cardinality assumption.
 
-### Implementation order and verification gates
+### Implementation stages and verification
 
-The work should proceed in independently checkable stages:
+The work was completed in independently checkable stages:
 
-1. define canonical worlds, frames, relations, valuations, and models;
-2. prove their elementary characterization lemmas;
-3. prove the truth lemma;
-4. prove finiteness and nonemptiness of the canonical frame;
-5. develop the set-based boxed-context helper and accessibility lemma;
-6. derive the two countermodel theorems;
-7. prototype and complete finite-world validity transport;
-8. prove the generic completeness lemma;
-9. add the module to `HOLMS.lean`, update the module documentation, and run
-   the complete Lean build.
+1. canonical worlds, frames, relations, valuations, and models were defined;
+2. their elementary characterization lemmas were proved;
+3. the truth lemma was proved;
+4. finiteness and nonemptiness of the canonical frame were established;
+5. the set-based boxed-context helper and accessibility lemma were developed;
+6. the two countermodel theorems were derived;
+7. finite-world validity transport was prototyped and completed;
+8. the generic completeness lemma was proved;
+9. the module was added to `HOLMS.lean`, the documentation was updated, and
+   the complete Lean build was run.
 
-Each stage should compile without `sorry`, `admit`, new axioms, or weakened
-statements. Before later system-specific completeness files are translated,
-their uses of the discarded flat-map and permutation lemmas must be mapped to
-the new set-based interfaces.
+Each stage was compiled before proceeding to the next, and the completed
+module passes the full Lean build without `sorry`, `admit`, new axioms, or
+weakened statements. When later system-specific completeness files are
+translated, their uses of the discarded flat-map and permutation lemmas must
+be mapped to the new set-based interfaces.
 
-The first two implementation stages are complete: `GenCompleteness.lean`
-contains the canonical-world, standard-frame, standard-model, and
-canonical-valuation definitions together with their elementary
-characterizations and `GEN_TRUTH_LEMMA`. The standard relation and all
-subsequent results remain future stages of this plan.
+The translation of the mathematical content of `gen_completeness.ml` is now
+complete. `GenCompleteness.lean` contains the canonical-world,
+standard-frame, standard-model, and canonical-valuation definitions; the
+truth, finiteness, and accessibility lemmas; the generic countermodel
+theorems; and finite-world validity transport. The original flat-map lemmas
+have been replaced by set-based box-content definitions, while the
+permutation, `set_of_list`, `GEN_STDWORLDS`, and `GEN_STDREL` sections have no
+separate declarations because their sole purpose was to mediate between list
+worlds and their underlying sets.
 
 ## Proof style
 
