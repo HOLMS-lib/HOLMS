@@ -4,6 +4,7 @@ import HOLMS.ParametricCorrespondence
 import HOLMS.AdHocCorrespondence
 import HOLMS.SetConsistent
 import HOLMS.GenCompleteness
+import HOLMS.KCompleteness
 
 /-!
 # HOLMS

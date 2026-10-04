@@ -26,6 +26,8 @@ Light library.
 - `HOLMS/GenCompleteness.lean` formalizes the generic completeness
   infrastructure: set-based canonical worlds, finite standard frames, the
   truth and accessibility lemmas, countermodels, and validity transport.
+- `HOLMS/KCompleteness.lean` specializes that infrastructure to K and proves
+  soundness, consistency, finite countermodel existence, and completeness.
 - `TRANSLATION.md` documents the main representation and proof-engineering
   differences between the HOL Light sources and the Lean port.
 - `lakefile.toml` defines the `HOLMS` Lake library.

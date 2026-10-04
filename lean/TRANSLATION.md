@@ -24,6 +24,7 @@ The Lean port is a Lake library:
   `ad_hoc_correspondence.ml`;
 - `HOLMS/SetConsistent.lean` corresponds to `setconsistent.ml`;
 - `HOLMS/GenCompleteness.lean` corresponds to `gen_completeness.ml`;
+- `HOLMS/KCompleteness.lean` corresponds to `k_completeness.ml`;
 - `HOLMS.lean` is the root import module;
 - imports replace `needs` and are checked by Lean's module system.
 
@@ -481,6 +482,12 @@ The intended Lean modules are `KCompleteness.lean`, `TCompleteness.lean`,
 `DCompleteness.lean`. Each module should be added to `HOLMS.lean` only after it
 compiles independently.
 
+`KCompleteness.lean` has now been completed and establishes the common module
+shape described below. Its main completeness theorem already uses worlds of
+type `Set Form`; `K_COUNTERMODEL_FINITE_SETS` is therefore a direct corollary
+of the generic countermodel construction rather than the endpoint of a second
+list-to-set bisimulation. The remaining order starts with T and K4.
+
 ### Common mathematical pattern
 
 Each source file follows essentially the same outer argument:
@@ -593,18 +600,21 @@ the difficult accessibility proofs harder to state and debug.
 
 ### Per-logic analysis
 
-#### K: baseline specialization
+#### K: completed baseline specialization
 
-K is the first module to translate. Its additional axiom set is empty and its
+K was the first module translated. Its additional axiom set is empty and its
 canonical relation is exactly `GEN_STANDARD_REL ∅ p`. The generic
 accessibility lemma applies without strengthening the extension context.
-Consequently, this module should mostly consist of correspondence,
+Consequently, the module mostly consists of correspondence,
 soundness, consistency, and thin specializations of the generic truth,
 countermodel, and completeness results.
 
-K is the appropriate place to settle naming, namespace use, theorem argument
-order, and the standard shape of a logic-specific module. It should not
-introduce machinery tailored to harder systems.
+The completed translation settles naming, namespace use, theorem argument
+order, and the standard shape of a logic-specific module without introducing
+machinery tailored to harder systems. It preserves the public mathematical
+theorem names, omits the OCaml tactic wrappers, and replaces the final
+list-to-set construction with a direct theorem about the existing set-world
+canonical frame.
 
 #### T: reflexivity
 
@@ -726,17 +736,19 @@ negative-information pattern are established.
 
 ### Recommended implementation order
 
-A risk-directed Lean order is:
+A risk-directed Lean order, including current progress, is:
 
-1. review and, when first required, expose the boxed-context lifting lemma;
-2. translate K as the minimal end-to-end template;
-3. translate T and K4, establishing reflexivity and box persistence;
-4. translate S4 by combining those two patterns;
-5. translate the core of D, keeping the alternative-axiom equivalences at the
+1. **K — completed:** the minimal end-to-end template required no change to
+   the private boxed-context lifting lemma;
+2. translate T and K4, establishing reflexivity and box persistence; review
+   and expose that lifting lemma when K4 first requires it outside the generic
+   module;
+3. translate S4 by combining those two patterns;
+4. translate the core of D, keeping the alternative-axiom equivalences at the
    explicit dependency boundary described above;
-6. translate KB and then B, developing the symmetric accessibility context;
-7. translate GL, reusing the K4 context but adding Löb strictness;
-8. translate S5 last, because it combines the greatest number of previously
+5. translate KB and then B, developing the symmetric accessibility context;
+6. translate GL, reusing the K4 context but adding Löb strictness;
+7. translate S5 last, because it combines the greatest number of previously
    established techniques.
 
 This differs from `make.ml` only to expose technical dependencies and reduce
