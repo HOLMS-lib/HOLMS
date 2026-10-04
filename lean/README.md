@@ -30,8 +30,14 @@ Light library.
   infrastructure to K and T and provide the completeness-based tactics
   `modal_k` and `modal_t`. Later logic-specific completeness modules follow
   the same `modal_<system>` naming convention.
-- `TRANSLATION.md` documents the main representation and proof-engineering
-  differences between the HOL Light sources and the Lean port.
+- [`CONVENTIONS.md`](CONVENTIONS.md) is the authoritative guide to
+  representation, style, and proof-engineering choices shared by several
+  translated modules.
+- [`translation/README.md`](translation/README.md) indexes one implementation
+  note for every Lean module. Consult the matching note when reading or
+  changing that module.
+- [`TRANSLATION.md`](TRANSLATION.md) is retained only as a legacy snapshot of
+  the earlier combined documentation; it is redundant and may be obsolete.
 - `lakefile.toml` defines the `HOLMS` Lake library.
 - `lean-toolchain` pins the Lean version used by the project.
 

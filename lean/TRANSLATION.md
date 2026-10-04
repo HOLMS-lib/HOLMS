@@ -1,8 +1,16 @@
 # Translating HOLMS from HOL Light to Lean 4
 
-This document records the main conceptual, stylistic, and technical choices
-used in the Lean port of HOLMS. It is intended both as a guide for reading the
-current translation and as a convention for translating later modules.
+> **Legacy document.** This file is now a historical snapshot of the
+> translation process. Its material has been reorganized into the shorter,
+> authoritative [`CONVENTIONS.md`](CONVENTIONS.md), for choices shared by
+> several modules, and the module-specific notes indexed in
+> [`translation/README.md`](translation/README.md). The text below is retained
+> temporarily for provenance and may be redundant or obsolete; it should not
+> be used as the current translation guide or updated with new decisions.
+
+The text below originally recorded the main conceptual, stylistic, and
+technical choices used during the Lean port of HOLMS. It reflects the state of
+the translation when this combined document was maintained.
 
 The HOL Light development remains the mathematical reference. A difference
 listed here is an implementation choice, not a change to the intended modal

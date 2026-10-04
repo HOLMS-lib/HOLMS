@@ -27,8 +27,12 @@ This is a Lake project:
 - `HOLMS/*.lean` contains the implementation modules.
 - `HOLMS/Modal.lean` corresponds to `../modal.ml` and contains syntax, Kripke
   semantics, subformulas, countability, and bisimulation.
-- `TRANSLATION.md` documents conceptual, stylistic, and technical choices
-  used in the Lean port of HOLMS from HOL Light.
+- `CONVENTIONS.md` contains the authoritative translation choices that apply
+  across multiple modules.
+- `translation/README.md` indexes the implementation notes specific to each
+  Lean module.
+- `TRANSLATION.md` is a legacy snapshot. It is redundant, may be obsolete,
+  and must not be treated as the current translation guide.
 
 Run Lake commands from this directory. Do not treat the Lean port as part of
 the HOL Light `make.ml` load sequence.
@@ -37,11 +41,14 @@ the HOL Light `make.ml` load sequence.
 
 Before translating a definition or theorem:
 
-1. Inspect the corresponding HOL Light source and its dependencies.
-2. Search the existing Lean modules for reusable definitions and results.
-3. Preserve the original mathematical meaning and public terminology where
+1. Read `CONVENTIONS.md` and the matching module note indexed by
+   `translation/README.md`. For a new module, inspect the notes of its direct
+   dependencies and create its own note as part of the translation.
+2. Inspect the corresponding HOL Light source and its dependencies.
+3. Search the existing Lean modules for reusable definitions and results.
+4. Preserve the original mathematical meaning and public terminology where
    practical, while following established Lean naming and proof conventions.
-4. Keep explicit which parts are faithful translations and which parts are
+5. Keep explicit which parts are faithful translations and which parts are
    Lean-specific implementation choices.
 
 Prefer idiomatic Lean structures, inductive types, recursion, and theorem
@@ -52,7 +59,9 @@ abstraction is appropriate.
 When adding a public module, import it from `HOLMS.lean`. Keep imports at the
 beginning of each Lean file and avoid unnecessary dependencies. Consult the
 corresponding HOL Light files before changing foundational syntax or semantic
-definitions.
+definitions. Update the matching file under `translation/` when a
+module-specific implementation decision changes; update `CONVENTIONS.md`
+instead when the decision affects several modules.
 
 ## Formalization principles
 

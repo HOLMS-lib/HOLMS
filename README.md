@@ -7,6 +7,13 @@ See the [website](https://holms-lib.github.io/) for a brief overview of our [HOL
 
 This repository contains HOLMS (HOL-Light Library for Modal Systems), a modular framework designed to implement modal reasoning within the HOL Light proof assistant.
 
+An ongoing Lean 4 port is maintained under [`lean/`](lean/). Its
+[`README`](lean/README.md) describes the translated modules, while
+[`CONVENTIONS.md`](lean/CONVENTIONS.md) and the
+[`module-specific translation index`](lean/translation/README.md) document
+the current implementation choices. The older
+[`TRANSLATION.md`](lean/TRANSLATION.md) is retained only as a legacy snapshot.
+
  At its current stage, nine modal system and their adequacy proofs are now implemented in HOLMS:
 - **K** the minimal system is developed in `k_completeness.ml`;
 - **D** in `d_completeness.ml`;
@@ -827,4 +834,3 @@ val ctm : term =
 # GRZ_HOLMS_CERTIFY_COUNTERMODEL ctm tm;;
 val it : thm = |- ~(RATF |= Diam Box Atom "a" --> Box Diam Atom "a")
  ```
-
