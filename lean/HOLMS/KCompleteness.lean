@@ -225,4 +225,28 @@ theorem K_COMPLETENESS_THM_GEN {A : Type*} [Infinite A] {p : Form}
     GEN_LEMMA_FOR_GEN_COMPLETENESS (A := A) (∅ : Set Form) happA
   simpa only [← FINITE_FRAME_APPR_K (Set Form)] using happSets
 
+/-! ## Automated proof procedure -/
+
+/-- Prove a closed theorem of K by finite-frame completeness, semantic
+normalization, and first-order proof search. -/
+macro "modal_k" : tactic =>
+  `(tactic|
+    apply K_COMPLETENESS_THM <;>
+    simp only [Form.Valid, Form.holdsIn, Form.holds, IN_FINITE_FRAME,
+      Set.mem_ofPred_eq] <;>
+    grind)
+
+/-! The active `K_RULE` examples from `k_completeness.ml` are retained as
+compile-time regression tests for `modal_k`. -/
+
+example (p q r : Form) :
+    ∅ ⊢ₘ[∅] (((¬p) ⟶ q ⟶ r) ⟷ ((p ⟶ ⊥ₘ) ⟶ q ⟶ r)) := by
+  modal_k
+
+example (p : Form) : ∅ ⊢ₘ[∅] (((p ⟶ ⊥ₘ) ⟶ ⊥ₘ) ⟷ p) := by
+  modal_k
+
+example (p q : Form) : ∅ ⊢ₘ[∅] ((¬ (p ⋏ q)) ⟷ ((¬p) ⋎ ¬ q)) := by
+  modal_k
+
 end HOLMS

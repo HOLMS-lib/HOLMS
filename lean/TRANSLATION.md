@@ -24,10 +24,10 @@ The Lean port is a Lake library:
   `ad_hoc_correspondence.ml`;
 - `HOLMS/SetConsistent.lean` corresponds to `setconsistent.ml`;
 - `HOLMS/GenCompleteness.lean` corresponds to `gen_completeness.ml`;
-- `HOLMS/KCompleteness.lean` corresponds to `k_completeness.ml`;
-- `HOLMS/TCompleteness.lean` currently translates the theoretical part of
-  `t_completeness.ml`; its `T_TAC` and `T_RULE` utilities are a separate
-  pending stage;
+- `HOLMS/KCompleteness.lean` corresponds to `k_completeness.ml` and provides
+  the tactic `modal_k`;
+- `HOLMS/TCompleteness.lean` corresponds to `t_completeness.ml` and provides
+  the tactic `modal_t`;
 - `HOLMS.lean` is the root import module;
 - imports replace `needs` and are checked by Lean's module system.
 
@@ -489,9 +489,9 @@ compiles independently.
 shape described below. Its main completeness theorem already uses worlds of
 type `Set Form`; `K_COUNTERMODEL_FINITE_SETS` is therefore a direct corollary
 of the generic countermodel construction rather than the endpoint of a second
-list-to-set bisimulation. The theoretical part of `TCompleteness.lean` is also
-complete; its rudimentary automation remains deliberately separate from the
-mathematical translation. K4 is the next unstarted completeness module.
+list-to-set bisimulation. `KCompleteness.lean` and `TCompleteness.lean` both
+include their rudimentary completeness-based automation. K4 is the next
+unstarted completeness module.
 
 ### Common mathematical pattern
 
@@ -572,12 +572,71 @@ file depends on a historical `*_COUNTERMODEL_FINITE_SETS` name, it may be
 provided as a direct corollary or alias of the main countermodel theorem, but
 the list-to-set bisimulation should not be recreated.
 
-The OCaml values `K_TAC`, `T_TAC`, `K4_TAC`, and their analogues, together
-with the `*_RULE` wrappers, are proof-producing meta-level utilities rather
-than modal completeness theorems. They belong to the later translation of
-the decision-procedure modules, not to this stage. The completeness modules
-should expose the propositions from which future Lean tactics can be built,
-without attempting to translate OCaml tactic code as logical declarations.
+### Completeness-based automation
+
+The individual HOL Light completeness files generally end with a pair such
+as `K_TAC`/`K_RULE`, `T_TAC`/`T_RULE`, or `K4_TAC`/`K4_RULE`. The first member
+applies the corresponding completeness theorem, expands semantic validity and
+the relevant finite-frame conditions, and invokes `MESON_TAC`. The second is
+an OCaml function that introduces universal variables, runs the tactic on a
+quoted term, and returns a theorem.
+
+Lean uses one tactic per modal system, following the naming convention
+`modal_<system>` (`modal_k`, `modal_t`, etc).
+
+There is no separate Lean counterpart of `*_RULE`. Formula variables normally
+appear as declaration binders and are already in the local context when a
+proof begins. If a theorem is instead stated with explicit Lean quantifiers,
+the ordinary `intro` tactic is used before the logic-specific modal tactic:
+
+```lean
+example (p q : Form) :
+    T_AX ⊢ₘ[(∅ : Set Form)] (□(p ⟷ q) ⟶ (□p ⟷ □q)) := by
+  modal_t
+
+example : ∀ p q : Form,
+    T_AX ⊢ₘ[(∅ : Set Form)] (□(p ⟷ q) ⟶ (□p ⟷ □q)) := by
+  intro p q
+  modal_t
+```
+
+Each tactic retains the transparent architecture of its HOL Light source:
+
+1. apply the system-specific finite-frame completeness theorem;
+2. use `simp only` to unfold `Form.Valid`, `Form.holdsIn`, `Form.holds`, the
+   membership theorem for the relevant finite frame class, and exactly the
+   relational properties needed by that class;
+3. invoke `grind` as the counterpart of `MESON_TAC` on the resulting
+   first-order goal.
+
+The explicit simplification list is deliberately system-specific. For
+example, `modal_k` needs only `IN_FINITE_FRAME`, whereas `modal_t` additionally
+uses `IN_RF` and `REFLEXIVE`. Future tactics will similarly add
+`TRANSITIVE`, `SYMMETRIC`, `EUCLIDEAN`, `SERIAL`, or the appropriate combined
+frame characterization. An unrestricted `simp` would make proof search depend
+on unrelated future simp lemmas and would obscure which frame property closes
+the modal argument.
+
+The active `*_RULE` calls in each HOL Light source file should be translated
+as Lean `example` declarations next to the tactic. They are compile-time
+regression tests, not additional public theorems. `modal_k` currently passes
+the three active K examples, while `modal_t` passes the five active T
+examples.
+
+These tactics are deliberately modest. They target closed derivability goals
+with empty hypotheses, as their HOL Light counterparts do; they are not
+claimed to decide every theorem of the corresponding logic or to replace the
+later certified decision procedures. `grind` is heuristic proof search, but
+every successful invocation produces a proof term checked by Lean. The pinned
+toolchain and the translated source examples provide regression protection
+against changes in its search behavior.
+
+The common shape does not yet justify a tactic-generating abstraction. The
+frame expansions and completeness theorems differ by system, and a direct
+macro keeps each dependency visible. After several more completeness modules
+have been translated, a shared internal helper or a generic `modal` dispatcher
+may be considered if it reduces duplication without weakening diagnostics or
+making the supported logic ambiguous.
 
 ### Shared proof-theoretic infrastructure to review first
 
@@ -597,11 +656,11 @@ for several HOL Light lemmas that box a `CONJLIST` of assumptions. The move
 must be a focused API refactoring: `GenCompleteness.lean` should continue to
 use the same theorem and its behavior must not change.
 
-No larger abstraction should be introduced before completing K. K will show
-which parts of the repeated countermodel argument are genuinely boilerplate.
-Only after that prototype compiles should a common packaging theorem be
-considered. Prematurely abstracting all nine canonical relations would make
-the difficult accessibility proofs harder to state and debug.
+The completed K module identifies the outer countermodel argument that is
+genuinely boilerplate, but one example is not yet enough to justify a common
+packaging theorem for all systems. Prematurely abstracting all nine canonical
+relations would make the difficult accessibility proofs harder to state and
+debug; reconsider this only after further modules expose a stable boundary.
 
 ### Per-logic analysis
 
@@ -617,11 +676,11 @@ countermodel, and completeness results.
 The completed translation settles naming, namespace use, theorem argument
 order, and the standard shape of a logic-specific module without introducing
 machinery tailored to harder systems. It preserves the public mathematical
-theorem names, omits the OCaml tactic wrappers, and replaces the final
-list-to-set construction with a direct theorem about the existing set-world
-canonical frame.
+theorem names, replaces the final list-to-set construction with a direct
+theorem about the existing set-world canonical frame, and replaces the
+`K_TAC`/`K_RULE` pair with the single tactic `modal_k`.
 
-#### T: theoretical translation completed; automation pending
+#### T: completed theory and automation
 
 T also uses the generic canonical relation. The additional obligation is to
 show that it is reflexive. If `□B` belongs to a maximal T-consistent world,
@@ -636,13 +695,12 @@ the axiom set, reflexive frame classes, correspondence, soundness,
 consistency, specialized standard models and truth lemma, accessibility,
 finite countermodels, and both forms of completeness.
 
-The HOL Light file additionally defines `T_TAC` by applying completeness and
-then discharging the resulting finite reflexive-frame semantic goal with
-`MESON_TAC`; `T_RULE` packages that tactic as a theorem-producing function.
-These are meta-level automation rather than missing steps in the completeness
-proof. Their Lean counterparts are intentionally reserved for a second stage,
-where the appropriate interface (tactic macro, elaborator, or theorem-level
-procedure) can be chosen and tested independently of the mathematical module.
+The T-specific instance of the general automation convention is `modal_t`.
+Compared with `modal_k`, its normalization also unfolds `IN_RF` and
+`REFLEXIVE`, allowing `grind` to use the self-loop supplied by reflexivity.
+The five active `T_RULE` calls in the source are retained as compile-time
+examples; the commented attempts at axiom 4 and Löb formulas remain
+non-examples rather than proof obligations for T.
 
 #### K4: persistence under boxes
 
@@ -755,9 +813,9 @@ negative-information pattern are established.
 A risk-directed Lean order, including current progress, is:
 
 1. **K — completed:** the minimal end-to-end template required no change to
-   the private boxed-context lifting lemma;
-2. **T theory — completed:** reflexivity required only a direct set-based
-   closure argument; translate its automation separately, as requested;
+   the private boxed-context lifting lemma and provides `modal_k`;
+2. **T — completed:** reflexivity uses a direct set-based closure argument
+   and the module provides `modal_t`;
 3. translate K4, establishing box persistence; review and expose the
    boxed-context lifting lemma when K4 first requires it outside the generic
    module;
@@ -784,7 +842,9 @@ milestones:
 5. the named extension context and accessibility lemma;
 6. finite countermodel and completeness over `Set Form`;
 7. completeness over an arbitrary infinite type;
-8. documentation, root import, focused build, and full build.
+8. the corresponding `modal_<system>` tactic and translated `*_RULE`
+   regression examples, where the source provides them;
+9. documentation, root import, focused build, and full build.
 
 ### Risks and verification gates
 

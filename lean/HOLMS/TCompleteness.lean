@@ -4,15 +4,10 @@ import HOLMS.GenCompleteness
 /-!
 # Completeness of T
 
-This module is the Lean 4 counterpart of the mathematical part of
-`t_completeness.ml`. It specializes the generic finite canonical-model
-construction to the reflexivity axiom T and proves soundness, consistency,
-finite-model completeness, and completeness over every infinite type of
-worlds.
-
-The HOL Light file also defines the meta-level proof procedures `T_TAC` and
-`T_RULE`. They are intentionally deferred to a separate translation stage;
-this module contains only their logical foundation.
+This module is the Lean 4 counterpart of `t_completeness.ml`. It specializes
+the generic finite canonical-model construction to the reflexivity axiom T,
+proves soundness, consistency, finite-model completeness, and completeness
+over every infinite type of worlds, and provides the `modal_t` proof tactic.
 -/
 
 namespace HOLMS
@@ -311,5 +306,34 @@ theorem T_COMPLETENESS_THM_GEN {A : Type*} [Infinite A] {p : Form}
     simpa only [← RF_APPR_T A] using hvalid
   have happSets := GEN_LEMMA_FOR_GEN_COMPLETENESS (A := A) T_AX happA
   simpa only [← RF_APPR_T (Set Form)] using happSets
+
+/-! ## Automated proof procedure -/
+
+/-- Prove a closed theorem of T by finite-frame completeness, semantic
+normalization, and first-order proof search. -/
+macro "modal_t" : tactic =>
+  `(tactic|
+    apply T_COMPLETENESS_THM <;>
+    simp only [Form.Valid, Form.holdsIn, Form.holds, IN_RF,
+      IN_FINITE_FRAME, REFLEXIVE, Set.mem_ofPred_eq] <;>
+    grind)
+
+/-! The active `T_RULE` examples from `t_completeness.ml` are retained as
+compile-time regression tests for `modal_t`. -/
+
+example (p q r : Form) : T_AX ⊢ₘ[∅] (p ⋏ q ⋏ r ⟶ p ⋏ r) := by
+  modal_t
+
+example (p q : Form) : T_AX ⊢ₘ[∅] (□(p ⟶ q) ⟶ □p ⟶ □q) := by
+  modal_t
+
+example (p q : Form) : T_AX ⊢ₘ[∅] ((□(p ⟶ q) ⋏ □p) ⟶ □q) := by
+  modal_t
+
+example (p : Form) : T_AX ⊢ₘ[∅] (□p ⟶ p) := by
+  modal_t
+
+example (p q : Form) : T_AX ⊢ₘ[∅] (□(p ⟷ q) ⟶ (□p ⟷ □q)) := by
+  modal_t
 
 end HOLMS
