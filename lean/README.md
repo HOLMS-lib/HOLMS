@@ -28,6 +28,9 @@ Light library.
   truth and accessibility lemmas, countermodels, and validity transport.
 - `HOLMS/KCompleteness.lean` specializes that infrastructure to K and proves
   soundness, consistency, finite countermodel existence, and completeness.
+- `HOLMS/TCompleteness.lean` proves the corresponding theoretical results for
+  T over reflexive frames; translation of the source's `T_TAC` and `T_RULE`
+  proof procedures is intentionally deferred.
 - `TRANSLATION.md` documents the main representation and proof-engineering
   differences between the HOL Light sources and the Lean port.
 - `lakefile.toml` defines the `HOLMS` Lake library.

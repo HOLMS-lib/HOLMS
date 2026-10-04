@@ -25,6 +25,9 @@ The Lean port is a Lake library:
 - `HOLMS/SetConsistent.lean` corresponds to `setconsistent.ml`;
 - `HOLMS/GenCompleteness.lean` corresponds to `gen_completeness.ml`;
 - `HOLMS/KCompleteness.lean` corresponds to `k_completeness.ml`;
+- `HOLMS/TCompleteness.lean` currently translates the theoretical part of
+  `t_completeness.ml`; its `T_TAC` and `T_RULE` utilities are a separate
+  pending stage;
 - `HOLMS.lean` is the root import module;
 - imports replace `needs` and are checked by Lean's module system.
 
@@ -486,7 +489,9 @@ compiles independently.
 shape described below. Its main completeness theorem already uses worlds of
 type `Set Form`; `K_COUNTERMODEL_FINITE_SETS` is therefore a direct corollary
 of the generic countermodel construction rather than the endpoint of a second
-list-to-set bisimulation. The remaining order starts with T and K4.
+list-to-set bisimulation. The theoretical part of `TCompleteness.lean` is also
+complete; its rudimentary automation remains deliberately separate from the
+mathematical translation. K4 is the next unstarted completeness module.
 
 ### Common mathematical pattern
 
@@ -616,7 +621,7 @@ theorem names, omits the OCaml tactic wrappers, and replaces the final
 list-to-set construction with a direct theorem about the existing set-world
 canonical frame.
 
-#### T: reflexivity
+#### T: theoretical translation completed; automation pending
 
 T also uses the generic canonical relation. The additional obligation is to
 show that it is reflexive. If `□B` belongs to a maximal T-consistent world,
@@ -625,8 +630,19 @@ member of the same world. With set hypotheses this is a direct derivability
 and membership argument, replacing the source proof through a singleton list
 and `CONJLIST`.
 
-This is expected to be a low-risk second module and will establish a reusable
-pattern for obtaining canonical relation properties from an axiom schema.
+This theoretical translation is complete and establishes a reusable pattern
+for obtaining canonical relation properties from an axiom schema. It includes
+the axiom set, reflexive frame classes, correspondence, soundness,
+consistency, specialized standard models and truth lemma, accessibility,
+finite countermodels, and both forms of completeness.
+
+The HOL Light file additionally defines `T_TAC` by applying completeness and
+then discharging the resulting finite reflexive-frame semantic goal with
+`MESON_TAC`; `T_RULE` packages that tactic as a theorem-producing function.
+These are meta-level automation rather than missing steps in the completeness
+proof. Their Lean counterparts are intentionally reserved for a second stage,
+where the appropriate interface (tactic macro, elaborator, or theorem-level
+procedure) can be chosen and tested independently of the mathematical module.
 
 #### K4: persistence under boxes
 
@@ -740,15 +756,17 @@ A risk-directed Lean order, including current progress, is:
 
 1. **K — completed:** the minimal end-to-end template required no change to
    the private boxed-context lifting lemma;
-2. translate T and K4, establishing reflexivity and box persistence; review
-   and expose that lifting lemma when K4 first requires it outside the generic
+2. **T theory — completed:** reflexivity required only a direct set-based
+   closure argument; translate its automation separately, as requested;
+3. translate K4, establishing box persistence; review and expose the
+   boxed-context lifting lemma when K4 first requires it outside the generic
    module;
-3. translate S4 by combining those two patterns;
-4. translate the core of D, keeping the alternative-axiom equivalences at the
+4. translate S4 by combining the T and K4 patterns;
+5. translate the core of D, keeping the alternative-axiom equivalences at the
    explicit dependency boundary described above;
-5. translate KB and then B, developing the symmetric accessibility context;
-6. translate GL, reusing the K4 context but adding Löb strictness;
-7. translate S5 last, because it combines the greatest number of previously
+6. translate KB and then B, developing the symmetric accessibility context;
+7. translate GL, reusing the K4 context but adding Löb strictness;
+8. translate S5 last, because it combines the greatest number of previously
    established techniques.
 
 This differs from `make.ml` only to expose technical dependencies and reduce
