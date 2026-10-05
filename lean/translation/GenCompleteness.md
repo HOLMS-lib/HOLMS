@@ -20,6 +20,13 @@ true exactly when that atom belongs to the current world.
 same valuation. The equality theorem is kept to preserve a useful comparison
 point with the source without creating two implementations.
 
+The HOL Light characterization theorem `GEN_STANDARD_WORLD` is named
+`GEN_STANDARD_WORLD_EQ` in Lean because `GEN_STANDARD_WORLD` already names
+the definition.
+
+In HOL Light, `STANDARD_EVAL` acts on list worlds and `SET_STANDARD_EVAL` on
+set worlds. Both act on set worlds in Lean and are definitionally equal.
+
 ## Truth lemma
 
 `GEN_TRUTH_LEMMA` is proved by induction on the formula. The propositional

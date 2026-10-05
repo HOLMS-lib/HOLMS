@@ -3,11 +3,10 @@ import HOLMS.Calculus
 /-!
 # Parametric correspondence theory
 
-This module is the Lean 4 counterpart of `parametric_correspondence.ml`.  It
-defines well-formed and finite Kripke frames, the frames characteristic for a
-set of modal axioms, and the finite frames appropriate for that set.  Its main
-results establish semantic soundness of the Hilbert calculus over those frame
-classes.
+This module defines well-formed and finite Kripke frames, the frames
+characteristic for a set of modal axioms, and the finite frames appropriate
+for that set. Its main results establish semantic soundness of the Hilbert
+calculus over those frame classes.
 -/
 
 namespace HOLMS

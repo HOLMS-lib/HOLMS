@@ -13,13 +13,16 @@ and [`../CONVENTIONS.md`](../CONVENTIONS.md) for shared conventions.
 `KAxiom` and `ModProves` are inductive propositions. Their constructors are the
 axiom and inference rules, while Lean supplies their recursors and induction
 principles. Separate translations of generated HOL Light values such as
-`KAXIOM_RULES` and `MODPROVES_INDUCT_STRONG` are therefore unnecessary.
+`KAXIOM_RULES`, `MODPROVES_RULES`, and `MODPROVES_INDUCT_STRONG` are therefore unnecessary.
 
 Both the additional axiom system and the hypothesis context are `Set Form`.
 The necessitation constructor deliberately preserves the source restriction:
 its premise must be derivable with no hypotheses, although its conclusion can
 be used in an arbitrary hypothesis context. Several later modal arguments
 depend on this exact formulation.
+
+The OCaml parser and printer for derivability are replaced by the scoped Lean
+notation `S ⊢ₘ[H] p`.
 
 ## Derived proof rules
 

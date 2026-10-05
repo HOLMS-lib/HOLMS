@@ -3,9 +3,9 @@ import HOLMS.Calculus
 /-!
 # Ad hoc correspondence theory
 
-This module is the Lean 4 counterpart of `ad_hoc_correspondence.ml`.  It
-defines the standard modal axiom schemata and the corresponding properties of
-Kripke relations, then proves their frame-correspondence theorems.
+This module defines the standard modal axiom schemata and the corresponding
+properties of Kripke relations, then proves their frame-correspondence
+theorems.
 -/
 
 namespace HOLMS
@@ -62,7 +62,8 @@ def SYMMETRIC {W : Type*} (worlds : Set W) (rel : W → W → Prop) : Prop :=
 def ANTISYMMETRIC {W : Type*} (worlds : Set W) (rel : W → W → Prop) : Prop :=
   ∀ w w', w ∈ worlds → w' ∈ worlds → rel w w' → rel w' w → w = w'
 
-/-- Euclideanity in the orientation used by the HOL Light development. -/
+/-- Euclideanity on designated worlds: `rel w w'` and `rel w w''` imply
+`rel w'' w'`. -/
 def EUCLIDEAN {W : Type*} (worlds : Set W) (rel : W → W → Prop) : Prop :=
   ∀ w w' w'', w ∈ worlds → w' ∈ worlds → w'' ∈ worlds →
     rel w w' → rel w w'' → rel w'' w'

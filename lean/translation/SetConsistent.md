@@ -33,6 +33,9 @@ directly as membership equivalences. This API is designed for rewriting in the
 canonical truth lemma and avoids an intermediate iterated conjunction of a
 list.
 
+The historical misspelling `MIONOR` in the conjunction closure theorem name
+is retained for compatibility with the HOL Light theorem name.
+
 ## Maximal extension
 
 `EXTEND_MAXIMAL_SETCONSISTENT` performs finite recursion over the `Finset` of

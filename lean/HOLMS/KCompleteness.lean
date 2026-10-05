@@ -3,14 +3,10 @@ import HOLMS.GenCompleteness
 /-!
 # Completeness of K
 
-This module is the Lean 4 counterpart of `k_completeness.ml`. It specializes
-the generic finite canonical-model construction to the empty set of additional
-axioms and proves soundness, consistency, finite-model completeness, and
-completeness over every infinite type of worlds.
-
-Canonical worlds are sets of formulas. Consequently, the list-to-set
-bisimulation from the final section of the HOL Light file is unnecessary: the
-main countermodel already has set-valued worlds.
+This module specializes the generic finite canonical-model construction to
+the empty set of additional axioms and proves soundness, consistency,
+finite-model completeness, and completeness over every infinite type of
+worlds. Canonical worlds are sets of formulas.
 -/
 
 namespace HOLMS
@@ -193,8 +189,7 @@ theorem K_COUNTERMODEL {M : Set Form} {p : Form}
     tauto
 
 /-- Every non-theorem of K has a finite countermodel whose worlds are sets of
-formulas. This is the set-based replacement for the final countermodel theorem
-of the HOL Light file. -/
+formulas. -/
 theorem K_COUNTERMODEL_FINITE_SETS {p : Form}
     (hnp : ¬((∅ : Set Form) ⊢ₘ[(∅ : Set Form)] p)) :
     ¬p.holdsIn
@@ -236,8 +231,7 @@ macro "modal_k" : tactic =>
       Set.mem_ofPred_eq] <;>
     grind)
 
-/-! The active `K_RULE` examples from `k_completeness.ml` are retained as
-compile-time regression tests for `modal_k`. -/
+/-! Compile-time regression tests for `modal_k`. -/
 
 example (p q r : Form) :
     ∅ ⊢ₘ[∅] (((¬p) ⟶ q ⟶ r) ⟷ ((p ⟶ ⊥ₘ) ⟶ q ⟶ r)) := by

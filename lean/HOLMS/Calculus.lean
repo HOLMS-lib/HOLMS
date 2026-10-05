@@ -3,15 +3,9 @@ import HOLMS.Modal
 /-!
 # Axiomatic calculus for normal modal logics
 
-This module is the Lean 4 counterpart of `calculus.ml`.  It defines the
-Hilbert basis for `K` and derivability from a set of additional axioms and a
-set of hypotheses.  The modal rule is necessitation from the empty set of
-hypotheses, as in the HOL Light development.
-
-The HOL Light values `KAXIOM_RULES`, `MODPROVES_RULES`, and
-`MODPROVES_INDUCT_STRONG` are represented by the constructors and generated
-recursors of `KAxiom` and `ModProves`.  The OCaml parser and printer are
-replaced by the scoped Lean notation `S ⊢ₘ[H] p`.
+This module defines the Hilbert basis for `K` and derivability from a set of
+additional axioms and a set of hypotheses. The modal rule is necessitation
+from the empty set of hypotheses. Derivability is written `S ⊢ₘ[H] p`.
 -/
 
 namespace HOLMS
@@ -1129,7 +1123,7 @@ def subst (f : String → Form) : Form → Form
 
 end Form
 
-/-- Compatibility alias for the HOL Light name. -/
+/-- Abbreviation for uniform substitution `Form.subst`. -/
 abbrev SUBST := Form.subst
 
 /-- Primitive `K` axioms are closed under uniform substitution. -/

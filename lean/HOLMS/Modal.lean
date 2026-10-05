@@ -3,10 +3,8 @@ import Mathlib
 /-!
 # Syntax and semantics of modal logic
 
-This module is the Lean 4 counterpart of `modal.ml`. It defines modal formulas,
-Kripke semantics, subformulas, and bisimulations. The OCaml utilities and
-specialized HOL Light tactics from the source file are represented here by
-ordinary recursive functions and Lean's generated induction principles.
+This module defines modal formulas, Kripke semantics, subformulas, and
+bisimulations.
 -/
 
 namespace HOLMS

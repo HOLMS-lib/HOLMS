@@ -4,10 +4,10 @@ import HOLMS.GenCompleteness
 /-!
 # Completeness of T
 
-This module is the Lean 4 counterpart of `t_completeness.ml`. It specializes
-the generic finite canonical-model construction to the reflexivity axiom T,
-proves soundness, consistency, finite-model completeness, and completeness
-over every infinite type of worlds, and provides the `modal_t` proof tactic.
+This module specializes the generic finite canonical-model construction to
+the reflexivity axiom T, proves soundness, consistency, finite-model
+completeness, and completeness over every infinite type of worlds, and
+provides the `modal_t` proof tactic.
 -/
 
 namespace HOLMS
@@ -318,8 +318,7 @@ macro "modal_t" : tactic =>
       IN_FINITE_FRAME, REFLEXIVE, Set.mem_ofPred_eq] <;>
     grind)
 
-/-! The active `T_RULE` examples from `t_completeness.ml` are retained as
-compile-time regression tests for `modal_t`. -/
+/-! Compile-time regression tests for `modal_t`. -/
 
 example (p q r : Form) : T_AX ⊢ₘ[∅] (p ⋏ q ⋏ r ⟶ p ⋏ r) := by
   modal_t

@@ -4,12 +4,9 @@ import HOLMS.ParametricCorrespondence
 /-!
 # Generic completeness infrastructure
 
-This module is the Lean 4 counterpart of `gen_completeness.ml`.  It constructs
-finite canonical frames, proves the truth and accessibility lemmas, extracts
-generic countermodels, and transports validity to an arbitrary infinite world
-type. Canonical worlds are represented directly by sets of formulas, rather
-than by duplicate-free lists; consequently, the source file's permutation and
-list-to-set infrastructure has no separate Lean counterpart.
+This module constructs finite canonical frames, proves the truth and
+accessibility lemmas, extracts generic countermodels, and transports validity
+to an arbitrary infinite world type. Canonical worlds are sets of formulas.
 -/
 
 namespace HOLMS
@@ -54,11 +51,7 @@ def GEN_STANDARD_WORLD (S : Set Form) (p : Form) : Set (Set Form) :=
 theorem GEN_STANDARD_WORLD_DEF (S : Set Form) (p : Form) :
     GEN_STANDARD_WORLD S p = PARAMETRIC_STD_WORLD S STD_FRAME_SCHEMA p := rfl
 
-/-- Expanded characterization of generic standard worlds.
-
-The HOL Light theorem carrying this characterization is also named
-`GEN_STANDARD_WORLD`; Lean uses `GEN_STANDARD_WORLD_EQ` because the definition
-already occupies that name. -/
+/-- Expanded characterization of generic standard worlds. -/
 theorem GEN_STANDARD_WORLD_EQ (S : Set Form) (p : Form) :
     GEN_STANDARD_WORLD S p =
       {w | MAXIMAL_SETCONSISTENT S p w ∧ ∀ q, q ∈ w → q ⊑ₛ p} := by
@@ -117,29 +110,18 @@ theorem GEN_STANDARD_MODEL_DEF (S : Set Form) (p : Form)
 def STANDARD_EVAL (p : Form) : Valuation (Set Form) :=
   fun a w => Form.atom a ⊑ p ∧ Form.atom a ∈ w
 
-/-- Compatibility name for the canonical valuation on set-based worlds.
-
-HOL Light distinguishes this definition from `STANDARD_EVAL` because the
-latter acts on list worlds.  Canonical worlds are already sets in Lean, so the
-two valuations coincide. -/
+/-- The canonical valuation on sets of formulas, equal to `STANDARD_EVAL`. -/
 def SET_STANDARD_EVAL (p : Form) : Valuation (Set Form) :=
   STANDARD_EVAL p
 
-/-- The two standard-evaluation names are definitionally equal in the
-set-based translation. -/
+/-- The two standard valuations are definitionally equal. -/
 theorem SET_STANDARD_EVAL_EQ_STANDARD_EVAL (p : Form) :
     SET_STANDARD_EVAL p = STANDARD_EVAL p := rfl
 
 /-! ## Truth lemma -/
 
 /-- In a generic standard model, membership in a canonical world agrees with
-Kripke truth for every subformula of the distinguished formula.
-
-As in the HOL Light statement, the theorem assumes that `p` is not derivable
-without hypotheses.  The structural induction itself uses only the standard
-model and subformula assumptions; the nonderivability hypothesis is retained
-to preserve the original interface and for the later countermodel theorems
-that instantiate this result. -/
+Kripke truth for every subformula of the distinguished formula. -/
 theorem GEN_TRUTH_LEMMA {S : Set Form} {p q : Form}
     (model : Model (Set Form))
     (_hnp : ¬S ⊢ₘ[(∅ : Set Form)] p)
@@ -272,9 +254,7 @@ def GEN_BOX_CONTENT (w : Set Form) : Set Form :=
 context `w` contains `□q` for every hypothesis `q ∈ Γ`, then `□p` follows
 from `w`.
 
-This local principle replaces the HOL Light argument that collects `Γ` into
-`CONJLIST Γ`, boxes that conjunction, and distributes `box` back over the
-derivation.  The proof instead follows the derivation directly. Primitive and
+The proof follows the derivation directly. Primitive and
 additional axioms are boxed by necessitation, hypotheses use the corresponding
 member of `w`, modus ponens uses `MLK_box_modusponens`, and a necessitation
 step is boxed once more. The last case is sound because the premise of
@@ -356,8 +336,7 @@ theorem GEN_ACCESSIBILITY_LEMMA {S w X : Set Form} {p q : Form}
     exact hmaxX.1 (MLK_NC_ALT (.hyp hqX) (.hyp hnqX))
 
 /-- The K accessibility context is contained in the context that also keeps
-the boxed assumptions.  The historical `SUBLIST` name is retained although
-the Lean statement is set inclusion. -/
+the boxed assumptions. -/
 def GEN_BOX_CONTENT_K4 (w : Set Form) : Set Form :=
   GEN_BOX_CONTENT w ∪ Form.box '' GEN_BOX_CONTENT w
 

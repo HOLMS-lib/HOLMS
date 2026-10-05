@@ -3,9 +3,8 @@ import HOLMS.Calculus
 /-!
 # Consistent sets of modal formulas
 
-This module is the Lean 4 counterpart of `setconsistent.ml`.  Consistency and
-maximal consistency are formulated only for `Set Form`; the redundant
-list-based presentation from `consistent.ml` is intentionally not reproduced.
+This module defines consistency and maximal consistency for sets of modal
+formulas and proves their closure and extension properties.
 -/
 
 namespace HOLMS
@@ -186,8 +185,7 @@ theorem MAXIMAL_SETCONSISTENT_NOT_CLOSED {S w : Set Form} {p q : Form}
     · exact hnqmem
 
 /-- A conjunction belongs to a maximal consistent set exactly when both
-conjuncts belong to it.  The misspelling `MIONOR` is retained for compatibility
-with the HOL Light theorem name. -/
+conjuncts belong to it. -/
 theorem MAXIMAL_SETCONSISTENT_AND_MIONOR_CLOSED
     {S w : Set Form} {p q₁ q₂ : Form}
     (hmax : MAXIMAL_SETCONSISTENT S p w) (hsub : q₁ ⋏ q₂ ⊑ p) :

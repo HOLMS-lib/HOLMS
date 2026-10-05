@@ -10,5 +10,5 @@ import HOLMS.TCompleteness
 /-!
 # HOLMS
 
-Root module for the Lean port of HOLMS.
+Root module for the HOLMS library.
 -/

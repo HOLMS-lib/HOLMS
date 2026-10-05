@@ -17,6 +17,10 @@ below.
 | [`HOLMS.KCompleteness`](../HOLMS/KCompleteness.lean) | [`KCompleteness.md`](KCompleteness.md) | [`k_completeness.ml`](../../k_completeness.ml) |
 | [`HOLMS.TCompleteness`](../HOLMS/TCompleteness.lean) | [`TCompleteness.md`](TCompleteness.md) | [`t_completeness.ml`](../../t_completeness.ml) |
 
+Lean comments and docstrings describe the Lean code on its own terms. Details
+about translation, source correspondence, historical names, and comparisons
+with HOL Light belong in these notes, not in `.lean` files.
+
 The notes describe representation choices, proof interfaces, deliberate
 departures from a mechanical translation, and source material that was not
 reproduced. They are not substitutes for the natural-language mathematical
