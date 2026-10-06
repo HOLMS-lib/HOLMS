@@ -1,841 +1,1445 @@
-# Il calcolo assiomatico modale di HOLMS
+# The modal axiomatic calculus of HOLMS
 
-Questo capitolo presenta il calcolo assiomatico modale e le sue regole
-derivate. L'esposizione è indipendente dalle implementazioni nei verificatori
-e dai dettagli delle dimostrazioni formali.
+This chapter presents the Hilbert calculus and its derived rules in ordinary
+mathematical language. Statements and informal proofs are kept together; no
+knowledge of a proof assistant is assumed.
 
-Per gli altri capitoli si veda l'[indice della documentazione matematica](README.md).
-Le corrispondenze fra HOL Light e Lean e le scelte di implementazione sono
-descritte nelle [note di traduzione di Calculus](../lean/translation/Calculus.md).
+See the [mathematical documentation index](README.md) and the companion
+chapter on [syntax and semantics](Modal.md). The formal developments are
+[HOL Light's `calculus.ml`](../calculus.ml) and
+[Lean's `HOLMS/Calculus.lean`](../lean/HOLMS/Calculus.lean).
+Each **Formalization references** paragraph below gives names in both files
+unless it explicitly distinguishes them. Lean names are relative to namespace
+`HOLMS`. Historical spellings are retained so that declarations can be found
+exactly. Implementation details belong in the
+[Calculus translation notes](../lean/translation/Calculus.md).
+The [obsolete Italian version](Calculus.it.obsolete.md) is retained for
+historical reference and is no longer maintained.
 
-## 1. Scopo del calcolo
+## 1. Language, judgments, and proof conventions
 
-Consideriamo un calcolo hilbertiano per la logica modale proposizionale
-classica. La base modale è la logica normale **K**, ma il sistema è
-parametrizzato da un insieme arbitrario di assiomi aggiuntivi. La stessa
-nozione di derivabilità può quindi essere usata per K, GL e altri sistemi
-modali normali.
+The formulas are those of the modal language described in [Modal](Modal.md):
+$\bot,\top$, atoms, $\neg,\land,\lor,\to,\leftrightarrow$, and $\Box$.
+Possibility abbreviates $\Diamond p=\neg\Box\neg p$.
+All propositional connectives are primitive syntax; the axioms below govern
+their deductive behaviour.
 
-La relazione fondamentale si scrive qui
-
-$$
-S;H \vdash p, 
-$$
-
-dove:
-
-- $S$ è l'insieme degli assiomi aggiuntivi che determina il sistema modale;
-- $H$ è l'insieme delle ipotesi locali;
-- $p$ è la formula conclusiva.
-
-La distinzione tra $S$ e $H$ è essenziale. Gli elementi di $S$ si
-comportano come assiomi globali del sistema, mentre gli elementi di $H$ sono
-assunzioni locali soggette al lemma di deduzione. In particolare, la regola di
-necessitazione non permette di trasformare in una necessità una conclusione
-che dipenda da ipotesi locali.
-
-Benché il commento iniziale del sorgente faccia riferimento alla logica di
-provabilità GL, l'assioma caratteristico di GL non appartiene alla base
-primitiva descritta qui. GL si ottiene scegliendo come assiomi aggiuntivi le
-istanze appropriate dell'assioma di Löb.
-
-## 2. Linguaggio delle formule
-
-Le formule sono costruite a partire da:
-
-- falsità $\bot$ e verità $\top$;
-- variabili proposizionali;
-- negazione $\neg p$;
-- congiunzione $p\land q$;
-- disgiunzione $p\lor q$;
-- implicazione $p\to q$;
-- equivalenza $p\leftrightarrow q$;
-- necessità $\Box p$.
-
-La possibilità è definita per dualità:
+The judgment
 
 $$
-\Diamond p := \neg\Box\neg p.
+S;H\vdash p
 $$
 
-Tutti i connettivi proposizionali fanno parte del linguaggio, ma il calcolo
-contiene assiomi che ne fissano il comportamento classico in termini
-dell'implicazione e della falsità.
+means that $p$ is derivable from a set $S$ of additional **global axioms**
+and a set $H$ of **local hypotheses**. The base calculus is classical normal
+modal logic K. Choosing appropriate additional axiom sets gives other modal
+systems; for example, the instances of Löb's axiom give GL. Despite the
+historical GL heading in the HOL Light source, Löb's axiom is not one of the
+primitive axioms listed here. For arbitrary $S$, substitution closure is a
+separate condition, made explicit in Section 11.
 
-## 3. Base assiomatica
-
-Ogni istanza dei seguenti schemi è un assioma del calcolo.
-
-### 3.1 Implicazione classica
-
-I primi tre schemi costituiscono una base completa per il frammento
-implicativo classico con falsità:
-
-$$
-p\to(q\to p),
-$$
+Unless a context is displayed, $\vdash p$ abbreviates $S;H\vdash p$ for
+fixed but arbitrary $S,H$. All formula variables in a statement are universally
+quantified. Implication associates to the right. A fraction is a rule between
+derivability judgments, not an additional primitive inference rule. In
+particular,
 
 $$
-(p\to(q\to r))\to((p\to q)\to(p\to r)),
+\vdash p\leftrightarrow q
+\qquad\text{and}\qquad
+(\vdash p)\Longleftrightarrow(\vdash q)
 $$
 
+are different statements: the former derives a formula, while the latter
+compares two derivability claims. We use $\Longrightarrow,\Longleftrightarrow$
+between claims and $\to,\leftrightarrow$ inside formulas.
+
+**MP** denotes modus ponens. After Section 4, **DT** denotes the deduction
+theorem: a proof under an extra local assumption can be discharged into an
+implication. Such informal proofs use weakening to retain previously derived
+formulas in enlarged contexts. These are syntactic arguments within the
+calculus, not appeals to semantic completeness.
+
+## 2. Primitive axioms and inference rules
+
+### 2.1 The eleven axiom schemata
+
+Let $\mathsf{Ax}_K$ be the set of all instances of the following schemata.
+The last column names the theorem asserting derivability of that instance.
+
+| Meaning | Axiom formula | Name in both formalizations |
+|---|---|---|
+| Add an antecedent | $p\to(q\to p)$ | `MLK_axiom_addimp` |
+| Distribute implication | $(p\to(q\to r))\to((p\to q)\to(p\to r))$ | `MLK_axiom_distribimp` |
+| Classical double-negation elimination | $((p\to\bot)\to\bot)\to p$ | `MLK_axiom_doubleneg` |
+| First biconditional projection | $(p\leftrightarrow q)\to(p\to q)$ | `MLK_axiom_iffimp1` |
+| Second biconditional projection | $(p\leftrightarrow q)\to(q\to p)$ | `MLK_axiom_iffimp2` |
+| Biconditional introduction | $(p\to q)\to((q\to p)\to(p\leftrightarrow q))$ | `MLK_axiom_impiff` |
+| Truth | $\top\leftrightarrow(\bot\to\bot)$ | `MLK_axiom_true` |
+| Negation | $\neg p\leftrightarrow(p\to\bot)$ | `MLK_axiom_not` |
+| Conjunction | $(p\land q)\leftrightarrow((p\to(q\to\bot))\to\bot)$ | `MLK_axiom_and` |
+| Disjunction | $(p\lor q)\leftrightarrow\neg(\neg p\land\neg q)$ | `MLK_axiom_or` |
+| Modal distribution K | $\Box(p\to q)\to(\Box p\to\Box q)$ | `MLK_axiom_boximp` |
+
+**Statement.** For each formula $a$ in the table, and every $S,H$,
+$S;H\vdash a$.
+
+**Proof.** Each formula is an instance in $\mathsf{Ax}_K$; apply primitive
+axiom introduction from Section 2.2. $\square$
+
+**Comment.** Double-negation elimination makes the propositional basis
+classical. The last schema, together with necessitation, governs normal
+modal reasoning.
+
+**Formalization references.** [HOL Light](../calculus.ml): `KAXIOM_RULES`
+defines `KAXIOM`; [Lean](../lean/HOLMS/Calculus.lean): `KAxiom`.
+The eleven names in the table occur in both files.
+
+### 2.2 Defining rules of derivability
+
+Derivability is the least relation closed under these five rules:
+
 $$
-((p\to\bot)\to\bot)\to p.
-$$
-
-Il terzo schema esprime l'eliminazione classica della doppia negazione. Il
-calcolo non è quindi intuizionista.
-
-### 3.2 Equivalenza
-
-L'equivalenza è regolata dai tre schemi
-
-$$
-(p\leftrightarrow q)\to(p\to q),
-$$
-
-$$
-(p\leftrightarrow q)\to(q\to p),
-$$
-
-$$
-(p\to q)\to((q\to p)\to(p\leftrightarrow q)).
-$$
-
-Di conseguenza, due formule sono equivalenti esattamente quando sono
-derivabili entrambe le implicazioni fra di esse.
-
-### 3.3 Costanti e connettivi proposizionali
-
-Il comportamento dei connettivi rimanenti è fissato da:
-
-$$
-\top\leftrightarrow(\bot\to\bot),
+\frac{p\in\mathsf{Ax}_K}{S;H\vdash p},\qquad
+\frac{p\in S}{S;H\vdash p},\qquad
+\frac{p\in H}{S;H\vdash p},
 $$
 
 $$
-\neg p\leftrightarrow(p\to\bot),
+\frac{S;H\vdash p\to q\qquad S;H\vdash p}{S;H\vdash q},
+\qquad
+\frac{S;\varnothing\vdash p}{S;H\vdash\Box p}.
+$$
+
+**Comment.** Necessitation requires an empty **local** context, while $S$
+remains available. It cannot box an arbitrary conclusion depending on $H$.
+Its conclusion may nevertheless be used in any local context.
+
+**Proof of the named rules.** Each displayed rule is a defining clause of
+derivability, so its named theorem applies that clause directly. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml): `MODPROVES_RULES`;
+[Lean](../lean/HOLMS/Calculus.lean): `ModProves`. Both provide
+`MODPROVES_KAXIOM`, `MODPROVES_AX`, `MODPROVES_HP`, `MLK_modusponens`, and
+`MLK_necessitation`, in the displayed order.
+
+### 2.3 Weakening in axioms and hypotheses
+
+**Statements.**
+
+$$
+\frac{S\subseteq S'\qquad S;H\vdash p}{S';H\vdash p},
+\qquad
+\frac{H\subseteq H'\qquad S;H\vdash p}{S;H'\vdash p}.
+$$
+
+**Comment.** Adding available axioms or hypotheses preserves every existing
+proof.
+
+**Proof.** For axiom weakening, induct on the derivation, for all local
+contexts. Primitive axioms and hypotheses remain available; an additional
+axiom remains available by $S\subseteq S'$. Reapply MP to the two induction
+hypotheses. In the necessitation case, the induction hypothesis transports
+its empty-context premise to $S'$, and necessitation gives the conclusion.
+
+For hypothesis weakening, induct on the derivation with the target context
+arbitrary. The axiom cases are unchanged, and a hypothesis belongs to $H'$
+by inclusion. Reapply MP. A necessitation step retains its original
+empty-context premise and can already conclude in $H'$. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MODPROVES_MONO1`, `MODPROVES_MONO2`.
+
+## 3. Basic implicational reasoning
+
+These lemmas are established without DT and provide what is needed to prove it.
+
+### 3.1 Extracting and introducing biconditionals
+
+**Statements.**
+
+$$
+\frac{\vdash p\leftrightarrow q}{\vdash p\to q},\qquad
+\frac{\vdash p\leftrightarrow q}{\vdash q\to p},\qquad
+\frac{\vdash p\to q\qquad\vdash q\to p}{\vdash p\leftrightarrow q}.
+$$
+
+**Proof.** Apply MP with the two biconditional projection axioms. For the
+third rule, apply MP twice to the biconditional introduction axiom.
+The name “antisymmetry” for this rule refers to combining the two directions
+of implication. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_iff_imp1`, `MLK_iff_imp2`,
+`MLK_imp_antisym`.
+
+### 3.2 Antecedent introduction and implication reflexivity
+
+**Statements.**
+
+$$
+\frac{\vdash q}{\vdash p\to q},\qquad \vdash p\to p.
+$$
+
+**Proof.** For antecedent introduction, apply MP to $q$ and the axiom
+$q\to(p\to q)$. For reflexivity, take the two axiom instances
+$p\to((p\to p)\to p)$ and $p\to(p\to p)$. The distribution axiom with
+middle formula $p\to p$ combines them, by two MP steps, into $p\to p$.
+$\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_add_assum`, `MLK_imp_refl_th`.
+
+### 3.3 Implication under a common antecedent
+
+**Statements.**
+
+$$
+\frac{\vdash q\to r}{\vdash(p\to q)\to(p\to r)},
+\qquad
+\frac{\vdash p\to(p\to q)}{\vdash p\to q}.
+$$
+
+**Proof.** For the first rule, antecedent introduction gives
+$p\to(q\to r)$; MP with the distribution axiom gives the conclusion.
+For contraction, that axiom applied to the premise gives
+$(p\to p)\to(p\to q)$; MP with reflexivity finishes. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_imp_add_assum`, `MLK_imp_unduplicate`.
+
+### 3.4 Composition and exchange
+
+**Statements.**
+
+$$
+\frac{\vdash p\to q\qquad\vdash q\to r}{\vdash p\to r},
+\qquad
+\frac{\vdash p\to(q\to r)}{\vdash q\to(p\to r)}.
+$$
+
+**Proof.** For composition, lift $q\to r$ under antecedent $p$ by Section 3.3
+and apply MP to $p\to q$. For exchange, distribution turns the premise into
+$(p\to q)\to(p\to r)$. Compose this with the axiom $q\to(p\to q)$.
+$\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_imp_trans`, `MLK_imp_swap`.
+
+### 3.5 Combining two consequences of one premise
+
+**Statement.**
+
+$$
+\frac{\vdash p\to q_1\qquad\vdash p\to q_2\qquad
+\vdash q_1\to(q_2\to r)}{\vdash p\to r}.
+$$
+
+**Proof.** Exchange the antecedents in the third premise and compose with
+$p\to q_2$ to get $p\to(q_1\to r)$. Exchange once more and compose with
+$p\to q_1$ to get $p\to(p\to r)$. Contraction removes the duplicate
+antecedent. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_imp_trans_chain_2`.
+
+### 3.6 Internal composition and extension of conclusions
+
+**Statements.**
+
+$$
+\vdash(q\to r)\to((p\to q)\to(p\to r)),
 $$
 
 $$
-p\land q\leftrightarrow((p\to(q\to\bot))\to\bot),
+\frac{\vdash p\to q}{\vdash(q\to r)\to(p\to r)},
+\qquad
+\frac{\vdash p\to(q\to r)\qquad\vdash r\to s}
+{\vdash p\to(q\to s)}.
 $$
 
-$$
-p\lor q\leftrightarrow\neg(\neg p\land\neg q).
-$$
+**Proof.** Compose $(q\to r)\to(p\to(q\to r))$ with the distribution
+axiom to obtain the first statement. Exchange its first two antecedents
+and apply MP to $p\to q$ for the second. For the third, lift $r\to s$
+under antecedent $q$ and compose with $p\to(q\to r)$. $\square$
 
-Questi schemi rendono esplicito che la logica proposizionale sottostante è
-classica e che, dal punto di vista deduttivo, tutti i connettivi possono essere
-ricondotti all'implicazione e alla falsità.
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_imp_trans_th`, `GLimp_add_concl`,
+`MLK_imp_trans2`. The historical prefix `GLimp` imposes no GL-specific axiom.
 
-### 3.4 Assioma modale K
+## 4. The deduction theorem
 
-La normalità dell'operatore di necessità è espressa dallo schema
+### 4.1 Inserting a local hypothesis
 
-$$
-\Box(p\to q)\to(\Box p\to\Box q).
-$$
-
-Esso afferma che la necessità distribuisce sull'implicazione.
-
-## 4. Regole di derivazione
-
-La relazione $S;H\vdash p$ è la più piccola relazione chiusa rispetto alle
-regole seguenti.
-
-1. Ogni istanza di uno schema della base K è derivabile.
-2. Ogni formula appartenente a $S$ è derivabile.
-3. Ogni formula appartenente a $H$ è derivabile.
-4. **Modus ponens:** da $S;H\vdash p\to q$ e $S;H\vdash p$ segue
-   $S;H\vdash q$.
-5. **Necessitazione:** se $S;\varnothing\vdash p$, allora
-   $S;H\vdash\Box p$, per qualunque $H$.
-
-La premessa vuota nella necessitazione garantisce che si possano necessitare
-soltanto teoremi, cioè formule che non dipendono da assunzioni locali. Gli
-assiomi globali in $S$, invece, rimangono disponibili.
-
-## 5. Proprietà strutturali
-
-La derivabilità è monotona in entrambi i suoi parametri insiemistici:
-
-- se $S\subseteq S'$ e $S;H\vdash p$, allora $S';H\vdash p$;
-- se $H\subseteq H'$ e $S;H\vdash p$, allora $S;H'\vdash p$.
-
-Aggiungere assiomi o ipotesi non distrugge quindi una derivazione esistente.
-
-Il principale risultato strutturale è il **lemma di deduzione**:
+**Statement.**
 
 $$
-S;H\vdash p\to q
-\quad\Longleftrightarrow\quad
+S;H\vdash p\to q\Longrightarrow S;H\cup\{p\}\vdash q.
+$$
+
+**Proof.** Weaken the given derivation to $H\cup\{p\}$. In that context
+$p$ is a hypothesis; MP gives $q$. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MODPROVES_DEDUCTION_LEMMA_INSERT`.
+
+### 4.2 Discharging a member of the context
+
+**Statement.**
+
+$$
+S;G\vdash q,\quad p\in G
+\quad\Longrightarrow\quad S;G\setminus\{p\}\vdash p\to q.
+$$
+
+**Comment.** This is the induction lemma underlying the reverse direction of DT.
+
+**Proof.** Fix $S,p$ and induct on the derivation, allowing $G$ to vary.
+
+- A primitive or additional axiom remains derivable in the reduced context;
+  antecedent introduction adds $p$.
+- If $q$ is a hypothesis and $q=p$, use implication reflexivity. Otherwise
+  $q\in G\setminus\{p\}$, so introduce it and add antecedent $p$.
+- If MP derives $b$ from $a\to b$ and $a$, the induction hypotheses give
+  $p\to(a\to b)$ and $p\to a$ in the reduced context. The distribution
+  axiom and two MP steps give $p\to b$.
+- If necessitation derives $\Box a$ from $S;\varnothing\vdash a$, retain
+  that original empty-context premise. Necessitation gives $\Box a$ in
+  $G\setminus\{p\}$, and antecedent introduction gives $p\to\Box a$.
+  The hypothesis being discharged was never used in the premise of this step.
+
+These exhaust the derivation rules. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MODPROVES_DEDUCTION_LEMMA_DELETE`.
+
+### 4.3 Deduction theorem
+
+**Statement.** For arbitrary $S,H,p,q$,
+
+$$
+S;H\vdash p\to q\quad\Longleftrightarrow\quad
 S;H\cup\{p\}\vdash q.
 $$
 
-Il lemma permette di passare fra implicazioni interne al linguaggio e
-ragionamenti condotti sotto un'ipotesi aggiuntiva. La restrizione imposta alla
-necessitazione è precisamente ciò che rende valida questa forma del lemma.
+**Comment.** A local hypothesis can be moved into an implication antecedent.
+The global axiom set $S$ is unchanged. The restriction on necessitation is
+essential to the discharge argument.
 
-Un caso limite importante è l'esplosione del contesto: se
-$\bot\in H$, allora $S;H\vdash p$ per ogni formula $p$.
+**Proof.** Section 4.1 gives the forward direction. For the reverse, if
+$p\notin H$, apply Section 4.2 to $H\cup\{p\}$ and use
+$(H\cup\{p\})\setminus\{p\}=H$. If $p\in H$, the given derivation already
+has context $H$, and antecedent introduction gives $p\to q$. $\square$
 
-## 6. Calcolo proposizionale derivato
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MODPROVES_DEDUCTION_LEMMA`.
 
-Dalla base primitiva vengono ricostruite le usuali regole della logica
-proposizionale classica.
+### 4.4 Internal exchange, insertion, and the Frege rule
 
-### 6.1 Implicazione
-
-Sono derivabili, fra le altre, le seguenti leggi:
-
-- riflessività: $p\to p$;
-- aggiunta di una premessa: da $q$ si ottiene $p\to q$;
-- transitività: da $p\to q$ e $q\to r$ si ottiene $p\to r$;
-- permutazione delle premesse:
-  $(p\to(q\to r))\to(q\to(p\to r))$;
-- contrazione: da $p\to(p\to q)$ si ottiene $p\to q$;
-- monotonia: da $p'\to p$ e $q\to q'$ si ottiene
-  $(p\to q)\to(p'\to q')$.
-
-Queste regole consentono di concatenare e riorganizzare catene di
-implicazioni senza alterarne il significato logico.
-
-### 6.2 Falsità, negazione e ragionamento classico
-
-Si dimostrano:
+**Statements.**
 
 $$
-\bot\to p
+\vdash(p\to(q\to r))\to(q\to(p\to r)),
+\qquad
+\frac{\vdash p\to r}{\vdash p\to(q\to r)},
 $$
 
-per ogni $p$, e quindi il principio *ex falso quodlibet*. Sono inoltre
-disponibili:
-
-- eliminazione e introduzione della doppia negazione;
-- contrapposizione;
-- ragionamento per assurdo;
-- distinzione dei casi $p$ e $\neg p$;
-- terzo escluso $p\lor\neg p$;
-- principio di non contraddizione
-  $(p\land\neg p)\to\bot$.
-
-In particolare,
-
 $$
-\neg\neg p\leftrightarrow p
+\frac{\vdash p\to(q\to r)\qquad\vdash p\to q}{\vdash p\to r}.
 $$
 
-è un teorema del sistema.
+**Proof.** For internal exchange, assume $p\to(q\to r)$, apply exchange,
+and discharge the assumption by DT. For insertion, compose $p\to r$ with
+$r\to(q\to r)$. For the Frege rule, apply MP twice to the distribution
+axiom with the two premises. $\square$
 
-### 6.3 Congiunzione
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_imp_swap_th`, `MLK_imp_insert`,
+`MLK_frege`.
 
-La congiunzione soddisfa le regole usuali:
+## 5. Falsity, truth, and classical reasoning
 
-- da $p\land q$ si ricavano $p$ e $q$;
-- da $p$ e $q$ si ricava $p\land q$;
-- un'implicazione con antecedente congiunto può essere trasformata nella
-  corrispondente catena di implicazioni, e viceversa.
+### 5.1 Explosion
 
-Sono dimostrate anche commutatività, associatività, identità con $\top$ e
-congruenza rispetto all'equivalenza dimostrabile.
-
-### 6.4 Disgiunzione
-
-Per la disgiunzione valgono:
-
-- le due regole di introduzione;
-- l'eliminazione per casi;
-- commutatività e associatività;
-- identità con $\bot$;
-- congruenza rispetto all'equivalenza dimostrabile.
-
-L'eliminazione per casi assume la forma
+**Statements.**
 
 $$
-\frac{p\lor q \qquad p\to r \qquad q\to r}{r}.
+\vdash\bot\to p,\qquad
+\frac{\vdash\bot}{\vdash p},\qquad
+\vdash(p\to\bot)\to(p\to q).
 $$
 
-### 6.5 Equivalenza e sostituzione dei proposizionalmente equivalenti
-
-L'equivalenza dimostrabile è riflessiva, simmetrica e transitiva. Inoltre è
-una congruenza per tutti i connettivi proposizionali:
+Also, for every $p$,
 
 $$
-p\leftrightarrow p',\quad q\leftrightarrow q'
+\bot\in H\Longrightarrow S;H\vdash p.
 $$
 
-permettono di dedurre le equivalenze ottenute sostituendo $p,p'$ e
-$q,q'$ dentro negazioni, congiunzioni, disgiunzioni, implicazioni ed
-equivalenze.
+**Proof.** Compose the antecedent axiom
+$\bot\to((p\to\bot)\to\bot)$ with classical double-negation elimination
+to obtain $\bot\to p$. MP gives the rule. Lifting $\bot\to q$ under
+antecedent $p$ gives the third statement. If $\bot\in H$, hypothesis
+introduction supplies $\bot$, and the rule applies. $\square$
 
-Questo principio giustifica il ragionamento algebrico sulle formule: una
-sottoformula può essere rimpiazzata da una formula dimostrabilmente
-equivalente.
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_ex_falso_th`, `MLK_ex_falso`,
+`MLK_imp_contr_th`, `MODPROVES_EX_FALSO`.
 
-### 6.6 Identità booleane
+### 5.2 Proof by contradiction and Boolean cases
 
-La teoria comprende numerose identità classiche, fra cui:
-
-- le leggi di De Morgan;
-- $\neg\top\leftrightarrow\bot$;
-- $\neg(p\to q)\leftrightarrow p\land\neg q$;
-- caratterizzazioni dell'equivalenza mediante due implicazioni;
-- leggi distributive di $\land$ rispetto a $\lor$ e viceversa;
-- identità e associatività dei connettivi.
-
-Le versioni formulate come equivalenze interne convivono con regole che
-trasportano direttamente la derivabilità da un membro dell'equivalenza
-all'altro.
-
-## 7. Conseguenze modali
-
-Dall'assioma K e dalla necessitazione segue la monotonia della necessità sui
-teoremi:
+**Statements.**
 
 $$
-S;\varnothing\vdash p\to q
-\quad\Longrightarrow\quad
-S;H\vdash\Box p\to\Box q.
+\frac{\vdash(p\to\bot)\to p}{\vdash p},\qquad
+\frac{\vdash p\to q\qquad\vdash(p\to\bot)\to q}{\vdash q}.
 $$
 
-Di conseguenza, le equivalenze dimostrate senza ipotesi locali possono essere
-trasportate sotto $\Box$:
+**Proof.** For contradiction, assume $p\to\bot$. The premise gives $p$,
+then MP gives $\bot$. DT yields $(p\to\bot)\to\bot$; classical
+double-negation elimination gives $p$.
+For Boolean cases, assume $q\to\bot$. Composing it with $p\to q$ gives
+$p\to\bot$, so the second premise gives $q$, a contradiction. Discharge
+$q\to\bot$ and apply double-negation elimination. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_contrad`, `MLK_bool_cases`.
+
+### 5.3 Truth and the definition of negation
+
+**Statements.**
 
 $$
-S;\varnothing\vdash p\leftrightarrow q
-\quad\Longrightarrow\quad
-S;H\vdash\Box p\leftrightarrow\Box q.
+\vdash\top,\qquad
+(\vdash\neg p)\Longleftrightarrow(\vdash p\to\bot),\qquad
+S;\varnothing\vdash\neg\bot.
 $$
 
-La necessità preserva la congiunzione in entrambe le direzioni:
+**Proof.** Extract $(\bot\to\bot)\to\top$ from the truth axiom and apply
+MP with reflexivity. The negation equivalence follows by MP in either
+direction of its defining axiom. In the empty context, apply that equivalence
+to $\bot\to\bot$ to derive $\neg\bot$. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_truth_th`, `MLK_not_def`,
+`MLK_not_false`. The last declaration is stated with empty local context;
+weakening permits its use in any $H$.
+
+### 5.4 Contraposition
+
+**Statements.**
 
 $$
-\Box(p\land q)\leftrightarrow(\Box p\land\Box q).
+\frac{\vdash p\to q}{\vdash\neg q\to\neg p},\qquad
+\vdash(p\to q)\to(\neg q\to\neg p).
 $$
 
-Per la possibilità si ottiene la direzione sempre valida
+**Proof.** Composition towards $\bot$ transforms $p\to q$ into
+$(q\to\bot)\to(p\to\bot)$ (Section 3.6). Use the defining equivalences
+for negation to replace the two implications to $\bot$ by negations.
+For the internal statement, assume $p\to q$, apply the rule, and use DT.
+$\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_contrapos`, `MLK_contrapos_th`.
+
+### 5.5 Double negation
+
+**Statements.**
 
 $$
-\Diamond(p\land q)\to(\Diamond p\land\Diamond q).
+\vdash((p\to\bot)\to\bot)\leftrightarrow p,\qquad
+\vdash\neg\neg p\leftrightarrow p,
 $$
 
-Il converso non viene affermato: in generale due formule possono essere
-possibili in mondi accessibili differenti senza che sia possibile la loro
-congiunzione.
-
-## 8. Sostituzione uniforme
-
-Una sostituzione uniforme assegna a ogni variabile proposizionale una formula
-e si estende ricorsivamente a tutte le formule. Il calcolo dimostra tre fatti
-fondamentali.
-
-1. Gli schemi primitivi di K sono chiusi per sostituzione uniforme.
-2. Una derivazione può essere sostituita uniformemente, purché l'insieme
-   $S$ degli assiomi aggiuntivi sia chiuso rispetto alla sostituzione scelta.
-3. Se due sostituzioni assegnano a ogni variabile formule dimostrabilmente
-   equivalenti senza ipotesi locali, allora producono formule
-   dimostrabilmente equivalenti in qualunque contesto.
-
-Più precisamente, se $\sigma$ è una sostituzione, $S$ è chiuso rispetto a
-$\sigma$, e
-
 $$
-S;H\vdash p,
+\frac{\vdash\neg\neg p}{\vdash p},\qquad
+\frac{\vdash p}{\vdash\neg\neg p},\qquad
+(\vdash\neg\neg p)\Longleftrightarrow(\vdash p).
 $$
 
-allora
+**Proof.** One implication of the first statement is the classical axiom.
+For the other, assume $p$ and $p\to\bot$; MP gives $\bot$, and DT twice
+gives $p\to((p\to\bot)\to\bot)$. Combine the two implications.
+For the second statement, the negation axiom converts $\neg\neg p$ to
+$(\neg p\to\bot)$. Under this assumption, assuming $p\to\bot$ gives
+$\neg p$ and hence $\bot$, so double-negation elimination gives $p$.
+Conversely, under $p$, assuming $\neg p$ gives $\bot$, so DT and the
+negation axiom give $\neg\neg p$. Combine these directions. The final
+rules and equivalence follow by MP with the two implications. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_not_not_false_th`, `MLK_not_not_th`,
+`MLK_DOUBLENEG_CL`, `MLK_DOUBLENEG`, `MLK_DOUBLENEG_IFF`, respectively.
+
+## 6. Conjunction, disjunction, and biconditionals
+
+### 6.1 Conjunction introduction and projections
+
+**Statements.**
 
 $$
-S;\sigma[H]\vdash\sigma(p).
+\vdash(p\land q)\to p,\qquad\vdash(p\land q)\to q,\qquad
+\vdash p\to(q\to(p\land q)),
 $$
 
-La condizione di chiusura su $S$ è necessaria perché $S$ può essere un
-insieme arbitrario di formule, non necessariamente già presentato come schema
-chiuso per sostituzione.
-
-## 9. Quadro complessivo
-
-La teoria sviluppata nel file può essere riassunta come segue:
-
-- fornisce una base hilbertiana classica per la logica modale normale K;
-- separa assiomi globali e ipotesi locali;
-- ricostruisce un'ampia libreria di ragionamento proposizionale;
-- dimostra il lemma di deduzione e le proprietà strutturali del giudizio;
-- stabilisce le principali regole di congruenza proposizionale e modale;
-- garantisce la stabilità del calcolo rispetto alla sostituzione uniforme;
-- permette di ottenere sistemi modali specifici scegliendo opportunamente
-  l'insieme $S$.
-
-Il risultato è un'infrastruttura sintattica generale sulla quale possono
-essere costruite le successive teorie di correttezza, completezza,
-decidibilità e costruzione di contromodelli per i singoli sistemi modali.
-
-## 10. Dimostrazioni dei risultati del calcolo
-
-In questa sezione scriviamo semplicemente $\vdash p$ quando gli insiemi
-fissi $S$ e $H$ non hanno un ruolo particolare. Ogni uso di una formula
-già dimostrata in un contesto più piccolo sottintende la monotonia. Indichiamo
-con **MP** il modus ponens e con **DT** il lemma di deduzione.
-
-### 10.1 Regole primitive e monotonia
-
-**Regole `MODPROVES_KAXIOM`, `MODPROVES_AX`, `MODPROVES_HP`,
-`MLK_modusponens` e `MLK_necessitation`.** Questi enunciati sono esattamente
-le cinque clausole che definiscono la derivabilità: introduzione di un assioma
-K, introduzione di un elemento di $S$, introduzione di un'ipotesi, modus
-ponens e necessitazione di un teorema senza ipotesi locali. La loro prova
-consiste quindi nell'applicare la clausola corrispondente.
-
-**Assiomi con nome.** I risultati `MLK_axiom_addimp`,
-`MLK_axiom_distribimp`, `MLK_axiom_doubleneg`, `MLK_axiom_iffimp1`,
-`MLK_axiom_iffimp2`, `MLK_axiom_impiff`, `MLK_axiom_true`, `MLK_axiom_not`,
-`MLK_axiom_and`, `MLK_axiom_or` e `MLK_axiom_boximp` sono le undici istanze
-della base assiomatica elencata nella Sezione 3. Ciascuno segue introducendo
-la corrispondente istanza di assioma K.
-
-**Monotonia negli assiomi (`MODPROVES_MONO1`).** Si procede per induzione
-sulla derivazione. Un assioma K rimane tale; un elemento di $S$ appartiene a
-$S'$ perché $S\subseteq S'$; le ipotesi non cambiano. MP si conserva
-applicando l'ipotesi induttiva alle due premesse. Nel caso della
-necessitazione, l'ipotesi induttiva trasporta prima il teorema dal sistema
-$S$ al sistema $S'$, dopo di che si applica nuovamente la necessitazione.
-
-**Monotonia nelle ipotesi (`MODPROVES_MONO2`).** Anche qui si usa l'induzione
-sulla derivazione. Il solo caso non immediato è l'introduzione di un'ipotesi:
-se $p\in H$ e $H\subseteq H'$, allora $p\in H'$. Nella necessitazione la
-premessa ha contesto vuoto e quindi non dipende né da $H$ né da $H'$.
-
-### 10.2 Calcolo dell'implicazione
-
-**Eliminazione dell'equivalenza (`MLK_iff_imp1`, `MLK_iff_imp2`).** Da
-$p\leftrightarrow q$ e dal rispettivo assioma
-$(p\leftrightarrow q)\to(p\to q)$, oppure
-$(p\leftrightarrow q)\to(q\to p)$, si conclude con MP.
-
-**Antisimmetria (`MLK_imp_antisym`).** Si applica due volte MP all'assioma
-$(p\to q)\to((q\to p)\to(p\leftrightarrow q))$.
-
-**Aggiunta di un antecedente (`MLK_add_assum`).** Da $\vdash q$ e
-$q\to(p\to q)$, per MP, segue $p\to q$.
-
-**Riflessività (`MLK_imp_refl_th`).** Si considerino
-
 $$
-p\to((p\to p)\to p),\qquad p\to(p\to p)
+(\vdash p\land q)\Longleftrightarrow
+\bigl((\vdash p)\ \text{and}\ (\vdash q)\bigr).
 $$
 
-e l'istanza dell'assioma distributivo con $q=p\to p$. Due applicazioni di MP
-danno $p\to p$.
+**Comment.** These recover the familiar conjunction rules from its negative
+axiomatic characterization.
 
-**Monotonia sotto un antecedente (`MLK_imp_add_assum`).** Da
-$q\to r$ si ottiene $p\to(q\to r)$ per aggiunta di antecedente. MP con
-l'assioma distributivo produce $(p\to q)\to(p\to r)$.
+**Proof.** From $p\land q$ the defining axiom gives
+$(p\to(q\to\bot))\to\bot$. To derive $p$, suppose $p\to\bot$.
+Under further assumptions $p,q$ we derive $\bot$; discharging $q,p$ gives
+$p\to(q\to\bot)$. This contradicts the displayed consequence of the
+conjunction. Discharge $p\to\bot$ and eliminate double negation.
+To derive $q$, suppose $q\to\bot$ instead and repeat the argument using $q$
+to obtain the inner contradiction. DT discharges the conjunction premise
+in each projection.
 
-**Contrazione (`MLK_imp_unduplicate`).** Applicando l'assioma distributivo a
-$p\to(p\to q)$ si ottiene $(p\to p)\to(p\to q)$; MP con la riflessività
-conclude.
+For introduction, assume $p,q$, then $p\to(q\to\bot)$. Two MP steps give
+$\bot$. Discharge the last assumption and use the reverse direction of the
+conjunction axiom to obtain $p\land q$. Discharge $q,p$ to obtain the
+curried formula. MP with this formula gives conjunction from its components;
+MP with the projections gives the converse. $\square$
 
-**Transitività (`MLK_imp_trans`).** Da $q\to r$, il risultato precedente
-fornisce $(p\to q)\to(p\to r)$. MP con $p\to q$ conclude.
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_and_left_th`, `MLK_and_right_th`,
+`MLK_and_pair_th`, `MLK_and`.
 
-**Scambio (`MLK_imp_swap`).** Da $p\to(q\to r)$, l'assioma distributivo
-produce $(p\to q)\to(p\to r)$. Poiché $q\to(p\to q)$, la transitività
-dà $q\to(p\to r)$.
+### 6.2 Conjunction under a common antecedent
 
-**Catena binaria (`MLK_imp_trans_chain_2`).** Da $p\to q_2$ e
-$q_1\to(q_2\to r)$, dopo uno scambio, segue $p\to(q_1\to r)$. Un secondo
-scambio e la composizione con $p\to q_1$ danno $p\to(p\to r)$; la
-contrazione elimina la duplicazione di $p$.
-
-**Forma interna della transitività (`MLK_imp_trans_th`).** La composizione di
-$(q\to r)\to(p\to(q\to r))$ con l'assioma distributivo dà
+**Statements.**
 
 $$
-(q\to r)\to((p\to q)\to(p\to r)).
+\frac{\vdash r\to p\qquad\vdash r\to q}{\vdash r\to(p\land q)},
+\qquad
+\frac{\vdash r\to(p\land q)}{\vdash r\to q\quad\text{and}\quad\vdash r\to p}.
 $$
 
-**Aggiunta della conclusione (`GLimp_add_concl`).** Si scambiano i primi due
-antecedenti nella forma interna della transitività e si applica MP a
-$p\to q$, ottenendo $(q\to r)\to(p\to r)$.
-
-**Composizione sotto due antecedenti (`MLK_imp_trans2`).** La monotonia sotto
-l'antecedente $q$ trasforma $r\to s$ in
-$(q\to r)\to(q\to s)$; componendo con $p\to(q\to r)$ si ottiene la tesi.
-
-**Forme interne di scambio e inserimento (`MLK_imp_swap_th`,
-`MLK_imp_insert`).** Per la prima si assume $p\to(q\to r)$, si applica la
-regola di scambio e si scarica l'assunzione con DT. Per la seconda si compone
-$p\to r$ con $r\to(q\to r)$.
-
-### 10.3 Lemma di deduzione
-
-**Direzione di inserimento (`MODPROVES_DEDUCTION_LEMMA_INSERT`).** Da
-$H\vdash p\to q$, per monotonia si ha
-$H\cup\{p\}\vdash p\to q$. Nello stesso contesto $p$ è un'ipotesi; MP dà
-$q$.
-
-**Direzione di cancellazione (`MODPROVES_DEDUCTION_LEMMA_DELETE`).** Si
-induce sulla derivazione di $q$ da $H$, supponendo $p\in H$.
-
-- Gli assiomi K e gli elementi di $S$ ricevono l'antecedente $p$ mediante
-  aggiunta di assunzione.
-- Se la conclusione è un'ipotesi $q$, nel caso $q=p$ si usa $p\to p$;
-  altrimenti $q$ resta in $H\setminus\{p\}$ e si aggiunge l'antecedente.
-- Nel caso MP, le ipotesi induttive danno $p\to(a\to b)$ e $p\to a$;
-  l'assioma distributivo produce $p\to b$.
-- Una conclusione ottenuta per necessitazione proviene dal contesto vuoto;
-  può quindi essere necessitata anche nel contesto ridotto e poi ricevere
-  l'antecedente $p$.
-
-**Lemma di deduzione (`MODPROVES_DEDUCTION_LEMMA`).** La direzione da sinistra
-a destra è il lemma di inserimento. Per il converso, se $p\in H$, allora
-$H\cup\{p\}=H$ e basta aggiungere l'antecedente. Se $p\notin H$, si
-applica il lemma di cancellazione a $H\cup\{p\}$, osservando che
-$(H\cup\{p\})\setminus\{p\}=H$.
-
-### 10.4 Falsità, verità e ragionamento classico
-
-**Ex falso (`MLK_ex_falso_th`, `MLK_ex_falso`).** La formula
-$\bot\to((p\to\bot)\to\bot)$ è un'istanza di aggiunta di antecedente.
-Componendola con l'eliminazione della doppia negazione si ottiene
-$\bot\to p$. Se $\bot$ è già derivata, MP dà $p$.
-
-**Contraddizione come antecedente (`MLK_imp_contr_th`).** Si applica la
-monotonia sotto l'antecedente $p$ a $\bot\to q$, ottenendo
-$(p\to\bot)\to(p\to q)$.
-
-**Ragionamento per assurdo (`MLK_contrad`).** Supponiamo derivata
-$(p\to\bot)\to p$. Sotto l'ipotesi $p\to\bot$, MP produce sia $p$ sia
-$p\to\bot$, dunque $\bot$. DT dà
-$(p\to\bot)\to\bot$, e l'assioma di doppia negazione conclude $p$.
-
-**Casi booleani (`MLK_bool_cases`).** Supponiamo $p\to q$ e
-$(p\to\bot)\to q$. Per assurdo assumiamo $q\to\bot$. La prima
-implicazione dà $p\to\bot$; la seconda dà allora $q$, in contraddizione
-con $q\to\bot$. L'eliminazione della doppia negazione conclude $q$.
-
-**Verità (`MLK_truth_th`).** Dall'assioma
-$\top\leftrightarrow(\bot\to\bot)$ si estrae
-$(\bot\to\bot)\to\top$; MP con la riflessività di $\bot$ dà $\top$.
-
-**Riflessività, simmetria e transitività dell'equivalenza
-(`MLK_iff_refl_th`, `MLK_iff_sym`, `MLK_iff_trans`).** La riflessività segue
-dalle due copie di $p\to p$. La simmetria scambia le due implicazioni
-estratte da un'equivalenza. La transitività compone separatamente le
-implicazioni nelle due direzioni e le ricongiunge per antisimmetria.
-
-### 10.5 Regole modali elementari
-
-**Monotonia della scatola (`MLK_imp_box`).** Da un teorema
-$p\to q$ si ottiene $\Box(p\to q)$ per necessitazione; MP con K dà
-$\Box p\to\Box q$.
-
-**Modus ponens inscatolato (`MLK_box_modusponens`, `MLK_boximp`,
-`MLK_box_moduspones`).** Se è disponibile $\Box(p\to q)$, K e MP danno
-$\Box p\to\Box q$, e un'ulteriore applicazione di MP a $\Box p$ dà
-$\Box q$. Se si parte dal teorema non inscatolato $p\to q$, si usa prima
-la monotonia della scatola.
-
-### 10.6 Congiunzione
-
-**Proiezioni (`MLK_and_left_th`, `MLK_and_right_th`).** Dall'assioma che
-caratterizza $p\land q$ si ottiene
-$(p\to(q\to\bot))\to\bot$. Per dimostrare $p$, si assume
-$p\to\bot$; sotto ulteriori ipotesi $p,q$ si ricava $\bot$, quindi
-$p\to(q\to\bot)$, ancora $\bot$, e infine $p$ per doppia negazione.
-La prova della proiezione destra è simmetrica.
-
-**Introduzione curried (`MLK_and_pair_th`).** Sotto le ipotesi $p$ e $q$,
-per provare la caratterizzazione negativa della congiunzione si assume
-$p\to(q\to\bot)$ e si applica due volte MP, ottenendo $\bot$. DT scarica
-le tre ipotesi; l'altra direzione dell'assioma della congiunzione dà
-$p\to(q\to p\land q)$.
-
-**Regola della congiunzione (`MLK_and`).** Una derivazione di $p\land q$
-fornisce entrambe le componenti mediante le proiezioni. Viceversa, da
-derivazioni di $p$ e $q$, due MP con il lemma precedente producono
-$p\land q$.
-
-**Introduzione ed eliminazione sotto implicazione (`MLK_and_intro`,
-`MLK_and_add`, `MLK_and_elim`).** Le prime due combinano
-$r\to p$ e $r\to q$ con $p\to(q\to p\land q)$. L'eliminazione compone
-$r\to(p\land q)$ con ciascuna proiezione.
-
-**Shunt e antecedente congiunto (`MLK_shunt`, `MLK_ante_conj`,
-`MLK_ante_conj2`, `MLK_imp_imp`).** Componendo
-$p\to(q\to p\land q)$ con $(p\land q)\to r$ si ottiene
-$p\to(q\to r)$. Nel verso opposto si applica la catena binaria alle due
-proiezioni. La variante `ante_conj2` premette uno scambio; `imp_imp` raccoglie
-le due direzioni.
-
-**Forma interna di MP (`MLK_modusponens_th`).** Da
-$(p\to q)\land p$ si proiettano $p\to q$ e $p$, quindi MP dà $q$.
-
-**Definizione dell'equivalenza (`MLK_iff_def_th`, `MLK_iff_def`).** Da
-$p\leftrightarrow q$ si estraggono le due implicazioni e le si congiunge.
-Viceversa, dalle due proiezioni si applica l'assioma di introduzione
-dell'equivalenza. La versione esterna segue applicando MP nelle due direzioni.
-
-### 10.7 Negazione e disgiunzione
-
-**Definizione della negazione e negazione del falso (`MLK_not_def`,
-`MLK_not_false`).** Le due direzioni della prima sono ottenute dall'assioma
-$\neg p\leftrightarrow(p\to\bot)$. Ponendo $p=\bot$, la riflessività
-$\bot\to\bot$ introduce $\neg\bot$.
-
-**Contrapposizione (`MLK_contrapos`).** Da $p\to q$, la composizione verso
-$\bot$ dà $(q\to\bot)\to(p\to\bot)$. Le due equivalenze che definiscono
-la negazione trasformano questo risultato in $\neg q\to\neg p$.
-
-**Doppia negazione (`MLK_not_not_false_th`, `MLK_not_not_th`,
-`MLK_DOUBLENEG_CL`, `MLK_DOUBLENEG`, `MLK_DOUBLENEG_IFF`).** Una direzione di
-$((p\to\bot)\to\bot)\leftrightarrow p$ è l'assioma classico; l'altra si
-ottiene assumendo $p$ e $p\to\bot$. Sostituendo a ogni negazione la sua
-definizione si ricava $\neg\neg p\leftrightarrow p$. Le regole di
-introduzione, eliminazione e l'equivalenza esterna seguono con MP.
-
-**Introduzioni della disgiunzione (`MLK_or_right_th`, `MLK_or_left_th`,
-`MLK_or_introl`, `MLK_or_intror`).** Supponiamo $p$ e, per assurdo,
-$\neg p\land\neg q$. La prima proiezione contraddice $p$, dunque
-$\neg(\neg p\land\neg q)$, che per definizione equivale a $p\lor q$.
-L'altro lato è simmetrico. Le regole senza implicazione applicano MP.
-
-**Eliminazione della disgiunzione (`MLK_ante_disj`, `MLK_disj_imp`,
-`MLK_or_elim`).** Assumiamo $p\lor q$, $p\to r$, $q\to r$. Si ragiona
-per casi su $p$, poi su $q$. Se entrambi sono falsi, si ottiene
-$\neg p\land\neg q$, in contraddizione con la definizione di $p\lor q$.
-Negli altri casi segue $r$. DT produce
-$(p\lor q)\to r$. Componendo questa implicazione con le due introduzioni si
-ottiene il converso di `MLK_disj_imp`; MP dà `MLK_or_elim`.
-
-**Trasporto dentro una disgiunzione (`MLK_or_transl`, `MLK_or_transr`).** Si
-compone l'implicazione data con la corrispondente introduzione della
-disgiunzione.
-
-**Regola di Frege (`MLK_frege`).** Due MP con l'assioma distributivo applicati
-a $p\to(q\to r)$ e $p\to q$ producono $p\to r$.
-
-**Non contraddizione (`MLK_NC`, `MLK_NC_ALT`, `MLK_nc_th`).** Da
-$p\land\neg p$ si proiettano $p$ e $p\to\bot$, quindi MP dà $\bot$.
-Da $\bot$, ex falso produce entrambe le componenti. `NC_ALT` compone questo
-fatto con ex falso; `nc_th` ne internalizza la prima direzione.
-
-**MP per equivalenza (`MLK_iff_mp`, `MLK_iff`).** Si estrae da
-$p\leftrightarrow q$ l'implicazione appropriata e si usa MP. Applicando lo
-stesso argomento all'equivalenza simmetrica si ottiene l'equivalenza esterna
-fra le due nozioni di derivabilità.
-
-### 10.8 Leggi algebriche e congruenze
-
-**Commutatività e associatività di $\land$ (`MLK_and_comm_th`,
-`MLK_and_comm`, `MLK_and_assoc_th`, `MLK_and_assoc`).** Ogni implicazione si
-costruisce proiettando le componenti nella disposizione iniziale e
-ricongiungendole nella disposizione richiesta. L'antisimmetria produce
-l'equivalenza interna; MP produce la versione esterna.
-
-**Commutatività e associatività di $\lor$ (`MLK_or_comm`,
-`MLK_or_assoc_left_th`, `MLK_or_assoc_right_th`, `MLK_or_assoc_th`,
-`MLK_or_assoc`).** Si elimina la disgiunzione per casi e in ciascun ramo si
-usa la sequenza opportuna di introduzioni. Le due implicazioni associative
-formano l'equivalenza interna e, mediante MP, quella esterna.
-
-**Monotonia dell'implicazione (`MLK_imp_mono`, `MLK_imp_mono_th`).** Assunti
-$p'\to p$, $q\to q'$, $p\to q$ e $p'$, tre MP consecutivi producono
-$q'$. Scaricando gli ultimi due antecedenti si ottiene
-$(p\to q)\to(p'\to q')$. La forma `*_th` internalizza anche le prime due
-premesse, raccolte in una congiunzione.
-
-**Congruenza della congiunzione (`MLK_and_imp`, `MLK_and_subst_th`,
-`MLK_and_subst`, `MLK_and_subst_left_th`, `MLK_and_subst_right_th`).** Si
-proiettano $p,q$, si applicano rispettivamente $p\to p'$ e $q\to q'$,
-quindi si ricongiungono i risultati. Usando in entrambe le direzioni le
-implicazioni estratte dalle equivalenze si ottiene la congruenza. Le varianti
-sinistra e destra usano la riflessività per l'argomento invariato e DT per
-internalizzare l'equivalenza sostituita.
-
-**Congruenza dell'implicazione (`MLK_imp_subst`, `MLK_imp_mp_subst`).** La
-monotonia dell'implicazione è contravariante nell'antecedente e covariante nel
-conseguente. Si usano quindi $p'\to p$ e $q\to q'$ in una direzione, e le
-implicazioni opposte nell'altra. La variante MP trasporta una derivazione
-attraverso l'equivalenza ottenuta.
-
-**Congruenza della negazione (`MLK_not_subst`, `MLK_not_subst_th`,
-`MLK_iff_not`).** Le due implicazioni dell'equivalenza vengono
-contrapposte. Per il converso di `iff_not`, si nega ancora e si eliminano le
-doppie negazioni.
-
-**Congruenza della disgiunzione (`MLK_or_subst_th`,
-`MLK_or_subst_right`).** Si elimina $p\lor q$. Nel primo ramo si trasporta
-$p$ a $p'$ e si introduce la nuova disgiunzione; nel secondo si procede
-con $q\to q'$. La direzione inversa usa le implicazioni opposte. La variante
-destra pone l'equivalenza riflessiva nel primo argomento.
-
-**Congruenza dell'equivalenza (`MLK_iff_subst`, `MLK_iff_mp_subst`).** Si
-riscrivono entrambe le equivalenze come congiunzioni delle due implicazioni,
-si applicano le congruenze di implicazione e congiunzione e si torna alla
-forma con $\leftrightarrow$. La variante MP applica il risultato a una
-derivazione dell'equivalenza originale.
-
-### 10.9 Ulteriori identità classiche
-
-**Idempotenza, unità e contrapposizione interna.** `MLK_iff_and_refl` congiunge
-due copie di $p$ in una direzione e proietta nell'altra.
-`MLK_and_left_true_th`, `MLK_and_rigth_true_th`, `MLK_or_rid_th` e
-`MLK_or_lid_th` combinano proiezioni o eliminazione per casi con i teoremi
-$\top$ ed $\bot\to p$. `MLK_contrapos_th` assume $p\to q$, applica la
-contrapposizione e usa DT.
-
-**Equivalenza con la contrapposta (`MLK_contrapos_eq_th`,
-`MLK_contrapos_eq`).** La direzione diretta è la contrapposizione. Per il
-converso si assumono $\neg q\to\neg p$, $p$ e $\neg q$: si ricava
-$\neg p$, in contraddizione con $p$; dunque $\neg\neg q$, e quindi
-$q$. DT scarica le ipotesi. La variante esterna usa MP nelle due direzioni.
-
-**Terzo escluso e definizione della disgiunzione (`MLK_tnd_th`,
-`MLK_and_eq_or`).** La formula $p\lor\neg p$ segue dal ragionamento per casi:
-da $p$ si usa l'introduzione sinistra, da $p\to\bot$ si introduce prima
-$\neg p$ e poi la disgiunzione. `and_eq_or` è l'applicazione in entrambe le
-direzioni dell'assioma che definisce $\lor$.
-
-**De Morgan (`MLK_de_morgan_and_th`, `MLK_de_morgan_or_th`).** Per la prima
-legge si sostituiscono $p,q$ con $\neg\neg p,\neg\neg q$ sotto la
-congiunzione e la negazione, poi si usa la definizione della disgiunzione. Per
-la seconda, $\neg(p\lor q)$ implica separatamente $\neg p$ e $\neg q$
-per contrapposizione delle introduzioni. Viceversa, da entrambe le negazioni,
-ogni caso della disgiunzione conduce a $\bot$, dunque
-$\neg(p\lor q)$.
-
-**Negazione del vero (`MLK_not_true_th`, `MLK_not_true`).** Da $\neg\top$
-si ottiene $\top\to\bot$, che applicata al teorema $\top$ dà $\bot$.
-Il converso è ex falso. La versione esterna usa l'equivalenza così ottenuta.
-
-**Equivalenze da prove positive o negative (`MLK_proves_iff_pos`,
-`MLK_proves_iff_neg`).** Se $p$ e $q$ sono entrambi teoremi, ciascuno può
-ricevere l'altro come antecedente, producendo le due implicazioni. Se sono
-dimostrate entrambe le negazioni, si applica il caso positivo a
-$\neg p,\neg q$ e poi si elimina la negazione da entrambi i lati.
-
-**Introduzione da antecedente falso (`MLK_imp_introl`).** Da $\neg p$ si
-ottiene $p\to\bot$, che composto con $\bot\to q$ dà $p\to q$.
-
-**Negazioni di disgiunzione e implicazione (`MLK_proves_not_or`,
-`MLK_crysippus_th`, `MLK_proves_not_imp`).** La prima congiunge
-$\neg p,\neg q$ e applica De Morgan. Per
-$\neg(p\to q)\leftrightarrow p\land\neg q$, la direzione diretta ricava
-$p$ per assurdo e $\neg q$ contrapponendo $q\to(p\to q)$; la direzione
-inversa assume $p\to q$, usa $p$ per ottenere $q$ e lo contraddice con
-$\neg q$. L'ultima regola applica questa equivalenza a prove di $p$ e
-$\neg q$.
-
-**Combinazione di conclusioni (`MLK_and_imp_th1`, `MLK_and_imp_th`).** Due
-implicazioni con antecedente comune si congiungono mediante l'introduzione
-della congiunzione. Se le premesse sono equivalenze, la direzione inversa si
-ottiene proiettando una componente e tornando a $p$.
-
-**Simmetria e identità del vero per l'equivalenza (`MLK_iff_sym_th`,
-`MLK_iff_true_th`).** La prima assume $p\leftrightarrow q$, scambia le due
-implicazioni e scarica l'assunzione. Per
-$(p\leftrightarrow\top)\leftrightarrow p$, dalla direzione
-$\top\to p$ e dal teorema $\top$ si ricava $p$; viceversa, da $p$ si
-ottengono $p\to\top$ e $\top\to p$. Il caso
-$(\top\leftrightarrow p)\leftrightarrow p$ è analogo.
-
-**Clausole dell'implicazione (`MLK_imp_clauses`).** Le formule
-$p\to\top$ e $\bot\to p$ seguono rispettivamente dall'aggiunta di
-antecedente e da ex falso. $p\to\bot$ equivale a $\neg p$ per definizione.
-Infine, $\top\to p$ implica $p$ per MP con $\top$, mentre $p$ implica
-$\top\to p$ aggiungendo l'antecedente.
-
-**Regole `MLK_imp_truefalse_th`, `MLK_imp_true_rule` e
-`MLK_imp_false_rule`.** La prima assume successivamente
-$q\to\bot,p,p\to q$: due MP producono $q$, poi $\bot$; DT scarica le
-ipotesi. Per `imp_true_rule`, assunto $p\to q$, si ragiona per casi su
-$p$: se $p$, si ottiene $q$ e quindi $r$; se $\neg p$, si usa
-direttamente $\neg p\to r$. Per `imp_false_rule`, assunto
-$(p\to q)\to\bot$, si ragiona prima su $q$. Se $q$, allora
-$p\to q$, assurdo. Se $\neg q$, l'ipotesi data produce $p\to r$; un
-ulteriore ragionamento per casi su $p$ conclude $r$, perché $\neg p$
-renderebbe comunque vera $p\to q$, ancora assurdo.
-
-### 10.10 Distributività
-
-**Distribuzione di $\lor$ con un fattore comune (`MLK_or_and_distr`,
-`MLK_or_and_distr_inv`, `MLK_or_and_distr_equiv`).** Da
-$(p\lor q)\land r$ si ottengono $p\lor q$ e $r$; eliminando la
-disgiunzione si costruisce rispettivamente $p\land r$ oppure $q\land r$,
-poi si introduce la disgiunzione finale. Nel verso opposto si elimina
-$(p\land r)\lor(q\land r)$; in entrambi i rami si costruiscono
-$p\lor q$ e $r$. Le due regole formano l'equivalenza esterna.
-
-**Distribuzione di $\land$ sulla disgiunzione (`MLK_and_or_distr`,
-`MLK_and_or_distr_inv_prelim`, `MLK_and_or_distr_inv`,
-`MLK_and_or_distr_equiv`).** Da $(p\land q)\lor r$, il primo caso fornisce
-sia $p\lor r$ sia $q\lor r$, e il secondo introduce $r$ in entrambe.
-Nel converso si elimina prima $p\lor r$: il caso $r$ conclude subito;
-nel caso $p$ si elimina $q\lor r$, costruendo $p\land q$ oppure
-concludendo ancora con $r$. Il lemma preliminare è la parte di questo
-argomento condotta sotto l'ipotesi $q$. Le due direzioni danno
-l'equivalenza esterna.
-
-**Forma interna distributiva (`MLK_and_or_ldistrib_th`).** Da
-$p\land(q\lor r)$, si applica la prima distribuzione a
-$(q\lor r)\land p$ e si commutano le congiunzioni ottenute. Nel verso
-opposto si eliminano i due casi $p\land q$ e $p\land r$, mantenendo $p$
-e introducendo rispettivamente $q\lor r$. L'antisimmetria conclude
-l'equivalenza.
-
-### 10.11 Risultati modali composti
-
-**Congruenza della scatola (`MLK_box_iff_th`, `MLK_box_iff`,
-`MLK_box_subst`).** Da $\Box(p\leftrightarrow q)$, si inscatolano le due
-implicazioni contenute nell'equivalenza e si usa K per ottenere
-$\Box p\to\Box q$ e $\Box q\to\Box p$. La loro antisimmetria dà
-$\Box p\leftrightarrow\Box q$. La forma interna si ottiene con DT; se
-$p\leftrightarrow q$ è un teorema, la necessitazione fornisce la premessa
-inscatolata.
-
-**Scatola e congiunzione (`MLK_box_and`, `MLK_box_and_inv`,
-`MLK_box_and_th`, `MLK_box_and_inv_th`).** Dalle due proiezioni
-$(p\land q)\to p,q$, monotonia della scatola e MP ricavano
-$\Box p,\Box q$ da $\Box(p\land q)$. Viceversa si necessita
-$p\to(q\to p\land q)$ e si applica K due volte a $\Box p,\Box q$. Le due
-forme con implicazione si ottengono scaricando la premessa con DT.
-
-**Possibilità e congiunzione (`MLK_diam_and_th`).** Contrapponendo le
-proiezioni si hanno $\neg p\to\neg(p\land q)$ e
-$\neg q\to\neg(p\land q)$. La monotonia della scatola dà
-$\Box\neg p\to\Box\neg(p\land q)$ e l'analoga formula per $q$.
-Contrapponendo ancora si ottengono
-$\Diamond(p\land q)\to\Diamond p$ e
-$\Diamond(p\land q)\to\Diamond q$, che vengono congiunte.
-
-### 10.12 Sostituzione uniforme
-
-**Chiusura degli assiomi (`KAXIOM_SUBST`).** Si considerano uno per uno gli
-undici schemi primitivi. Sostituire uniformemente le variabili proposizionali
-lascia invariata la loro forma esterna e produce quindi un'altra istanza dello
-stesso schema.
-
-**Trasporto delle derivazioni (`SUBST_IMP`).** Si induce sulla derivazione.
-Gli assiomi K sono trattati dal lemma precedente; un assioma aggiuntivo resta
-in $S$ per l'ipotesi di chiusura; un'ipotesi diventa un elemento
-dell'immagine sostituita di $H$. MP è preservato perché la sostituzione
-commuta con l'implicazione. Nel caso della necessitazione, l'immagine del
-contesto vuoto è ancora vuota, quindi si può necessitare la formula
-sostituita.
-
-**Sostituzione di equivalenze (`SUBSTITUTION_LEMMA`).** È il caso precedente
-applicato alla formula $p\leftrightarrow q$, osservando che la sostituzione
-commuta con $\leftrightarrow$.
-
-**Sostituzioni puntualmente equivalenti (`SUBST_IFF`).** Si induce sulla
-struttura di $p$. Costanti e atomi seguono rispettivamente dalla
-riflessività e dall'ipotesi puntuale. I casi negazione, congiunzione,
-disgiunzione, implicazione ed equivalenza usano le rispettive congruenze. Nel
-caso $\Box p$, l'ipotesi induttiva nel contesto vuoto e la congruenza della
-scatola danno la tesi.
-
-**Falso nel contesto (`MODPROVES_EX_FALSO`).** Se $\bot\in H$, la regola
-delle ipotesi dà $S;H\vdash\bot$; MP con $\bot\to p$ conclude
-$S;H\vdash p$.
+**Proof.** Combine the two premises of introduction with
+$p\to(q\to(p\land q))$ using the binary composition rule of Section 3.5.
+For elimination, compose with each conjunction projection. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_and_intro` is introduction;
+`MLK_and_add` has the same conclusion with its two premises supplied in
+reverse order; `MLK_and_elim` gives the two projections in the displayed
+order. `MLK_and_imp_th1` is another instance of the introduction rule,
+with $r,p,q$ named $p,q,q'$.
+
+### 6.3 Conjoined antecedents and internal modus ponens
+
+**Statements.**
+
+$$
+\frac{\vdash(p\land q)\to r}{\vdash p\to(q\to r)},\qquad
+\frac{\vdash p\to(q\to r)}{\vdash(p\land q)\to r},\qquad
+\frac{\vdash q\to(p\to r)}{\vdash(p\land q)\to r},
+$$
+
+$$
+(\vdash p\to(q\to r))\Longleftrightarrow(\vdash(p\land q)\to r),
+\qquad
+\vdash((p\to q)\land p)\to q.
+$$
+
+**Proof.** For the first rule, assume $p,q$, form their conjunction, and
+apply the given implication; discharge the assumptions. In the reverse
+direction, assume $p\land q$, project its components, and apply the curried
+implication twice. The third rule uses the components in the opposite order.
+The equivalence collects the first two rules. For internal MP, project
+$p\to q$ and $p$ from the assumed conjunction, apply MP, and discharge.
+$\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_shunt`, `MLK_ante_conj`,
+`MLK_ante_conj2`, `MLK_imp_imp`, `MLK_modusponens_th`.
+
+### 6.4 Biconditionals as pairs of implications
+
+**Statements.**
+
+$$
+\vdash(p\leftrightarrow q)\leftrightarrow((p\to q)\land(q\to p)),
+$$
+
+$$
+(\vdash p\leftrightarrow q)\Longleftrightarrow
+\bigl((\vdash p\to q)\ \text{and}\ (\vdash q\to p)\bigr).
+$$
+
+**Proof.** Under $p\leftrightarrow q$, extract and conjoin its two
+implications. Under the conjunction of implications, project both and use
+biconditional introduction. Discharge the assumptions and combine the
+directions. The external equivalence is also exactly the combination of the
+three rules in Section 3.1. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_iff_def_th`, `MLK_iff_def`.
+
+### 6.5 Reflexivity, symmetry, transitivity, and transport
+
+**Statements.**
+
+$$
+\vdash p\leftrightarrow p,\qquad
+(\vdash p\leftrightarrow q)\Longleftrightarrow(\vdash q\leftrightarrow p),
+$$
+
+$$
+\frac{\vdash p\leftrightarrow q\qquad\vdash q\leftrightarrow r}
+{\vdash p\leftrightarrow r},\qquad
+\vdash(p\leftrightarrow q)\to(q\leftrightarrow p),
+$$
+
+$$
+\frac{\vdash p\leftrightarrow q\qquad\vdash p}{\vdash q},\qquad
+\vdash p\leftrightarrow q\Longrightarrow
+\bigl((\vdash p)\Longleftrightarrow(\vdash q)\bigr).
+$$
+
+**Proof.** Combine two copies of implication reflexivity for the first
+statement. For symmetry, extract the implications and reintroduce the
+biconditional in the opposite order; applying this twice gives the external
+equivalence. For transitivity, compose the forward implications and the
+backward implications separately, then combine them. DT internalizes the
+symmetry rule. For transport, extract $p\to q$ and apply MP to $p$; use
+$q\to p$ for the converse direction of the last claim. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_iff_refl_th`, `MLK_iff_sym`,
+`MLK_iff_trans`, `MLK_iff_sym_th`, `MLK_iff_mp`, `MLK_iff`.
+HOL Light's `MLK_iff_sym` states the displayed external equivalence; Lean's
+same-named theorem states its forward implication, with the reverse obtained
+by exchanging $p,q$. HOL Light defines `MLK_iff_sym_th` twice: its final
+binding is the implication displayed above, as in Lean; the earlier binding
+is the stronger internal biconditional between the two orders.
+
+### 6.6 Disjunction introduction and transport
+
+**Statements.**
+
+$$
+\vdash p\to(p\lor q),\qquad\vdash q\to(p\lor q),\qquad
+\frac{\vdash p}{\vdash p\lor q},\qquad
+\frac{\vdash q}{\vdash p\lor q},
+$$
+
+$$
+\frac{\vdash p\to q}{\vdash p\to(q\lor r)},\qquad
+\frac{\vdash p\to r}{\vdash p\to(q\lor r)}.
+$$
+
+**Proof.** Under $p$, an additional assumption $\neg p\land\neg q$ gives
+$\neg p$ by projection and hence $\bot$. DT and the negation axiom give
+$\neg(\neg p\land\neg q)$; the disjunction axiom gives $p\lor q$.
+Discharge $p$. Starting with $q$ uses the other projection. MP gives the
+rules from a derived disjunct. Composition with the corresponding
+introduction implication gives the last two rules. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_or_right_th` introduces from $p$,
+`MLK_or_left_th` from $q$; the direct rules are `MLK_or_introl`,
+`MLK_or_intror`. The last two rules are `MLK_or_transl`, `MLK_or_transr`.
+
+### 6.7 Disjunction elimination
+
+**Statements.**
+
+$$
+\frac{\vdash p\to r\qquad\vdash q\to r}{\vdash(p\lor q)\to r},
+$$
+
+$$
+(\vdash(p\lor q)\to r)\Longleftrightarrow
+\bigl((\vdash p\to r)\ \text{and}\ (\vdash q\to r)\bigr),
+$$
+
+$$
+\frac{\vdash p\lor q\qquad\vdash p\to r\qquad\vdash q\to r}{\vdash r}.
+$$
+
+**Proof.** Assume $p\lor q$. Use Boolean cases on $p$, then on $q$,
+expressing the negative cases by the negation axiom. If either is true, its
+given implication yields $r$. If both are false, conjunction introduction
+gives $\neg p\land\neg q$, contradicting the disjunction axiom; explosion
+yields $r$. Discharge $p\lor q$. Conversely, compose an implication from
+the disjunction with each disjunction introduction to obtain the two branch
+implications. The last rule applies MP to the first. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_ante_disj`, `MLK_disj_imp`,
+`MLK_or_elim`.
+
+### 6.8 Noncontradiction and excluded middle
+
+**Statements.**
+
+$$
+(\vdash p\land\neg p)\Longleftrightarrow(\vdash\bot),\qquad
+\frac{\vdash p\qquad\vdash\neg p}{\vdash q},\qquad
+\vdash(p\land\neg p)\to\bot,
+$$
+
+$$
+\vdash p\lor\neg p,\qquad
+(\vdash p\lor q)\Longleftrightarrow(\vdash\neg(\neg p\land\neg q)).
+$$
+
+**Proof.** Project $p,\neg p$ from a contradiction, convert $\neg p$ to
+$p\to\bot$, and apply MP. Conversely, explosion derives both conjuncts
+from $\bot$. This also proves the rule from separate contradictory premises;
+DT gives the internal implication. For excluded middle, use Boolean cases:
+from $p$ introduce the left disjunct, and from $p\to\bot$ first derive
+$\neg p$ and then introduce the right disjunct. The final equivalence is MP
+in both directions of the disjunction axiom. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_NC`, `MLK_NC_ALT`, `MLK_nc_th`,
+`MLK_tnd_th`, `MLK_and_eq_or`.
+
+## 7. Algebraic laws and congruence
+
+### 7.1 Commutativity and associativity of conjunction
+
+**Statements.**
+
+$$
+\vdash(p\land q)\leftrightarrow(q\land p),\qquad
+(\vdash p\land q)\Longleftrightarrow(\vdash q\land p),
+$$
+
+$$
+\vdash((p\land q)\land r)\leftrightarrow(p\land(q\land r)),
+$$
+
+$$
+(\vdash(p\land q)\land r)\Longleftrightarrow(\vdash p\land(q\land r)).
+$$
+
+**Comment.** The order and bracketing of conjuncts can be changed within the
+calculus, and consequently in derivability claims.
+
+**Proof.** The projections $(p\land q)\to q$ and $(p\land q)\to p$
+combine by conjunction introduction under a common antecedent into
+$(p\land q)\to(q\land p)$. Exchange $p,q$ for the reverse implication
+and introduce the biconditional. For associativity, assume either bracketing,
+project $p,q,r$, and reintroduce them in the other bracketing. Discharge and
+combine the two implications. Transport through these biconditionals gives
+the two external equivalences. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_and_comm_th`, `MLK_and_comm`,
+`MLK_and_assoc_th`, `MLK_and_assoc`.
+
+### 7.2 Commutativity and associativity of disjunction
+
+**Statements.**
+
+$$
+(\vdash p\lor q)\Longleftrightarrow(\vdash q\lor p),
+$$
+
+$$
+\vdash(p\lor(q\lor r))\to((p\lor q)\lor r),\qquad
+\vdash((p\lor q)\lor r)\to(p\lor(q\lor r)),
+$$
+
+$$
+\vdash(p\lor(q\lor r))\leftrightarrow((p\lor q)\lor r),
+$$
+
+$$
+(\vdash(p\lor q)\lor r)\Longleftrightarrow(\vdash p\lor(q\lor r)).
+$$
+
+**Proof.** Eliminate $p\lor q$ by cases and introduce each disjunct on the
+opposite side. Repeat with $p,q$ exchanged for the converse. For association,
+under $p\lor(q\lor r)$, the $p$ case introduces $p\lor q$ and then the
+outer disjunction; in the other branch, split $q\lor r$, introducing the
+appropriate target disjunct. The reverse implication splits
+$(p\lor q)\lor r$ and reinserts each of $p,q,r$ into the target bracketing.
+DT gives the displayed implications; biconditional introduction and transport
+give the remaining statements. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_or_comm`, `MLK_or_assoc_left_th`,
+`MLK_or_assoc_right_th`, `MLK_or_assoc_th`, `MLK_or_assoc`.
+
+### 7.3 Monotonicity of implication and conjunction
+
+**Statements.**
+
+$$
+\frac{\vdash p'\to p\qquad\vdash q\to q'}
+{\vdash(p\to q)\to(p'\to q')},
+$$
+
+$$
+\vdash((p'\to p)\land(q\to q'))\to((p\to q)\to(p'\to q')),
+$$
+
+$$
+\frac{\vdash p\to p'\qquad\vdash q\to q'}
+{\vdash(p\land q)\to(p'\land q')}.
+$$
+
+**Comment.** Implication reverses the direction in its antecedent and
+preserves it in its consequent. Conjunction preserves both directions.
+
+**Proof.** Under additional assumptions $p\to q$ and $p'$, apply
+$p'\to p$, $p\to q$, and $q\to q'$ in succession. Discharge the two
+assumptions. For the internal version, start by assuming the conjunction of
+the two premises and project them, then discharge that conjunction as well.
+For conjunction, assume $p\land q$, project, apply the two given
+implications, and conjoin the results; DT finishes. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_imp_mono`, `MLK_imp_mono_th`,
+`MLK_and_imp`. HOL Light first binds `MLK_imp_mono_th` to the curried
+formula $(p'\to p)\to((q\to q')\to((p\to q)\to(p'\to q')))$;
+its final binding has the conjoined antecedent displayed here, matching Lean.
+
+### 7.4 Congruence of the binary propositional connectives
+
+**Statement.** For each $\circ\in\{\land,\lor,\to,\leftrightarrow\}$,
+
+$$
+\frac{\vdash p\leftrightarrow p'\qquad\vdash q\leftrightarrow q'}
+{\vdash(p\circ q)\leftrightarrow(p'\circ q')}.
+$$
+
+**Comment.** Provable equivalence permits replacement inside every binary
+propositional connective, even when the equivalences depend on local hypotheses.
+
+**Proof.** For conjunction, extract the forward implications, use conjunction
+monotonicity, and repeat with the backward implications. For implication,
+use $p'\to p$ and $q\to q'$ in one direction, and $p\to p'$ and
+$q'\to q$ in the other, applying implication monotonicity. In each case
+combine the two implications.
+
+For disjunction, assume $p\lor q$ and eliminate it by cases. In the first
+case transport $p$ to $p'$ and introduce the left disjunct; in the second,
+transport $q$ to $q'$ and introduce the right disjunct. Reverse the given
+equivalences to prove the converse. For biconditionals, use Section 6.4 to
+express each as the conjunction of its two implications, apply the already
+proved congruences for implication and conjunction, and return to the
+biconditional form. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_and_subst_th`, `MLK_or_subst_th`,
+`MLK_imp_subst`, `MLK_iff_subst`, for the four respective connectives.
+
+### 7.5 Transport through congruences and replacement of one conjunct
+
+**Statements.** Under the premises $\vdash p\leftrightarrow p'$ and
+$\vdash q\leftrightarrow q'$,
+
+$$
+(\vdash p\land q)\Longleftrightarrow(\vdash p'\land q'),
+$$
+
+$$
+\frac{\vdash p\to q}{\vdash p'\to q'},\qquad
+\frac{\vdash p\leftrightarrow q}{\vdash p'\leftrightarrow q'}.
+$$
+
+The one-argument versions include
+
+$$
+\vdash(q_1\leftrightarrow q_2)\to
+((p\land q_1)\leftrightarrow(p\land q_2)),
+$$
+
+$$
+\vdash(p_1\leftrightarrow p_2)\to
+((p_1\land q)\leftrightarrow(p_2\land q)),
+$$
+
+$$
+\frac{\vdash q_1\leftrightarrow q_2}
+{\vdash(p\lor q_1)\leftrightarrow(p\lor q_2)}.
+$$
+
+**Proof.** For the first three claims, apply transport (Section 6.5) to the
+corresponding congruence in Section 7.4. For one-argument replacement, use
+reflexivity for the unchanged argument and the given equivalence for the
+other. In the two conjunction statements, assume that equivalence locally
+and discharge it with DT. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_and_subst`, `MLK_imp_mp_subst`,
+`MLK_iff_mp_subst`, `MLK_and_subst_right_th`, `MLK_and_subst_left_th`,
+`MLK_or_subst_right`, respectively.
+
+### 7.6 Congruence of negation
+
+**Statements.**
+
+$$
+\frac{\vdash p\leftrightarrow q}{\vdash\neg p\leftrightarrow\neg q},
+\qquad
+\frac{\vdash p\leftrightarrow q\qquad\vdash\neg p}{\vdash\neg q},
+$$
+
+$$
+(\vdash\neg p\leftrightarrow\neg q)\Longleftrightarrow
+(\vdash p\leftrightarrow q).
+$$
+
+**Proof.** Contrapose the two implications of the given equivalence and
+combine them. Transport through the resulting equivalence gives the second
+rule. For the converse direction of the final equivalence, apply negation
+congruence again to obtain $\neg\neg p\leftrightarrow\neg\neg q$, and
+compose with the double-negation equivalences. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_not_subst`, `MLK_not_subst_th`,
+`MLK_iff_not`. Despite its suffix, `MLK_not_subst_th` is a transport rule
+with two derivability premises.
+
+## 8. Further classical identities
+
+### 8.1 Idempotence and neutral elements
+
+**Statements.**
+
+$$
+\vdash p\leftrightarrow(p\land p),\qquad
+\vdash(\top\land p)\leftrightarrow p,\qquad
+\vdash(p\land\top)\leftrightarrow p,
+$$
+
+$$
+\vdash(p\lor\bot)\leftrightarrow p,\qquad
+\vdash(\bot\lor p)\leftrightarrow p.
+$$
+
+**Proof.** For idempotence, conjoin two copies of $p$ in one direction and
+project in the other. For conjunction with truth, project $p$ in one
+direction; in the other, combine $p$ with the theorem $\top$. For disjunction
+with falsity, eliminate by cases: the $p$ branch is immediate and the $\bot$
+branch uses explosion. The reverse direction is disjunction introduction.
+DT and biconditional introduction finish each internal identity. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_iff_and_refl`,
+`MLK_and_left_true_th`, `MLK_and_rigth_true_th`, `MLK_or_rid_th`,
+`MLK_or_lid_th`, respectively (including the source spelling `rigth`).
+
+### 8.2 Equivalence with the contrapositive
+
+**Statements.**
+
+$$
+\vdash(p\to q)\leftrightarrow(\neg q\to\neg p),\qquad
+(\vdash\neg p\to\neg q)\Longleftrightarrow(\vdash q\to p).
+$$
+
+**Proof.** The forward implication of the internal equivalence is internal
+contraposition. For the reverse, assume $\neg q\to\neg p$ and $p$.
+Assuming $\neg q$ produces $\neg p$, contradicting $p$; hence
+$\neg\neg q$, and therefore $q$. Discharge the assumptions and combine
+the directions. Transport gives the external equivalence with variables
+renamed as displayed. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_contrapos_eq_th`, `MLK_contrapos_eq`.
+
+### 8.3 De Morgan's laws
+
+**Statements.**
+
+$$
+\vdash\neg(p\land q)\leftrightarrow(\neg p\lor\neg q),\qquad
+\vdash\neg(p\lor q)\leftrightarrow(\neg p\land\neg q).
+$$
+
+**Proof.** Apply the disjunction axiom to $\neg p,\neg q$ to obtain
+$(\neg p\lor\neg q)\leftrightarrow\neg(\neg\neg p\land\neg\neg q)$.
+Conjunction and negation congruence, together with double-negation
+elimination, turn its right side into $\neg(p\land q)$; symmetry gives
+the first statement.
+
+For the second, contrapose each disjunction introduction: from
+$\neg(p\lor q)$ obtain $\neg p$ and $\neg q$, and conjoin them. Conversely,
+assume their conjunction and then $p\lor q$. Each disjunct contradicts its
+corresponding negation, so disjunction elimination yields $\bot$.
+Discharge the disjunction to obtain its negation, then discharge the
+conjunction and combine directions. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_de_morgan_and_th`,
+`MLK_de_morgan_or_th`.
+
+### 8.4 Negation of truth and implication with constants
+
+**Statements.**
+
+$$
+\vdash\neg\top\leftrightarrow\bot,\qquad
+(\vdash\neg\top)\Longleftrightarrow(\vdash\bot).
+$$
+
+For every $p$,
+
+$$
+\vdash p\to\top,\qquad
+(\vdash p\to\bot)\Longleftrightarrow(\vdash\neg p),
+$$
+
+$$
+(\vdash\top\to p)\Longleftrightarrow(\vdash p),\qquad
+\vdash\bot\to p.
+$$
+
+**Proof.** From $\neg\top$, the negation axiom gives $\top\to\bot$;
+apply it to the theorem $\top$. The converse is explosion. Discharge and
+combine, then use transport for the external equivalence. Of the four
+implication clauses, the first adds an antecedent to $\top$; the second is
+the definition of negation; the third uses MP with $\top$ in one direction
+and antecedent introduction in the other; the fourth is explosion. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_not_true_th`, `MLK_not_true`, and
+`MLK_imp_clauses` (the four clauses in the displayed order).
+
+### 8.5 Equivalence from positive or negative information
+
+**Statements.**
+
+$$
+\frac{\vdash p\qquad\vdash q}{\vdash p\leftrightarrow q},\qquad
+\frac{\vdash\neg p\qquad\vdash\neg q}{\vdash p\leftrightarrow q},\qquad
+\frac{\vdash\neg p}{\vdash p\to q}.
+$$
+
+**Proof.** For positive information, add antecedent $p$ to $q$ and antecedent
+$q$ to $p$, then introduce the biconditional. Apply this to $\neg p,\neg q$
+and use Section 7.6 to obtain the negative-information rule. For the final
+rule, turn $\neg p$ into $p\to\bot$ and compose with $\bot\to q$.
+$\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_proves_iff_pos`, `MLK_proves_iff_neg`,
+`MLK_imp_introl`.
+
+### 8.6 Negated disjunctions and implications
+
+**Statements.**
+
+$$
+\frac{\vdash\neg p\qquad\vdash\neg q}{\vdash\neg(p\lor q)},\qquad
+\vdash\neg(p\to q)\leftrightarrow(p\land\neg q),\qquad
+\frac{\vdash p\qquad\vdash\neg q}{\vdash\neg(p\to q)}.
+$$
+
+**Proof.** Conjoin the two negations and apply De Morgan for the first rule.
+For the internal equivalence, assume $\neg(p\to q)$. If $\neg p$ held,
+Section 8.5 would give $p\to q$, a contradiction; double-negation elimination
+therefore gives $p$. Also $q\to(p\to q)$, so contraposition gives $\neg q$.
+Conjoin these conclusions. Conversely, from $p\land\neg q$, assuming
+$p\to q$ gives $q$ and hence $\bot$; discharge to obtain $\neg(p\to q)$.
+DT and biconditional introduction complete the equivalence. The last rule
+conjoins its premises and uses this equivalence. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_proves_not_or`, `MLK_crysippus_th`,
+`MLK_proves_not_imp`.
+
+### 8.7 Combining equivalent conclusions and comparison with truth
+
+**Statements.**
+
+$$
+\frac{\vdash p\leftrightarrow q\qquad\vdash p\leftrightarrow q'}
+{\vdash p\leftrightarrow(q\land q')},
+$$
+
+$$
+\vdash(p\leftrightarrow\top)\leftrightarrow p,\qquad
+\vdash(\top\leftrightarrow p)\leftrightarrow p.
+$$
+
+**Proof.** Combine the forward implications from $p$ using conjunction
+introduction under a common antecedent. For the reverse implication, project
+$q$ and apply $q\to p$. For comparison with truth, extract $\top\to p$
+from the assumed biconditional and apply it to $\top$. Conversely, under
+$p$, antecedent introduction gives $\top\to p$, while $p\to\top$ is
+always derivable. Introduce the biconditional; symmetry handles its other
+order. Discharge and combine the directions of each identity. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_and_imp_th`, `MLK_iff_true_th`
+(the latter packages both displayed identities).
+
+### 8.8 Reasoning from true or false implications
+
+**Statements.**
+
+$$
+\vdash(q\to\bot)\to(p\to((p\to q)\to\bot)),
+$$
+
+$$
+\frac{\vdash(p\to\bot)\to r\qquad\vdash q\to r}{\vdash(p\to q)\to r},
+\qquad
+\frac{\vdash(q\to\bot)\to(p\to r)}{\vdash((p\to q)\to\bot)\to r}.
+$$
+
+**Comment.** These rules expose the classical cases that make an implication
+true or false and are useful for subsequent case-based arguments.
+
+**Proof.** For the first formula, assume $q\to\bot$, $p$, and $p\to q$.
+Two MP steps give $\bot$; discharge in reverse order. For the second, assume
+$p\to q$ and use Boolean cases on $p$. If $p$, derive $q$ and then $r$;
+if $p\to\bot$, the other premise gives $r$. Discharge the implication.
+
+For the last rule, assume $(p\to q)\to\bot$. Use Boolean cases on $q$.
+If $q$, antecedent introduction gives $p\to q$, hence a contradiction and
+$r$. Otherwise $q\to\bot$, so the premise gives $p\to r$. Split on $p$:
+if $p$, derive $r$; otherwise $p\to\bot$, so explosion gives $p\to q$,
+again a contradiction and $r$. Discharge the initial assumption. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_imp_truefalse_th`,
+`MLK_imp_true_rule`, `MLK_imp_false_rule`.
+
+## 9. Distributivity
+
+### 9.1 Distributing a common conjunct over a disjunction
+
+**Statement.**
+
+$$
+(\vdash(p\lor q)\land r)\Longleftrightarrow
+(\vdash(p\land r)\lor(q\land r)).
+$$
+
+**Proof.** In the forward direction, project $p\lor q$ and $r$. Eliminate
+the disjunction: the $p$ branch constructs $p\land r$ and introduces the
+left disjunct; the $q$ branch constructs $q\land r$ and introduces the
+right disjunct. Conversely, eliminate $(p\land r)\lor(q\land r)$. Either
+branch supplies $r$ and one of $p,q$, from which obtain $p\lor q$ and
+conjoin it with $r$. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_or_and_distr` is the forward rule,
+`MLK_or_and_distr_inv` the reverse rule, and `MLK_or_and_distr_equiv` their
+external equivalence.
+
+### 9.2 Distributing a common disjunct over a conjunction
+
+**Statement.**
+
+$$
+(\vdash(p\land q)\lor r)\Longleftrightarrow
+(\vdash(p\lor r)\land(q\lor r)).
+$$
+
+An intermediate rule used for the reverse direction is
+
+$$
+\frac{\vdash(p\lor r)\land(q\lor r)}{\vdash q\to((p\land q)\lor r)}.
+$$
+
+**Proof.** For the forward direction, eliminate $(p\land q)\lor r$.
+From $p\land q$, its projections introduce $p\lor r$ and $q\lor r$;
+from $r$, introduce it into both disjunctions. Conjoin in either branch.
+
+For the intermediate rule, project $p\lor r$ and assume $q$. In the $p$
+branch form $p\land q$ and introduce the left target disjunct; in the $r$
+branch introduce the right one. Discharge $q$. For the full reverse rule,
+project $q\lor r$ and eliminate it: the $q$ branch uses the intermediate
+rule, and the $r$ branch introduces $r$ directly. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_and_or_distr`,
+`MLK_and_or_distr_inv`, `MLK_and_or_distr_equiv` name the forward rule,
+reverse rule, and external equivalence; `MLK_and_or_distr_inv_prelim` is the
+intermediate rule.
+
+### 9.3 Internal left distributivity
+
+**Statement.**
+
+$$
+\vdash(p\land(q\lor r))\leftrightarrow((p\land q)\lor(p\land r)).
+$$
+
+**Proof.** Assume $p\land(q\lor r)$. Project $p$ and $q\lor r$, then
+eliminate the disjunction: construct $p\land q$ or $p\land r$ and
+introduce the corresponding target disjunct. Conversely, from either
+$p\land q$ or $p\land r$, keep $p$ and introduce $q\lor r$ using the
+other conjunct, then conjoin. Disjunction elimination completes this
+direction. DT and biconditional introduction give the internal equivalence.
+$\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_and_or_ldistrib_th`.
+
+## 10. Modal consequences
+
+Here we write contexts explicitly whenever a premise must have no local
+hypotheses. All other judgments share the fixed $S,H$ convention of Section 1.
+
+### 10.1 Monotonicity of necessity and boxed modus ponens
+
+**Statements.**
+
+$$
+\frac{S;\varnothing\vdash p\to q}{S;H\vdash\Box p\to\Box q},
+$$
+
+$$
+\frac{\vdash\Box(p\to q)}{\vdash\Box p\to\Box q},\qquad
+\frac{\vdash\Box(p\to q)\qquad\vdash\Box p}{\vdash\Box q},
+$$
+
+$$
+\frac{S;\varnothing\vdash p\to q\qquad S;H\vdash\Box p}
+{S;H\vdash\Box q}.
+$$
+
+**Comment.** The empty context is needed when a new box is introduced by
+necessitation. An already boxed implication can be used under local hypotheses.
+
+**Proof.** For monotonicity, necessitate the empty-context premise and apply
+MP with K. For the second rule, its boxed premise is already available, so
+apply K directly. Another MP step with $\Box p$ gives boxed modus ponens.
+For the last rule, apply monotonicity to the empty-context implication and
+then MP to $\Box p$. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_imp_box`, `MLK_boximp`, and
+`MLK_box_moduspones` name the first, second, and fourth rules.
+The third is `MLK_box_modusponens` in Lean; there is no same-named theorem
+in this HOL Light file, where it follows from `MLK_boximp` and
+`MLK_modusponens`. The two historical spellings name different premises.
+
+### 10.2 Congruence under necessity
+
+**Statements.**
+
+$$
+\vdash\Box(p\leftrightarrow q)\to(\Box p\leftrightarrow\Box q),\qquad
+\frac{\vdash\Box(p\leftrightarrow q)}{\vdash\Box p\leftrightarrow\Box q},
+$$
+
+$$
+\frac{S;\varnothing\vdash p\leftrightarrow q}
+{S;H\vdash\Box p\leftrightarrow\Box q}.
+$$
+
+**Proof.** The projection formulas
+$(p\leftrightarrow q)\to(p\to q)$ and
+$(p\leftrightarrow q)\to(q\to p)$ are theorems in the empty context.
+Necessity monotonicity therefore turns them into implications from
+$\Box(p\leftrightarrow q)$ to $\Box(p\to q)$ and $\Box(q\to p)$.
+Under the boxed-biconditional assumption, MP and K yield
+$\Box p\to\Box q$ and $\Box q\to\Box p$. Combine them and discharge
+that assumption for the first statement. MP gives the second. For the
+third, necessitate the empty-context equivalence and use the second rule.
+$\square$
+
+**Comment.** The argument boxes the empty-context projection theorems, not
+implications extracted under a local assumption. An arbitrary locally
+proved equivalence does not justify replacement under $\Box$.
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_box_iff_th`, `MLK_box_iff`,
+`MLK_box_subst`.
+
+### 10.3 Necessity preserves conjunction
+
+**Statements.**
+
+$$
+\frac{\vdash\Box(p\land q)}{\vdash\Box p\land\Box q},\qquad
+\frac{\vdash\Box p\land\Box q}{\vdash\Box(p\land q)},
+$$
+
+$$
+\vdash\Box(p\land q)\to(\Box p\land\Box q),\qquad
+\vdash(\Box p\land\Box q)\to\Box(p\land q).
+$$
+
+Consequently,
+
+$$
+\vdash\Box(p\land q)\leftrightarrow(\Box p\land\Box q).
+$$
+
+**Proof.** Apply necessity monotonicity to the empty-context projection
+theorems $(p\land q)\to p$ and $(p\land q)\to q$. The premise
+$\Box(p\land q)$ then gives $\Box p,\Box q$ by MP; conjoin them.
+Conversely, necessitate the empty-context theorem
+$p\to(q\to(p\land q))$. Project $\Box p,\Box q$ from the premise.
+Apply boxed MP twice to obtain $\Box(p\land q)$. DT gives the two internal
+implications, and biconditional introduction gives the consequence.
+$\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_box_and`, `MLK_box_and_inv`,
+`MLK_box_and_th`, `MLK_box_and_inv_th`, respectively. The final biconditional
+is a consequence of these declarations, not a separately named theorem here.
+
+### 10.4 Possibility and conjunction
+
+**Statement.**
+
+$$
+\vdash\Diamond(p\land q)\to(\Diamond p\land\Diamond q).
+$$
+
+**Proof.** In the empty context, contrapose each conjunction projection to
+obtain $\neg p\to\neg(p\land q)$ and
+$\neg q\to\neg(p\land q)$. Necessity monotonicity gives
+$\Box\neg p\to\Box\neg(p\land q)$ and its analogue for $q$.
+Contrapose once more and unfold $\Diamond$ to obtain
+$\Diamond(p\land q)\to\Diamond p$ and
+$\Diamond(p\land q)\to\Diamond q$. Conjoin these consequences under their
+common antecedent. $\square$
+
+**Comment.** The converse is not a general K principle. For intuition, take
+a world with two accessible terminal successors: let only $p$ hold at the
+first and only $q$ at the second. Both $\Diamond p$ and $\Diamond q$ hold
+at the original world, but $\Diamond(p\land q)$ does not. This semantic
+observation is separate from the syntactic proof above.
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `MLK_diam_and_th`.
+
+## 11. Uniform substitution
+
+A substitution $\sigma$ assigns a formula to each atom and extends to all
+formulas by
+
+$$
+\sigma(\bot)=\bot,\quad\sigma(\top)=\top,\quad
+\sigma(a)=\sigma_a,\quad
+\sigma(\neg p)=\neg\sigma(p),\quad
+\sigma(\Box p)=\Box\sigma(p),
+$$
+
+$$
+\sigma(p\circ q)=\sigma(p)\circ\sigma(q)
+\qquad(\circ\in\{\land,\lor,\to,\leftrightarrow\}).
+$$
+
+Here $\sigma_a$ denotes the formula assigned to atom $a$. For a set $X$ of
+formulas, put $\sigma[X]=\{\sigma(p):p\in X\}$. These equations express
+uniform replacement at every occurrence of each atom.
+
+**Formalization references.** [HOL Light](../calculus.ml): `SUBST`.
+[Lean](../lean/HOLMS/Calculus.lean): `Form.subst`, with compatibility
+abbreviation `SUBST`. Its nine equations are also provided as
+`Form.subst_falsum`, `Form.subst_verum`, `Form.subst_atom`, `Form.subst_neg`,
+`Form.subst_conj`, `Form.subst_disj`, `Form.subst_imp`, `Form.subst_iff`,
+`Form.subst_box`; their proofs unfold the corresponding defining clause.
+
+### 11.1 Primitive axioms are substitution-invariant
+
+**Statement.** For every substitution $\sigma$ and formula $p$,
+
+$$
+p\in\mathsf{Ax}_K\Longrightarrow\sigma(p)\in\mathsf{Ax}_K.
+$$
+
+**Proof.** Inspect which of the eleven schemata produces $p$. Substitution
+preserves every constructor and constant in that schema; replacing its
+formula parameters by their substituted versions therefore yields another
+instance of the same schema. For example, K becomes
+$\Box(\sigma(p)\to\sigma(q))\to(\Box\sigma(p)\to\Box\sigma(q))$.
+The same argument applies to each propositional schema. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `KAXIOM_SUBST`.
+
+### 11.2 Substitution transports derivations
+
+**Statement.** Suppose $\sigma[S]\subseteq S$. Then
+
+$$
+S;H\vdash p\Longrightarrow S;\sigma[H]\vdash\sigma(p).
+$$
+
+**Comment.** The extra axiom set stays fixed, so its closure under this
+particular substitution is an explicit hypothesis. An arbitrary set $S$
+need not have this property.
+
+**Proof.** Fix $S,\sigma$ and induct on the derivation, allowing the local
+context and conclusion to vary. A primitive K axiom is preserved by
+Section 11.1. An additional axiom remains in $S$ by the closure hypothesis.
+A local hypothesis $a\in H$ becomes $\sigma(a)\in\sigma[H]$. For MP,
+substitution commutes with implication, so MP applied to the two induction
+hypotheses gives the substituted conclusion. Finally, a necessitation step
+starts from $S;\varnothing\vdash a$. Its induction hypothesis has context
+$\sigma[\varnothing]=\varnothing$, so necessitation applies to
+$\sigma(a)$ and gives $\Box\sigma(a)=\sigma(\Box a)$ in the desired
+context. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `SUBST_IMP`.
+
+### 11.3 Uniform substitution in a derivable equivalence
+
+**Statement.** If $\sigma[S]\subseteq S$, then
+
+$$
+S;H\vdash p\leftrightarrow q\Longrightarrow
+S;\sigma[H]\vdash\sigma(p)\leftrightarrow\sigma(q).
+$$
+
+**Proof.** Apply Section 11.2 to $p\leftrightarrow q$, and use the defining
+equation for substitution through a biconditional. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `SUBSTITUTION_LEMMA`.
+
+### 11.4 Pointwise equivalent substitutions
+
+**Statement.** Let $\sigma,\tau$ be substitutions such that
+
+$$
+\forall a,\quad S;\varnothing\vdash\sigma_a\leftrightarrow\tau_a.
+$$
+
+Then for every formula $p$ and every local context $H$,
+
+$$
+S;H\vdash\sigma(p)\leftrightarrow\tau(p).
+$$
+
+**Comment.** This compares the results of two substitutions, rather than
+substituting into a derivation. It requires no substitution-closure hypothesis
+on $S$. The pointwise equivalences must be theorems without local hypotheses
+because atoms may occur inside boxes.
+
+**Proof.** Induct on the structure of $p$, with the conclusion quantified
+over **all contexts $H$**. Constants use biconditional reflexivity. At an
+atom, weaken the assumed empty-context equivalence to $H$. Negation and
+the binary propositional connectives use their congruence rules with the
+induction hypotheses in $H$.
+
+For $p=\Box r$, instantiate the induction hypothesis for $r$ at the empty
+context. It gives $S;\varnothing\vdash\sigma(r)\leftrightarrow\tau(r)$.
+Modal congruence (Section 10.2) then yields
+$S;H\vdash\Box\sigma(r)\leftrightarrow\Box\tau(r)$, which is the required
+statement by the substitution equations. The generalization over $H$ is
+what makes this empty-context use legitimate. $\square$
+
+**Formalization references.** [HOL Light](../calculus.ml) and
+[Lean](../lean/HOLMS/Calculus.lean): `SUBST_IFF`.
+
+## 12. Role in the wider development
+
+The calculus separates global axioms from dischargeable local hypotheses,
+reconstructs classical propositional reasoning, and supplies the modal rules
+that follow from K and restricted necessitation. Uniform substitution and
+congruence make these results reusable across formulas and axiom systems.
+This syntactic infrastructure supports later soundness, completeness,
+decidability, and countermodel constructions for particular modal logics.
