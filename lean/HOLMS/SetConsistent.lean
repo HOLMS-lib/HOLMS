@@ -14,9 +14,11 @@ open ModalNotation
 /-! ## Consistent sets -/
 
 /-- A set of hypotheses is consistent when it does not derive falsity. -/
+-- HOL: `SETCONSISTENT` (`setconsistent.ml`).
 def SETCONSISTENT (S X : Set Form) : Prop := ¬S ⊢ₘ[X] ⊥ₘ
 
 /-- A consistent set cannot derive both a formula and its negation. -/
+-- HOL: `SETCONSISTENT_NC` (`setconsistent.ml`).
 theorem SETCONSISTENT_NC {S w : Set Form} {p : Form}
     (hcons : SETCONSISTENT S w) :
     ¬(S ⊢ₘ[w] p) ∨ ¬(S ⊢ₘ[w] Form.neg p) := by
@@ -26,6 +28,7 @@ theorem SETCONSISTENT_NC {S w : Set Form} {p : Form}
   exact hcons (MLK_NC_ALT h.1 h.2)
 
 /-- A consistent set cannot contain both a formula and its negation. -/
+-- HOL: `IN_SETCONSISTENT_NC` (`setconsistent.ml`).
 theorem IN_SETCONSISTENT_NC {S w : Set Form} {p : Form}
     (hcons : SETCONSISTENT S w) : p ∉ w ∨ Form.neg p ∉ w := by
   classical
@@ -34,6 +37,7 @@ theorem IN_SETCONSISTENT_NC {S w : Set Form} {p : Form}
   exact hcons (MLK_NC_ALT (.hyp h.1) (.hyp h.2))
 
 /-- Every subset of a consistent set is consistent. -/
+-- HOL: `SETCONSISTENT_SUBSET` (`setconsistent.ml`).
 theorem SETCONSISTENT_SUBSET {S X Y : Set Form} (hcons : SETCONSISTENT S X)
     (hYX : Y ⊆ X) : SETCONSISTENT S Y := by
   intro hfalse
@@ -41,6 +45,7 @@ theorem SETCONSISTENT_SUBSET {S X Y : Set Form} (hcons : SETCONSISTENT S X)
 
 /-- Consistency of a singleton is equivalent to the nonderivability of its
 negated member without hypotheses. -/
+-- HOL: `SETCONSISTENT_SING` (`setconsistent.ml`).
 theorem SETCONSISTENT_SING {S : Set Form} {p : Form} :
     SETCONSISTENT S {p} ↔ ¬(S ⊢ₘ[(∅ : Set Form)] Form.neg p) := by
   have hnot : (S ⊢ₘ[(∅ : Set Form)] Form.neg p) ↔
@@ -56,6 +61,7 @@ theorem SETCONSISTENT_SING {S : Set Form} {p : Form} :
   exact not_congr h.symm
 
 /-- A consistent set can be extended by either a formula or its negation. -/
+-- HOL: `SETCONSISTENT_EXTEND_CASES` (`setconsistent.ml`).
 theorem SETCONSISTENT_EXTEND_CASES {S X : Set Form} {p : Form}
     (hcons : SETCONSISTENT S X) :
     SETCONSISTENT S (insert p X) ∨ SETCONSISTENT S (insert (¬p) X) := by
@@ -72,14 +78,17 @@ theorem SETCONSISTENT_EXTEND_CASES {S X : Set Form} {p : Form}
 /-! ## Maximal consistent sets relative to a formula -/
 
 /-- A consistent set deciding every subformula of `p`. -/
+-- HOL: `MAXIMAL_SETCONSISTENT` (`setconsistent.ml`).
 def MAXIMAL_SETCONSISTENT (S : Set Form) (p : Form) (X : Set Form) : Prop :=
   SETCONSISTENT S X ∧ ∀ q, q ⊑ p → q ∈ X ∨ Form.neg q ∈ X
 
 /-- Maximal consistent sets are consistent. -/
+-- HOL: `MAXIMAL_SETCONSISTENT_IMP_SETCONSISTENT` (`setconsistent.ml`).
 theorem MAXIMAL_SETCONSISTENT_IMP_SETCONSISTENT {S X : Set Form} {p : Form}
     (h : MAXIMAL_SETCONSISTENT S p X) : SETCONSISTENT S X := h.1
 
 /-- A maximal consistent set contains each subformula or its negation. -/
+-- HOL: `IN_MAXIMAL_SETCONSISTENT_CASES` (`setconsistent.ml`).
 theorem IN_MAXIMAL_SETCONSISTENT_CASES {S X : Set Form} {p q : Form}
     (hmax : MAXIMAL_SETCONSISTENT S p X) (hsub : q ⊑ p) :
     q ∈ X ∨ Form.neg q ∈ X := hmax.2 q hsub
@@ -87,12 +96,16 @@ theorem IN_MAXIMAL_SETCONSISTENT_CASES {S X : Set Form} {p q : Form}
 /-! ## Subsentences -/
 
 /-- A subsentence of `p` is a subformula of `p` or the negation of one. -/
+-- HOL: `SUBSENTENCE`, introduced by `SUBSENTENCE_RULES` (`setconsistent.ml`).
 inductive Subsentence : Form → Form → Prop where
+  -- HOL: `SUBSENTENCE_RULES`, subformula clause. See `setconsistent.ml`.
   | ofSubformula {q p : Form} : q ⊑ p → Subsentence q p
+  -- HOL: `SUBSENTENCE_RULES`, negated-subformula clause. See `setconsistent.ml`.
   | negOfSubformula {q p : Form} : q ⊑ p → Subsentence (¬q) p
 
 namespace ModalNotation
 
+-- HOL: `SUBSENTENCE` notation (`setconsistent.ml`); scoped Lean notation.
 scoped infix:50 " ⊑ₛ " => Subsentence
 
 end ModalNotation
@@ -100,14 +113,17 @@ end ModalNotation
 open ModalNotation
 
 /-- Every subformula is a subsentence. -/
+-- HOL: `SUBFORMULA_IMP_SUBSENTENCE` (`setconsistent.ml`).
 theorem SUBFORMULA_IMP_SUBSENTENCE {p q : Form} (h : p ⊑ q) : p ⊑ₛ q :=
   .ofSubformula h
 
 /-- The negation of every subformula is a subsentence. -/
+-- HOL: `SUBFORMULA_IMP_NEG_SUBSENTENCE` (`setconsistent.ml`).
 theorem SUBFORMULA_IMP_NEG_SUBSENTENCE {p q : Form} (h : p ⊑ q) :
     (¬p) ⊑ₛ q := .negOfSubformula h
 
 /-- Subsentences are exactly subformulas and their negations. -/
+-- HOL: `SUBSENTENCE_EQ_SUBFORMULA` (`setconsistent.ml`).
 theorem SUBSENTENCE_EQ_SUBFORMULA (p : Form) :
     {q | q ⊑ₛ p} = {q | q ⊑ p} ∪ Form.neg '' {q | q ⊑ p} := by
   ext q
@@ -121,6 +137,7 @@ theorem SUBSENTENCE_EQ_SUBFORMULA (p : Form) :
     · exact .negOfSubformula hsub
 
 /-- Every formula has finitely many subsentences. -/
+-- HOL: `FINITE_SUBSENTENCE` (`setconsistent.ml`).
 theorem FINITE_SUBSENTENCE (p : Form) : Set.Finite {q | q ⊑ₛ p} := by
   rw [SUBSENTENCE_EQ_SUBFORMULA]
   exact (Form.finite_subformulas p).union
@@ -130,6 +147,7 @@ theorem FINITE_SUBSENTENCE (p : Form) : Set.Finite {q | q ⊑ₛ p} := by
 
 /-- For a subformula, membership in a maximal consistent set is equivalent to
 derivability from that set. -/
+-- HOL: `MAXIMAL_SETCONSISTENT_SUBFORMULA_MEMBER_IFF_DERIVABLE` (`setconsistent.ml`).
 theorem MAXIMAL_SETCONSISTENT_SUBFORMULA_MEMBER_IFF_DERIVABLE
     {S w : Set Form} {p q : Form} (hmax : MAXIMAL_SETCONSISTENT S p w)
     (hsub : q ⊑ p) : q ∈ w ↔ S ⊢ₘ[w] q := by
@@ -142,6 +160,7 @@ theorem MAXIMAL_SETCONSISTENT_SUBFORMULA_MEMBER_IFF_DERIVABLE
     · exact hmax.1 (MLK_NC_ALT hq (.hyp hnq))
 
 /-- The analogous membership characterization for negated subformulas. -/
+-- HOL: `MAXIMAL_SETCONSISTENT_NOT_SUBFORMULA_MEMBER_IFF_DERIVABLE` (`setconsistent.ml`).
 theorem MAXIMAL_SETCONSISTENT_NOT_SUBFORMULA_MEMBER_IFF_DERIVABLE
     {S w : Set Form} {p q : Form} (hmax : MAXIMAL_SETCONSISTENT S p w)
     (hsub : q ⊑ p) : Form.neg q ∈ w ↔ S ⊢ₘ[w] Form.neg q := by
@@ -155,6 +174,7 @@ theorem MAXIMAL_SETCONSISTENT_NOT_SUBFORMULA_MEMBER_IFF_DERIVABLE
 
 /-- A derivable subformula belongs to every maximal consistent superset of
 the hypotheses used in its derivation. -/
+-- HOL: `MAXIMAL_SETCONSISTENT_LEMMA` (`setconsistent.ml`).
 theorem MAXIMAL_SETCONSISTENT_LEMMA {S X A : Set Form} {p b : Form}
     (hmax : MAXIMAL_SETCONSISTENT S p X) (hAX : A ⊆ X) (hsub : b ⊑ p)
     (hb : S ⊢ₘ[A] b) : b ∈ X :=
@@ -165,6 +185,7 @@ theorem MAXIMAL_SETCONSISTENT_LEMMA {S X A : Set Form} {p b : Form}
 
 /-- A maximal consistent set contains truth whenever truth is among the
 subformulas under consideration. -/
+-- HOL: `MAXIMAL_SETCONSISTENT_TRUE_CLOSED` (`setconsistent.ml`).
 theorem MAXIMAL_SETCONSISTENT_TRUE_CLOSED {S w : Set Form} {p : Form}
     (hmax : MAXIMAL_SETCONSISTENT S p w) (hsub : ⊤ₘ ⊑ p) : ⊤ₘ ∈ w :=
   (MAXIMAL_SETCONSISTENT_SUBFORMULA_MEMBER_IFF_DERIVABLE hmax hsub).mpr
@@ -172,6 +193,7 @@ theorem MAXIMAL_SETCONSISTENT_TRUE_CLOSED {S w : Set Form} {p : Form}
 
 /-- Membership of a negated subformula is complementary to membership of the
 subformula. -/
+-- HOL: `MAXIMAL_SETCONSISTENT_NOT_CLOSED` (`setconsistent.ml`).
 theorem MAXIMAL_SETCONSISTENT_NOT_CLOSED {S w : Set Form} {p q : Form}
     (hmax : MAXIMAL_SETCONSISTENT S p w) (hsub : Form.neg q ⊑ p) :
     Form.neg q ∈ w ↔ q ∉ w := by
@@ -186,6 +208,7 @@ theorem MAXIMAL_SETCONSISTENT_NOT_CLOSED {S w : Set Form} {p q : Form}
 
 /-- A conjunction belongs to a maximal consistent set exactly when both
 conjuncts belong to it. -/
+-- HOL: `MAXIMAL_SETCONSISTENT_AND_MIONOR_CLOSED` (`setconsistent.ml`).
 theorem MAXIMAL_SETCONSISTENT_AND_MIONOR_CLOSED
     {S w : Set Form} {p q₁ q₂ : Form}
     (hmax : MAXIMAL_SETCONSISTENT S p w) (hsub : q₁ ⋏ q₂ ⊑ p) :
@@ -199,6 +222,7 @@ theorem MAXIMAL_SETCONSISTENT_AND_MIONOR_CLOSED
 
 /-- A disjunction belongs to a maximal consistent set exactly when one of its
 disjuncts belongs to it. -/
+-- HOL: `MAXIMAL_SETCONSISTENT_MINOR_OR_CLOSED` (`setconsistent.ml`).
 theorem MAXIMAL_SETCONSISTENT_MINOR_OR_CLOSED
     {S w : Set Form} {p q₁ q₂ : Form}
     (hmax : MAXIMAL_SETCONSISTENT S p w) (hsub : q₁ ⋎ q₂ ⊑ p) :
@@ -225,6 +249,7 @@ theorem MAXIMAL_SETCONSISTENT_MINOR_OR_CLOSED
 
 /-- An implication belongs to a maximal consistent set exactly when
 membership of its antecedent entails membership of its consequent. -/
+-- HOL: `MAXIMAL_SETCONSISTENT_IMP_CLOSED` (`setconsistent.ml`).
 theorem MAXIMAL_SETCONSISTENT_IMP_CLOSED
     {S w : Set Form} {p q₁ q₂ : Form}
     (hmax : MAXIMAL_SETCONSISTENT S p w) (hsub : (q₁ ⟶ q₂) ⊑ p) :
@@ -245,6 +270,7 @@ theorem MAXIMAL_SETCONSISTENT_IMP_CLOSED
 
 /-- An equivalence belongs to a maximal consistent set exactly when its two
 sides have the same membership status. -/
+-- HOL: `MAXIMAL_SETCONSISTENT_IFF_CLOSED` (`setconsistent.ml`).
 theorem MAXIMAL_SETCONSISTENT_IFF_CLOSED
     {S w : Set Form} {p q₁ q₂ : Form}
     (hmax : MAXIMAL_SETCONSISTENT S p w) (hsub : (q₁ ⟷ q₂) ⊑ p) :
@@ -277,6 +303,7 @@ theorem MAXIMAL_SETCONSISTENT_IFF_CLOSED
 
 /-- Every finite consistent set of subsentences of `p` extends to a finite
 maximal consistent set of subsentences of `p`. -/
+-- HOL: `EXTEND_MAXIMAL_SETCONSISTENT` (`setconsistent.ml`).
 theorem EXTEND_MAXIMAL_SETCONSISTENT {S X : Set Form} {p : Form}
     (hcons : SETCONSISTENT S X) (hfinite : X.Finite)
     (hsubs : ∀ q, q ∈ X → q ⊑ₛ p) :
@@ -343,6 +370,7 @@ theorem EXTEND_MAXIMAL_SETCONSISTENT {S X : Set Form} {p : Form}
 
 /-- Every formula not derivable without hypotheses has a maximal consistent
 set of its subsentences containing its negation. -/
+-- HOL: `NONEMPTY_MAXIMAL_SETCONSISTENT` (`setconsistent.ml`).
 theorem NONEMPTY_MAXIMAL_SETCONSISTENT {S : Set Form} {p : Form}
     (hp : ¬(S ⊢ₘ[(∅ : Set Form)] p)) :
     ∃ M, MAXIMAL_SETCONSISTENT S p M ∧ Form.neg p ∈ M ∧

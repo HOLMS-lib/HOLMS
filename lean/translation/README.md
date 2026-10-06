@@ -17,9 +17,23 @@ below.
 | [`HOLMS.KCompleteness`](../HOLMS/KCompleteness.lean) | [`KCompleteness.md`](KCompleteness.md) | [`k_completeness.ml`](../../k_completeness.ml) |
 | [`HOLMS.TCompleteness`](../HOLMS/TCompleteness.lean) | [`TCompleteness.md`](TCompleteness.md) | [`t_completeness.ml`](../../t_completeness.ml) |
 
-Lean comments and docstrings describe the Lean code on its own terms. Details
-about translation, source correspondence, historical names, and comparisons
-with HOL Light belong in these notes, not in `.lean` files.
+Lean docstrings describe the Lean code on its own terms. Each explicit
+Lean declaration also has a concise `-- HOL:` annotation identifying its
+HOL Light counterpart and source file, or explaining its role when there is
+no separately named counterpart. Constructors and split theorems identify the
+relevant source clause; unnamed examples refer to the corresponding source
+example. Generated instances are documented at the `deriving` clause.
+
+These annotations are navigation aids, not claims of identical encodings or
+formally proved equivalence. A reference can identify a counterpart adapted
+to sets, a clause of a larger theorem, or a local construction rather than a
+standalone HOL declaration. Statements that no named counterpart exists refer
+to the corresponding HOLMS source development.
+
+Detailed translation choices, source comparisons, and the reasons for naming
+or representation differences belong in these notes. The concise declaration
+annotations are the exception to keeping translation details out of `.lean`
+files.
 
 The notes describe representation choices, proof interfaces, deliberate
 departures from a mechanical translation, and source material that was not

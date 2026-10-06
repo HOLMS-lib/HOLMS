@@ -15,71 +15,88 @@ open ModalNotation
 /-! ## Axiom schemata -/
 
 /-- Seriality axiom `D`: `□p → ◇p`. -/
+-- HOL: `D_SCHEMA` (definition: `D_SCHEMA_DEF`) (`ad_hoc_correspondence.ml`).
 def D_SCHEMA (p : Form) : Form := □p ⟶ ◇p
 
 /-- Reflexivity axiom `T`: `□p → p`. -/
+-- HOL: `T_SCHEMA` (definition: `T_SCHEMA_DEF`) (`ad_hoc_correspondence.ml`).
 def T_SCHEMA (p : Form) : Form := □p ⟶ p
 
 /-- Transitivity axiom `4`: `□p → □□p`. -/
+-- HOL: `FOUR_SCHEMA` (definition: `FOUR_SCHEMA_DEF`) (`ad_hoc_correspondence.ml`).
 def FOUR_SCHEMA (p : Form) : Form := □p ⟶ □□p
 
 /-- Symmetry axiom `B`: `p → □◇p`. -/
+-- HOL: `B_SCHEMA` (definition: `B_SCHEMA_DEF`) (`ad_hoc_correspondence.ml`).
 def B_SCHEMA (p : Form) : Form := p ⟶ □(◇p)
 
 /-- Euclideanity axiom `5`: `◇p → □◇p`. -/
+-- HOL: `FIVE_SCHEMA` (definition: `FIVE_SCHEMA_DEF`) (`ad_hoc_correspondence.ml`).
 def FIVE_SCHEMA (p : Form) : Form := ◇p ⟶ □(◇p)
 
 /-- Löb's axiom. -/
+-- HOL: `LOB_SCHEMA` (definition: `LOB_SCHEMA_DEF`) (`ad_hoc_correspondence.ml`).
 def LOB_SCHEMA (p : Form) : Form := □(□p ⟶ p) ⟶ □p
 
 /-- Grzegorczyk's axiom. -/
+-- HOL: `GRZ_SCHEMA` (definition: `GRZ_SCHEMA_DEF`) (`ad_hoc_correspondence.ml`).
 def GRZ_SCHEMA (p : Form) : Form := □(□(p ⟶ □p) ⟶ p) ⟶ p
 
 /-! ## Properties of a relation on a set of worlds -/
 
 /-- Every world has a successor in the set of worlds. -/
+-- HOL: `SERIAL` (`ad_hoc_correspondence.ml`).
 def SERIAL {W : Type*} (worlds : Set W) (rel : W → W → Prop) : Prop :=
   ∀ w, w ∈ worlds → ∃ y, y ∈ worlds ∧ rel w y
 
 /-- Every world is related to itself. -/
+-- HOL: `REFLEXIVE` (`ad_hoc_correspondence.ml`).
 def REFLEXIVE {W : Type*} (worlds : Set W) (rel : W → W → Prop) : Prop :=
   ∀ w, w ∈ worlds → rel w w
 
 /-- No world is related to itself. -/
+-- HOL: `IRREFLEXIVE` (`ad_hoc_correspondence.ml`).
 def IRREFLEXIVE {W : Type*} (worlds : Set W) (rel : W → W → Prop) : Prop :=
   ∀ w, w ∈ worlds → ¬rel w w
 
 /-- Relational transitivity, restricted to the designated worlds. -/
+-- HOL: `TRANSITIVE` (`ad_hoc_correspondence.ml`).
 def TRANSITIVE {W : Type*} (worlds : Set W) (rel : W → W → Prop) : Prop :=
   ∀ w w' w'', w ∈ worlds → w' ∈ worlds → w'' ∈ worlds →
     rel w w' → rel w' w'' → rel w w''
 
 /-- Relational symmetry, restricted to the designated worlds. -/
+-- HOL: `SYMMETRIC` (`ad_hoc_correspondence.ml`).
 def SYMMETRIC {W : Type*} (worlds : Set W) (rel : W → W → Prop) : Prop :=
   ∀ w w', w ∈ worlds → w' ∈ worlds → rel w w' → rel w' w
 
 /-- Relational antisymmetry, restricted to the designated worlds. -/
+-- HOL: `ANTISYMMETRIC` (`ad_hoc_correspondence.ml`).
 def ANTISYMMETRIC {W : Type*} (worlds : Set W) (rel : W → W → Prop) : Prop :=
   ∀ w w', w ∈ worlds → w' ∈ worlds → rel w w' → rel w' w → w = w'
 
 /-- Euclideanity on designated worlds: `rel w w'` and `rel w w''` imply
 `rel w'' w'`. -/
+-- HOL: `EUCLIDEAN` (`ad_hoc_correspondence.ml`).
 def EUCLIDEAN {W : Type*} (worlds : Set W) (rel : W → W → Prop) : Prop :=
   ∀ w w' w'', w ∈ worlds → w' ∈ worlds → w'' ∈ worlds →
     rel w w' → rel w w'' → rel w'' w'
 
 /-- The field of a relation: the points occurring at either end of an edge. -/
+-- HOL: `fld`, the HOL Light relation field used in `WWF` (`ad_hoc_correspondence.ml`).
 def relField {W : Type*} (rel : W → W → Prop) : Set W :=
   {x | ∃ y, rel x y ∨ rel y x}
 
 /-- Weak well-foundedness: every nonempty predicate contained in the field has
 a minimal point with respect to the strict part of `rel`. -/
+-- HOL: `WWF` (`ad_hoc_correspondence.ml`).
 def WWF {W : Type*} (rel : W → W → Prop) : Prop :=
   ∀ P : W → Prop, (∃ x, P x) ∧ (∀ x, P x → x ∈ relField rel) →
     ∃ x, P x ∧ ∀ y, y ≠ x → rel y x → ¬P y
 
 /-- The field-based definition of weak well-foundedness is equivalent to
 ordinary well-foundedness of the strict part of the relation. -/
+-- HOL: no named counterpart; bridge from `WWF` to Lean's `WellFounded`.
 theorem wwf_iff_wellFounded_strict {W : Type*} (rel : W → W → Prop) :
     WWF rel ↔ WellFounded (fun y x => y ≠ x ∧ rel y x) := by
   rw [WellFounded.wellFounded_iff_has_min]
@@ -97,6 +114,7 @@ theorem wwf_iff_wellFounded_strict {W : Type*} (rel : W → W → Prop) :
     exact ⟨m, hm, fun y hy hrel hPy => hmin y hPy ⟨hy, hrel⟩⟩
 
 /-- Weak well-foundedness characterized by minimal elements. -/
+-- HOL: `WWF_EQ` (`ad_hoc_correspondence.ml`).
 theorem WWF_EQ {W : Type*} (rel : W → W → Prop) :
     WWF rel ↔ ∀ P : W → Prop, (∀ x, P x → x ∈ relField rel) →
       ((∃ x, P x) ↔ ∃ x, P x ∧ ∀ y, y ≠ x → rel y x → ¬P y) := by
@@ -111,6 +129,7 @@ theorem WWF_EQ {W : Type*} (rel : W → W → Prop) :
     exact (h P hfield).mp hne
 
 /-- Weak well-foundedness characterized by induction over strict predecessors. -/
+-- HOL: `WWF_IND` (`ad_hoc_correspondence.ml`).
 theorem WWF_IND {W : Type*} (rel : W → W → Prop) :
     WWF rel ↔ ∀ P : W → Prop,
       (∀ x, ¬P x → x ∈ relField rel) →
@@ -134,6 +153,7 @@ theorem WWF_IND {W : Type*} (rel : W → W → Prop) :
 /-! ## Elementary correspondence theorems -/
 
 /-- `D` is valid exactly on serial frames. -/
+-- HOL: `MODAL_SER` (`ad_hoc_correspondence.ml`).
 theorem MODAL_SER {W : Type*} (worlds : Set W) (rel : W → W → Prop) :
     SERIAL worlds rel ↔ ∀ p, Form.holdsIn ⟨worlds, rel⟩ (D_SCHEMA p) := by
   constructor
@@ -156,6 +176,7 @@ theorem MODAL_SER {W : Type*} (worlds : Set W) (rel : W → W → Prop) :
     exact hsucc ⟨y, hy, by simpa [valuation] using hry⟩
 
 /-- `T` is valid exactly on reflexive frames. -/
+-- HOL: `MODAL_REFL` (`ad_hoc_correspondence.ml`).
 theorem MODAL_REFL {W : Type*} (worlds : Set W) (rel : W → W → Prop) :
     REFLEXIVE worlds rel ↔ ∀ p, Form.holdsIn ⟨worlds, rel⟩ (T_SCHEMA p) := by
   constructor
@@ -167,6 +188,7 @@ theorem MODAL_REFL {W : Type*} (worlds : Set W) (rel : W → W → Prop) :
     exact h (fun y _ hry => hry)
 
 /-- `4` is valid exactly on transitive frames. -/
+-- HOL: `MODAL_TRANS` (`ad_hoc_correspondence.ml`).
 theorem MODAL_TRANS {W : Type*} (worlds : Set W) (rel : W → W → Prop) :
     TRANSITIVE worlds rel ↔ ∀ p, Form.holdsIn ⟨worlds, rel⟩ (FOUR_SCHEMA p) := by
   constructor
@@ -178,6 +200,7 @@ theorem MODAL_TRANS {W : Type*} (worlds : Set W) (rel : W → W → Prop) :
     exact h (fun u _ hwu => hwu) y hy hwy z hz hyz
 
 /-- `B` is valid exactly on symmetric frames. -/
+-- HOL: `MODAL_SYM` (`ad_hoc_correspondence.ml`).
 theorem MODAL_SYM {W : Type*} (worlds : Set W) (rel : W → W → Prop) :
     SYMMETRIC worlds rel ↔ ∀ p, Form.holdsIn ⟨worlds, rel⟩ (B_SCHEMA p) := by
   constructor
@@ -196,6 +219,7 @@ theorem MODAL_SYM {W : Type*} (worlds : Set W) (rel : W → W → Prop) :
     exact hnot hyz
 
 /-- `5` is valid exactly on Euclidean frames. -/
+-- HOL: `MODAL_EUCL` (`ad_hoc_correspondence.ml`).
 theorem MODAL_EUCL {W : Type*} (worlds : Set W) (rel : W → W → Prop) :
     EUCLIDEAN worlds rel ↔ ∀ p, Form.holdsIn ⟨worlds, rel⟩ (FIVE_SCHEMA p) := by
   constructor
@@ -223,6 +247,7 @@ theorem MODAL_EUCL {W : Type*} (worlds : Set W) (rel : W → W → Prop) :
 
 /-- Löb's axiom characterizes transitive frames whose converse relation is
 well-founded, assuming that every relational edge stays inside the frame. -/
+-- HOL: `MODAL_TRANSNT` (`ad_hoc_correspondence.ml`).
 theorem MODAL_TRANSNT {W : Type*} (worlds : Set W) (rel : W → W → Prop)
     (hclosed : ∀ x y, rel x y → x ∈ worlds ∧ y ∈ worlds) :
     (TRANSITIVE worlds rel ∧ WellFounded (fun x y => rel y x)) ↔
@@ -280,6 +305,7 @@ theorem MODAL_TRANSNT {W : Type*} (worlds : Set W) (rel : W → W → Prop)
 /-- Grzegorczyk's axiom characterizes reflexive, transitive, weakly
 well-founded frames, assuming that every relational edge stays inside the
 frame. -/
+-- HOL: `MODAL_RTWN` (`ad_hoc_correspondence.ml`).
 theorem MODAL_RTWN {W : Type*} (worlds : Set W) (rel : W → W → Prop)
     (hclosed : ∀ x y, rel x y → x ∈ worlds ∧ y ∈ worlds) :
     (REFLEXIVE worlds rel ∧ TRANSITIVE worlds rel ∧

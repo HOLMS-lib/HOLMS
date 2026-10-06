@@ -82,10 +82,16 @@ unchanged and report the obstruction.
 
 - Follow the style of nearby Lean code.
 - Add concise docstrings to public definitions and theorems.
-- Lean comments and docstrings must describe only the Lean definitions,
-  statements, proofs, and usage, independently of their origin. Put source
-  correspondences, translation history, naming compatibility, and comparisons
-  with HOL Light in the matching `translation/*.md` document.
+- Docstrings describe the Lean definitions, statements, proofs, and usage.
+- Annotate each explicit Lean declaration with a concise `-- HOL:` comment
+  giving its HOL Light counterpart and source file, when available. Identify
+  the relevant clause for split theorems or constructors. If there is no
+  separately named counterpart, say so and briefly identify the declaration's
+  role. Cover helpers, instances, structure fields, notation, and examples too;
+  describe generated instances together at their `deriving` clause.
+- These correspondence annotations are the exception to implementation-only
+  comments. Keep detailed translation choices, history, naming compatibility,
+  and comparisons with HOL Light in the matching `translation/*.md` document.
 - Keep notation scoped when it could conflict with Lean or other libraries.
 - Make focused changes and avoid unrelated refactoring.
 - Preserve existing public names unless the task explicitly requires a change.

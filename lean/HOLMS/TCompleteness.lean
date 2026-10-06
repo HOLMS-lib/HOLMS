@@ -17,32 +17,39 @@ open ModalNotation
 /-! ## Axiom set -/
 
 /-- The additional axioms of T are all instances of `□p → p`. -/
+-- HOL: `T_AX` (`t_completeness.ml`).
 def T_AX : Set Form := Set.range T_SCHEMA
 
 /-- Every instance of the T schema belongs to `T_AX`. -/
+-- HOL: `T_IN_T_AX` (`t_completeness.ml`).
 theorem T_IN_T_AX (q : Form) : (□q ⟶ q) ∈ T_AX := ⟨q, rfl⟩
 
 /-- Every instance of the T schema is derivable in T. -/
+-- HOL: `T_AX_T` (`t_completeness.ml`).
 theorem T_AX_T (q : Form) : T_AX ⊢ₘ[(∅ : Set Form)] (□q ⟶ q) :=
   .ax (T_IN_T_AX q)
 
 /-! ## Reflexive frames and correspondence -/
 
 /-- The class of well-formed reflexive frames. -/
+-- HOL: `REFL` (definition: `REFL_DEF`) (`t_completeness.ml`).
 def REFL (W : Type*) : Set (Frame W) :=
   {frame | frame ∈ FRAME W ∧ REFLEXIVE frame.worlds frame.rel}
 
 /-- Membership in the class of reflexive frames. -/
+-- HOL: `IN_REFL` (`t_completeness.ml`).
 theorem IN_REFL {W : Type*} (frame : Frame W) :
     frame ∈ REFL W ↔
       frame ∈ FRAME W ∧ REFLEXIVE frame.worlds frame.rel := Iff.rfl
 
 /-- Defining equation for the class of reflexive frames. -/
+-- HOL: `REFL_DEF` (`t_completeness.ml`).
 theorem REFL_DEF (W : Type*) :
     REFL W =
       {frame | frame ∈ FRAME W ∧ REFLEXIVE frame.worlds frame.rel} := rfl
 
 /-- Reflexive frames are exactly the frames characteristic for T. -/
+-- HOL: `REFL_CHAR_T` (`t_completeness.ml`).
 theorem REFL_CHAR_T (W : Type*) :
     REFL W = (CHAR T_AX : Set (Frame W)) := by
   ext frame
@@ -59,6 +66,7 @@ theorem REFL_CHAR_T (W : Type*) :
     exact hvalid (T_SCHEMA p) ⟨p, rfl⟩
 
 /-- Derivability in T preserves validity on reflexive frames. -/
+-- HOL: `T_REFL_VALID` (`t_completeness.ml`).
 theorem T_REFL_VALID {W : Type*} {H : Set Form} {p : Form}
     (hp : T_AX ⊢ₘ[H] p)
     (hH : ∀ q, q ∈ H → q.Valid (REFL W)) :
@@ -69,27 +77,32 @@ theorem T_REFL_VALID {W : Type*} {H : Set Form} {p : Form}
 /-! ## Finite reflexive frames -/
 
 /-- The class of finite well-formed reflexive frames. -/
+-- HOL: `RF` (definition: `RF_DEF`) (`t_completeness.ml`).
 def RF (W : Type*) : Set (Frame W) :=
   {frame | frame ∈ FINITE_FRAME W ∧ REFLEXIVE frame.worlds frame.rel}
 
 /-- Membership in the class of finite reflexive frames. -/
+-- HOL: `IN_RF` (`t_completeness.ml`).
 theorem IN_RF {W : Type*} (frame : Frame W) :
     frame ∈ RF W ↔
       frame ∈ FINITE_FRAME W ∧ REFLEXIVE frame.worlds frame.rel := Iff.rfl
 
 /-- Defining equation for finite reflexive frames. -/
+-- HOL: `RF_DEF` (`t_completeness.ml`).
 theorem RF_DEF (W : Type*) :
     RF W =
       {frame | frame ∈ FINITE_FRAME W ∧
         REFLEXIVE frame.worlds frame.rel} := rfl
 
 /-- Every finite reflexive frame is a reflexive frame. -/
+-- HOL: `RF_SUBSET_REFL` (`t_completeness.ml`).
 theorem RF_SUBSET_REFL {W : Type*} : RF W ⊆ REFL W := by
   intro frame hframe
   exact ⟨FINITE_FRAME_SUBSET_FRAME hframe.1, hframe.2⟩
 
 /-- Finite reflexive frames are the intersection of reflexive and finite
 frames. -/
+-- HOL: `RF_FIN_REFL` (`t_completeness.ml`).
 theorem RF_FIN_REFL (W : Type*) :
     RF W = REFL W ∩ FINITE_FRAME W := by
   ext frame
@@ -98,6 +111,7 @@ theorem RF_FIN_REFL (W : Type*) :
 
 /-- The finite frames appropriate for T are exactly the finite reflexive
 frames. -/
+-- HOL: `RF_APPR_T` (`t_completeness.ml`).
 theorem RF_APPR_T (W : Type*) :
     RF W = (APPR T_AX : Set (Frame W)) := by
   ext frame
@@ -106,17 +120,20 @@ theorem RF_APPR_T (W : Type*) :
   tauto
 
 /-- Every theorem of T is valid on every finite reflexive frame. -/
+-- HOL: `T_RF_VALID` (`t_completeness.ml`).
 theorem T_RF_VALID {W : Type*} {p : Form}
     (hp : T_AX ⊢ₘ[(∅ : Set Form)] p) : p.Valid (RF W) := by
   rw [RF_APPR_T W]
   exact GEN_APPR_VALID hp
 
 /-- Finite reflexive frames are, in particular, well-formed frames. -/
+-- HOL: `RF_SUBSET_FRAME` (`t_completeness.ml`).
 theorem RF_SUBSET_FRAME {W : Type*} : RF W ⊆ FRAME W := by
   intro frame hframe
   exact FINITE_FRAME_SUBSET_FRAME hframe.1
 
 /-- T is syntactically consistent. -/
+-- HOL: `T_CONSISTENT` (`t_completeness.ml`); set-world formulation.
 theorem T_CONSISTENT : ¬(T_AX ⊢ₘ[(∅ : Set Form)] ⊥ₘ) := by
   intro hfalse
   let frame : Frame Unit := ⟨Set.univ, fun _ _ => True⟩
@@ -136,14 +153,18 @@ theorem T_CONSISTENT : ¬(T_AX ⊢ₘ[(∅ : Set Form)] ⊥ₘ) := by
 /-! ## Standard frames and models -/
 
 /-- The standard frames for T. -/
+-- HOL: `T_STANDARD_FRAME` (definition: `T_STANDARD_FRAME_DEF`) (`t_completeness.ml`); set-world
+--   formulation.
 def T_STANDARD_FRAME (p : Form) : Set (Frame (Set Form)) :=
   GEN_STANDARD_FRAME T_AX p
 
 /-- Defining equation for T standard frames. -/
+-- HOL: `T_STANDARD_FRAME_DEF` (`t_completeness.ml`); set-world formulation.
 theorem T_STANDARD_FRAME_DEF (p : Form) :
     T_STANDARD_FRAME p = GEN_STANDARD_FRAME T_AX p := rfl
 
 /-- Expanded characterization of T standard frames. -/
+-- HOL: `IN_T_STANDARD_FRAME` (`t_completeness.ml`); set-world formulation.
 theorem IN_T_STANDARD_FRAME (p : Form) (frame : Frame (Set Form)) :
     frame ∈ T_STANDARD_FRAME p ↔
       frame.worlds =
@@ -155,14 +176,18 @@ theorem IN_T_STANDARD_FRAME (p : Form) (frame : Frame (Set Form)) :
   rw [T_STANDARD_FRAME, IN_GEN_STANDARD_FRAME, ← RF_APPR_T (Set Form)]
 
 /-- A T standard model is the corresponding generic standard model. -/
+-- HOL: `T_STANDARD_MODEL` (definition: `T_STANDARD_MODEL_DEF`) (`t_completeness.ml`); set-world
+--   formulation.
 def T_STANDARD_MODEL (p : Form) (model : Model (Set Form)) : Prop :=
   GEN_STANDARD_MODEL T_AX p model
 
 /-- Defining equation for T standard models. -/
+-- HOL: `T_STANDARD_MODEL_DEF` (`t_completeness.ml`); set-world formulation.
 theorem T_STANDARD_MODEL_DEF (p : Form) (model : Model (Set Form)) :
     T_STANDARD_MODEL p model ↔ GEN_STANDARD_MODEL T_AX p model := Iff.rfl
 
 /-- Expanded characterization of T standard models. -/
+-- HOL: `T_STANDARD_MODEL_CAR` (`t_completeness.ml`); set-world formulation.
 theorem T_STANDARD_MODEL_CAR (p : Form) (model : Model (Set Form)) :
     T_STANDARD_MODEL p model ↔
       model.frame ∈ T_STANDARD_FRAME p ∧
@@ -172,6 +197,7 @@ theorem T_STANDARD_MODEL_CAR (p : Form) (model : Model (Set Form)) :
 
 /-- Truth in a T standard model agrees with membership for every subformula
 of the distinguished formula. -/
+-- HOL: `T_TRUTH_LEMMA` (`t_completeness.ml`).
 theorem T_TRUTH_LEMMA {p q : Form} (model : Model (Set Form))
     (hnp : ¬(T_AX ⊢ₘ[(∅ : Set Form)] p))
     (hmodel : T_STANDARD_MODEL p model) (hsub : q ⊑ p) :
@@ -182,14 +208,18 @@ theorem T_TRUTH_LEMMA {p q : Form} (model : Model (Set Form))
 /-! ## Canonical relation and accessibility -/
 
 /-- The canonical accessibility relation for T. -/
+-- HOL: `T_STANDARD_REL` (definition: `T_STANDARD_REL_DEF`) (`t_completeness.ml`); set-world
+--   formulation.
 def T_STANDARD_REL (p : Form) (w x : Set Form) : Prop :=
   GEN_STANDARD_REL T_AX p w x
 
 /-- Defining equation for the T canonical relation. -/
+-- HOL: `T_STANDARD_REL_DEF` (`t_completeness.ml`); set-world formulation.
 theorem T_STANDARD_REL_DEF (p : Form) :
     T_STANDARD_REL p = GEN_STANDARD_REL T_AX p := rfl
 
 /-- Expanded characterization of the T canonical relation. -/
+-- HOL: `T_STANDARD_REL_CAR` (`t_completeness.ml`); set-world formulation.
 theorem T_STANDARD_REL_CAR (p : Form) (w x : Set Form) :
     T_STANDARD_REL p w x ↔
       MAXIMAL_SETCONSISTENT T_AX p w ∧
@@ -199,6 +229,7 @@ theorem T_STANDARD_REL_CAR (p : Form) (w x : Set Form) :
       ∀ B, □B ∈ w → B ∈ x := Iff.rfl
 
 /-- The T canonical worlds and relation form a finite reflexive frame. -/
+-- HOL: `RF_MAXIMAL_CONSISTENT` (`t_completeness.ml`); set-world formulation.
 theorem RF_MAXIMAL_CONSISTENT {p : Form}
     (hnp : ¬(T_AX ⊢ₘ[(∅ : Set Form)] p)) :
     (⟨GEN_STANDARD_WORLD T_AX p, T_STANDARD_REL p⟩ :
@@ -227,6 +258,7 @@ theorem RF_MAXIMAL_CONSISTENT {p : Form}
 
 /-- If every T-canonical successor of `w` contains `q`, then `w` contains
 `□q`. -/
+-- HOL: `T_ACCESSIBILITY_LEMMA` (`t_completeness.ml`); set-world formulation.
 theorem T_ACCESSIBILITY_LEMMA {p q : Form} {w : Set Form}
     (hnp : ¬(T_AX ⊢ₘ[(∅ : Set Form)] p))
     (hmaxw : MAXIMAL_SETCONSISTENT T_AX p w)
@@ -245,6 +277,7 @@ theorem T_ACCESSIBILITY_LEMMA {p q : Form} {w : Set Form}
 
 /-- The canonical finite reflexive frame for a non-theorem is a T standard
 frame. -/
+-- HOL: `RF_IN_T_STANDARD_FRAME` (`t_completeness.ml`); set-world formulation.
 theorem RF_IN_T_STANDARD_FRAME {p : Form}
     (hnp : ¬(T_AX ⊢ₘ[(∅ : Set Form)] p)) :
     (⟨GEN_STANDARD_WORLD T_AX p, T_STANDARD_REL p⟩ :
@@ -259,6 +292,7 @@ theorem RF_IN_T_STANDARD_FRAME {p : Form}
     exact T_ACCESSIBILITY_LEMMA hnp hw.1 hw.2 hboxsub hall
 
 /-- A canonical world containing `¬p` falsifies `p` in the T canonical model. -/
+-- HOL: `T_COUNTERMODEL` (`t_completeness.ml`); set-world formulation.
 theorem T_COUNTERMODEL {M : Set Form} {p : Form}
     (hnp : ¬(T_AX ⊢ₘ[(∅ : Set Form)] p))
     (hmaxM : MAXIMAL_SETCONSISTENT T_AX p M)
@@ -277,6 +311,7 @@ theorem T_COUNTERMODEL {M : Set Form} {p : Form}
 
 /-- Every non-theorem of T has a finite reflexive countermodel whose worlds
 are sets of formulas. -/
+-- HOL: `T_COUNTERMODEL_FINITE_SETS` (`t_completeness.ml`); set-world formulation.
 theorem T_COUNTERMODEL_FINITE_SETS {p : Form}
     (hnp : ¬(T_AX ⊢ₘ[(∅ : Set Form)] p)) :
     ¬p.holdsIn
@@ -287,6 +322,7 @@ theorem T_COUNTERMODEL_FINITE_SETS {p : Form}
 
 /-- Finite-reflexive-frame completeness of T on the canonical set-world
 type. -/
+-- HOL: `T_COMPLETENESS_THM` (`t_completeness.ml`); set-world formulation.
 theorem T_COMPLETENESS_THM {p : Form}
     (hvalid : p.Valid (RF (Set Form))) :
     T_AX ⊢ₘ[(∅ : Set Form)] p := by
@@ -299,6 +335,7 @@ theorem T_COMPLETENESS_THM {p : Form}
 
 /-- Finite-reflexive-frame completeness of T over every infinite type of
 worlds. -/
+-- HOL: `T_COMPLETENESS_THM_GEN` (`t_completeness.ml`).
 theorem T_COMPLETENESS_THM_GEN {A : Type*} [Infinite A] {p : Form}
     (hvalid : p.Valid (RF A)) : T_AX ⊢ₘ[(∅ : Set Form)] p := by
   apply T_COMPLETENESS_THM
@@ -311,6 +348,7 @@ theorem T_COMPLETENESS_THM_GEN {A : Type*} [Infinite A] {p : Form}
 
 /-- Prove a closed theorem of T by finite-frame completeness, semantic
 normalization, and first-order proof search. -/
+-- HOL: `T_TAC` / `T_RULE` (`t_completeness.ml`); one Lean tactic interface.
 macro "modal_t" : tactic =>
   `(tactic|
     apply T_COMPLETENESS_THM <;>
@@ -320,18 +358,23 @@ macro "modal_t" : tactic =>
 
 /-! Compile-time regression tests for `modal_t`. -/
 
+-- HOL: unnamed `T_RULE` example 1 in `t_completeness.ml`; regression test.
 example (p q r : Form) : T_AX ⊢ₘ[∅] (p ⋏ q ⋏ r ⟶ p ⋏ r) := by
   modal_t
 
+-- HOL: unnamed `T_RULE` example 2 in `t_completeness.ml`; regression test.
 example (p q : Form) : T_AX ⊢ₘ[∅] (□(p ⟶ q) ⟶ □p ⟶ □q) := by
   modal_t
 
+-- HOL: unnamed `T_RULE` example 3 in `t_completeness.ml`; regression test.
 example (p q : Form) : T_AX ⊢ₘ[∅] ((□(p ⟶ q) ⋏ □p) ⟶ □q) := by
   modal_t
 
+-- HOL: unnamed `T_RULE` example 4 in `t_completeness.ml`; regression test.
 example (p : Form) : T_AX ⊢ₘ[∅] (□p ⟶ p) := by
   modal_t
 
+-- HOL: unnamed `T_RULE` example 5 in `t_completeness.ml`; regression test.
 example (p q : Form) : T_AX ⊢ₘ[∅] (□(p ⟷ q) ⟶ (□p ⟷ □q)) := by
   modal_t
 

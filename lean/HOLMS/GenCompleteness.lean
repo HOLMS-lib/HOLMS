@@ -17,12 +17,15 @@ open ModalNotation
 
 /-- The canonical worlds selected by a formula schema `P`: maximally
 consistent sets relative to `p` whose members all belong to `P p`. -/
+-- HOL: `PARAMETRIC_STD_WORLD` (`gen_completeness.ml`); set-world formulation.
 def PARAMETRIC_STD_WORLD (S : Set Form) (P : Form → Set Form) (p : Form) :
     Set (Set Form) :=
   {w | MAXIMAL_SETCONSISTENT S p w ∧ w ⊆ P p}
 
 /-- The appropriate frames whose worlds are the selected canonical worlds and
 whose relation satisfies the truth condition for boxed subformulas of `p`. -/
+-- HOL: `PARAMETRIC_STANDARD_FRAME` (definition: `PARAMETRIC_STANDARD_FRAME_DEF`)
+--   (`gen_completeness.ml`); set-world formulation.
 def PARAMETRIC_STANDARD_FRAME (S : Set Form) (P : Form → Set Form)
     (p : Form) : Set (Frame (Set Form)) :=
   APPR S ∩
@@ -31,6 +34,7 @@ def PARAMETRIC_STANDARD_FRAME (S : Set Form) (P : Form → Set Form)
         (□q ∈ w ↔ ∀ x, frame.rel w x → q ∈ x)}
 
 /-- Defining characterization of parametric standard frames. -/
+-- HOL: `PARAMETRIC_STANDARD_FRAME_DEF` (`gen_completeness.ml`); set-world formulation.
 theorem PARAMETRIC_STANDARD_FRAME_DEF (S : Set Form) (P : Form → Set Form)
     (p : Form) :
     PARAMETRIC_STANDARD_FRAME S P p =
@@ -40,29 +44,36 @@ theorem PARAMETRIC_STANDARD_FRAME_DEF (S : Set Form) (P : Form → Set Form)
             (□q ∈ w ↔ ∀ x, frame.rel w x → q ∈ x)} := rfl
 
 /-- The generic standard-frame schema consists of all subsentences of `p`. -/
+-- HOL: `STD_FRAME_SCHEMA` (`gen_completeness.ml`).
 def STD_FRAME_SCHEMA (p : Form) : Set Form :=
   {q | q ⊑ₛ p}
 
 /-- The canonical worlds used by the generic completeness construction. -/
+-- HOL: `GEN_STANDARD_WORLD` (definition: `GEN_STANDARD_WORLD_DEF`), on set worlds
+--   (`gen_completeness.ml`).
 def GEN_STANDARD_WORLD (S : Set Form) (p : Form) : Set (Set Form) :=
   PARAMETRIC_STD_WORLD S STD_FRAME_SCHEMA p
 
 /-- Defining equation for generic standard worlds. -/
+-- HOL: `GEN_STANDARD_WORLD_DEF` (`gen_completeness.ml`); set-world formulation.
 theorem GEN_STANDARD_WORLD_DEF (S : Set Form) (p : Form) :
     GEN_STANDARD_WORLD S p = PARAMETRIC_STD_WORLD S STD_FRAME_SCHEMA p := rfl
 
 /-- Expanded characterization of generic standard worlds. -/
+-- HOL: `GEN_STANDARD_WORLD` (characterization theorem), on set worlds (`gen_completeness.ml`).
 theorem GEN_STANDARD_WORLD_EQ (S : Set Form) (p : Form) :
     GEN_STANDARD_WORLD S p =
       {w | MAXIMAL_SETCONSISTENT S p w ∧ ∀ q, q ∈ w → q ⊑ₛ p} := by
   rfl
 
 /-- The generic standard frames obtained from the subsentence schema. -/
+-- HOL: `GEN_STANDARD_FRAME` (`gen_completeness.ml`); set-world formulation.
 def GEN_STANDARD_FRAME (S : Set Form) (p : Form) :
     Set (Frame (Set Form)) :=
   PARAMETRIC_STANDARD_FRAME S STD_FRAME_SCHEMA p
 
 /-- Expanded characterization of generic standard frames. -/
+-- HOL: `GEN_STANDARD_FRAME_DEF` (`gen_completeness.ml`); set-world formulation.
 theorem GEN_STANDARD_FRAME_DEF (S : Set Form) (p : Form) :
     GEN_STANDARD_FRAME S p =
       APPR S ∩
@@ -75,6 +86,7 @@ theorem GEN_STANDARD_FRAME_DEF (S : Set Form) (p : Form) :
   rfl
 
 /-- Membership characterization for generic standard frames. -/
+-- HOL: `IN_GEN_STANDARD_FRAME` (`gen_completeness.ml`); set-world formulation.
 theorem IN_GEN_STANDARD_FRAME (S : Set Form) (p : Form)
     (frame : Frame (Set Form)) :
     frame ∈ GEN_STANDARD_FRAME S p ↔
@@ -92,6 +104,8 @@ theorem IN_GEN_STANDARD_FRAME (S : Set Form) (p : Form)
 
 /-- A standard model is based on a generic standard frame and interprets an
 atom by membership in the current canonical world. -/
+-- HOL: `GEN_STANDARD_MODEL` (definition: `GEN_STANDARD_MODEL_DEF`) (`gen_completeness.ml`);
+--   set-world formulation.
 def GEN_STANDARD_MODEL (S : Set Form) (p : Form) (model : Model (Set Form)) :
     Prop :=
   model.frame ∈ GEN_STANDARD_FRAME S p ∧
@@ -99,6 +113,7 @@ def GEN_STANDARD_MODEL (S : Set Form) (p : Form) (model : Model (Set Form)) :
       (model.valuation a w ↔ Form.atom a ∈ w ∧ Form.atom a ⊑ p)
 
 /-- Defining characterization of generic standard models. -/
+-- HOL: `GEN_STANDARD_MODEL_DEF` (`gen_completeness.ml`); set-world formulation.
 theorem GEN_STANDARD_MODEL_DEF (S : Set Form) (p : Form)
     (model : Model (Set Form)) :
     GEN_STANDARD_MODEL S p model ↔
@@ -107,14 +122,17 @@ theorem GEN_STANDARD_MODEL_DEF (S : Set Form) (p : Form)
           (model.valuation a w ↔ Form.atom a ∈ w ∧ Form.atom a ⊑ p) := Iff.rfl
 
 /-- The canonical valuation on set-based worlds. -/
+-- HOL: `STANDARD_EVAL` (`gen_completeness.ml`); set-world formulation.
 def STANDARD_EVAL (p : Form) : Valuation (Set Form) :=
   fun a w => Form.atom a ⊑ p ∧ Form.atom a ∈ w
 
 /-- The canonical valuation on sets of formulas, equal to `STANDARD_EVAL`. -/
+-- HOL: `SET_STANDARD_EVAL` (`gen_completeness.ml`); set-world formulation.
 def SET_STANDARD_EVAL (p : Form) : Valuation (Set Form) :=
   STANDARD_EVAL p
 
 /-- The two standard valuations are definitionally equal. -/
+-- HOL: no direct counterpart; the two valuations coincide on Lean's set worlds.
 theorem SET_STANDARD_EVAL_EQ_STANDARD_EVAL (p : Form) :
     SET_STANDARD_EVAL p = STANDARD_EVAL p := rfl
 
@@ -122,6 +140,7 @@ theorem SET_STANDARD_EVAL_EQ_STANDARD_EVAL (p : Form) :
 
 /-- In a generic standard model, membership in a canonical world agrees with
 Kripke truth for every subformula of the distinguished formula. -/
+-- HOL: `GEN_TRUTH_LEMMA` (`gen_completeness.ml`).
 theorem GEN_TRUTH_LEMMA {S : Set Form} {p q : Form}
     (model : Model (Set Form))
     (_hnp : ¬S ⊢ₘ[(∅ : Set Form)] p)
@@ -217,6 +236,7 @@ theorem GEN_TRUTH_LEMMA {S : Set Form} {p q : Form}
 
 /-- The canonical accessibility relation: both endpoints are generic
 canonical worlds and every box content of the source belongs to the target. -/
+-- HOL: `GEN_STANDARD_REL` (`gen_completeness.ml`); set-world formulation.
 def GEN_STANDARD_REL (S : Set Form) (p : Form) (w x : Set Form) : Prop :=
   MAXIMAL_SETCONSISTENT S p w ∧
     (∀ q, q ∈ w → q ⊑ₛ p) ∧
@@ -226,6 +246,7 @@ def GEN_STANDARD_REL (S : Set Form) (p : Form) (w x : Set Form) : Prop :=
 
 /-- If `p` is not derivable, its canonical worlds equipped with the canonical
 relation form a finite well-formed frame. -/
+-- HOL: `GEN_FINITE_FRAME_MAXIMAL_CONSISTENT` (`gen_completeness.ml`); set-world formulation.
 theorem GEN_FINITE_FRAME_MAXIMAL_CONSISTENT {S : Set Form} {p : Form}
     (hnp : ¬S ⊢ₘ[(∅ : Set Form)] p) :
     (⟨GEN_STANDARD_WORLD S p, GEN_STANDARD_REL S p⟩ : Frame (Set Form)) ∈
@@ -247,6 +268,8 @@ theorem GEN_FINITE_FRAME_MAXIMAL_CONSISTENT {S : Set Form} {p : Form}
 /-! ## Accessibility -/
 
 /-- The unboxed contents of all boxed formulas in a canonical world. -/
+-- HOL: no named definition; set version of the unboxed `FLATMAP` context in
+--   `GEN_XK_FOR_ACCESSIBILITY_LEMMA`.
 def GEN_BOX_CONTENT (w : Set Form) : Set Form :=
   {q | □q ∈ w}
 
@@ -259,6 +282,7 @@ additional axioms are boxed by necessitation, hypotheses use the corresponding
 member of `w`, modus ponens uses `MLK_box_modusponens`, and a necessitation
 step is boxed once more. The last case is sound because the premise of
 necessitation is derivable from the empty hypothesis set. -/
+-- HOL: no direct named counterpart; lifts derivations under a box for the accessibility proof.
 private theorem box_derivation_from_context {S Γ w : Set Form} {p : Form}
     (hp : S ⊢ₘ[Γ] p) (hΓ : ∀ q, q ∈ Γ → □q ∈ w) : S ⊢ₘ[w] □p := by
   induction hp with
@@ -270,6 +294,7 @@ private theorem box_derivation_from_context {S Γ w : Set Form} {p : Form}
   | necessitation hp _ => exact .necessitation (.necessitation hp)
 
 /-- Removing the outer box from a subsentence leaves a subsentence. -/
+-- HOL: no separate named theorem; Lean helper extracting subsentence membership from a box.
 private theorem content_subsentence_of_box_subsentence {p q : Form}
     (h : □q ⊑ₛ p) : q ⊑ₛ p := by
   cases h with
@@ -278,6 +303,7 @@ private theorem content_subsentence_of_box_subsentence {p q : Form}
 
 /-- If a boxed subformula is absent from a canonical world, the negation of
 its body together with all box contents extends to another canonical world. -/
+-- HOL: `GEN_XK_FOR_ACCESSIBILITY_LEMMA` (`gen_completeness.ml`); set-world formulation.
 theorem GEN_XK_FOR_ACCESSIBILITY_LEMMA {S w : Set Form} {p q : Form}
     (_hnp : ¬S ⊢ₘ[(∅ : Set Form)] p)
     (hmaxw : MAXIMAL_SETCONSISTENT S p w)
@@ -318,6 +344,7 @@ theorem GEN_XK_FOR_ACCESSIBILITY_LEMMA {S w : Set Form} {p q : Form}
 
 /-- A maximal extension supplied by `GEN_XK_FOR_ACCESSIBILITY_LEMMA` is a
 canonical successor in which the target formula is absent. -/
+-- HOL: `GEN_ACCESSIBILITY_LEMMA` (`gen_completeness.ml`); set-world formulation.
 theorem GEN_ACCESSIBILITY_LEMMA {S w X : Set Form} {p q : Form}
     (_hnp : ¬S ⊢ₘ[(∅ : Set Form)] p)
     (hmaxw : MAXIMAL_SETCONSISTENT S p w)
@@ -337,9 +364,11 @@ theorem GEN_ACCESSIBILITY_LEMMA {S w X : Set Form} {p q : Form}
 
 /-- The K accessibility context is contained in the context that also keeps
 the boxed assumptions. -/
+-- HOL: no named definition; set version of the context retaining boxes in `XK_SUBLIST_XK4`.
 def GEN_BOX_CONTENT_K4 (w : Set Form) : Set Form :=
   GEN_BOX_CONTENT w ∪ Form.box '' GEN_BOX_CONTENT w
 
+-- HOL: `XK_SUBLIST_XK4` (`gen_completeness.ml`); set-world formulation.
 theorem XK_SUBLIST_XK4 (w : Set Form) (q : Form) :
     insert (¬q) (GEN_BOX_CONTENT w) ⊆
       insert (¬q) (GEN_BOX_CONTENT_K4 w) := by
@@ -352,6 +381,7 @@ theorem XK_SUBLIST_XK4 (w : Set Form) (q : Form) :
 
 /-- A canonical world containing `¬p` falsifies `p` in every generic standard
 model based on the same canonical construction. -/
+-- HOL: `GEN_COUNTERMODEL` (`gen_completeness.ml`); set-world formulation.
 theorem GEN_COUNTERMODEL {S M : Set Form} {p : Form}
     (model : Model (Set Form)) (hnp : ¬S ⊢ₘ[(∅ : Set Form)] p)
     (hmaxM : MAXIMAL_SETCONSISTENT S p M) (hnotp : (¬p) ∈ M)
@@ -370,6 +400,7 @@ theorem GEN_COUNTERMODEL {S M : Set Form} {p : Form}
 
 /-- Every generic standard frame for a non-theorem carries a valuation and a
 world that falsify that formula. -/
+-- HOL: `GEN_COUNTERMODEL_ALT` (`gen_completeness.ml`); set-world formulation.
 theorem GEN_COUNTERMODEL_ALT {S : Set Form} {p : Form}
     {frame : Frame (Set Form)} (hnp : ¬S ⊢ₘ[(∅ : Set Form)] p)
     (hframe : frame ∈ GEN_STANDARD_FRAME S p) :
@@ -392,17 +423,20 @@ theorem GEN_COUNTERMODEL_ALT {S : Set Form} {p : Form}
 /-! ## Transport to an arbitrary infinite world type -/
 
 /-- Transport a frame along an embedding of its designated-world subtype. -/
+-- HOL: no named counterpart; Lean helper embedding a frame's designated worlds.
 private def embeddedFrame {W A : Type*} (frame : Frame W)
     (e : {w // w ∈ frame.worlds} ↪ A) : Frame A where
   worlds := Set.range e
   rel a b := ∃ x y, a = e x ∧ b = e y ∧ frame.rel x.1 y.1
 
 /-- The graph relating each designated world to its embedded copy. -/
+-- HOL: no named counterpart; graph relation for the Lean frame embedding.
 private def embeddedWorldRel {W A : Type*} (frame : Frame W)
     (e : {w // w ∈ frame.worlds} ↪ A) : W → A → Prop :=
   fun w a => ∃ hw : w ∈ frame.worlds, a = e ⟨w, hw⟩
 
 /-- Compatible valuations make a frame and its embedded copy bisimilar. -/
+-- HOL: no named counterpart; bisimulation for the Lean frame embedding.
 private theorem embeddedFrame_bisimulation {W A : Type*} {frame : Frame W}
     (hclosed : ∀ x y, frame.rel x y →
       x ∈ frame.worlds ∧ y ∈ frame.worlds)
@@ -432,6 +466,7 @@ private theorem embeddedFrame_bisimulation {W A : Type*} {frame : Frame W}
 
 /-- Every finite appropriate frame has an isomorphic copy on any infinite
 world type. -/
+-- HOL: no named counterpart; finite-frame embedding used in `GEN_LEMMA_FOR_GEN_COMPLETENESS`.
 private theorem exists_embedded_appropriate_frame {W A : Type*} [Infinite A]
     {S : Set Form} {frame : Frame W} (hframe : frame ∈ APPR S) :
     ∃ e : {w // w ∈ frame.worlds} ↪ A,
@@ -470,6 +505,7 @@ private theorem exists_embedded_appropriate_frame {W A : Type*} [Infinite A]
 
 /-- Validity on appropriate frames over an arbitrary infinite type implies
 validity on the set-based canonical-world type. -/
+-- HOL: `GEN_LEMMA_FOR_GEN_COMPLETENESS` (`gen_completeness.ml`); set-world formulation.
 theorem GEN_LEMMA_FOR_GEN_COMPLETENESS {A : Type*} [Infinite A]
     (S : Set Form) {p : Form}
     (hp : p.Valid (APPR S : Set (Frame A))) :

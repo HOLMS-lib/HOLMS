@@ -17,12 +17,14 @@ open ModalNotation
 
 /-- With no additional axioms, the characteristic frames are precisely all
 well-formed frames. -/
+-- HOL: `FRAME_CHAR_K` (`k_completeness.ml`).
 theorem FRAME_CHAR_K (W : Type*) :
     FRAME W = (CHAR (∅ : Set Form) : Set (Frame W)) := by
   ext frame
   simp [FRAME, CHAR]
 
 /-- Derivability in K preserves validity on all well-formed frames. -/
+-- HOL: `K_FRAME_VALID` (`k_completeness.ml`).
 theorem K_FRAME_VALID {W : Type*} {H : Set Form} {p : Form}
     (hp : (∅ : Set Form) ⊢ₘ[H] p)
     (hH : ∀ q, q ∈ H → q.Valid (FRAME W)) :
@@ -32,12 +34,14 @@ theorem K_FRAME_VALID {W : Type*} {H : Set Form} {p : Form}
 
 /-- The finite frames appropriate for K are exactly all finite well-formed
 frames. -/
+-- HOL: `FINITE_FRAME_APPR_K` (`k_completeness.ml`).
 theorem FINITE_FRAME_APPR_K (W : Type*) :
     FINITE_FRAME W = (APPR (∅ : Set Form) : Set (Frame W)) := by
   ext frame
   rw [IN_FINITE_FRAME_INTER, APPR_CAR, ← FRAME_CHAR_K W]
 
 /-- Every theorem of K is valid on every finite well-formed frame. -/
+-- HOL: `K_FINITE_FRAME_VALID` (`k_completeness.ml`).
 theorem K_FINITE_FRAME_VALID {W : Type*} {p : Form}
     (hp : (∅ : Set Form) ⊢ₘ[(∅ : Set Form)] p) :
     p.Valid (FINITE_FRAME W) := by
@@ -45,6 +49,7 @@ theorem K_FINITE_FRAME_VALID {W : Type*} {p : Form}
   exact GEN_APPR_VALID hp
 
 /-- K is syntactically consistent. -/
+-- HOL: `K_CONSISTENT` (`k_completeness.ml`); set-world formulation.
 theorem K_CONSISTENT : ¬((∅ : Set Form) ⊢ₘ[(∅ : Set Form)] ⊥ₘ) := by
   intro hfalse
   let frame : Frame Unit := ⟨Set.univ, fun _ _ => False⟩
@@ -61,14 +66,18 @@ theorem K_CONSISTENT : ¬((∅ : Set Form) ⊢ₘ[(∅ : Set Form)] ⊥ₘ) := b
 
 /-- The standard frames for K are the generic standard frames for the empty
 additional axiom set. -/
+-- HOL: `K_STANDARD_FRAME` (definition: `K_STANDARD_FRAME_DEF`) (`k_completeness.ml`); set-world
+--   formulation.
 def K_STANDARD_FRAME (p : Form) : Set (Frame (Set Form)) :=
   GEN_STANDARD_FRAME (∅ : Set Form) p
 
 /-- Defining equation for K standard frames. -/
+-- HOL: `K_STANDARD_FRAME_DEF` (`k_completeness.ml`); set-world formulation.
 theorem K_STANDARD_FRAME_DEF (p : Form) :
     K_STANDARD_FRAME p = GEN_STANDARD_FRAME (∅ : Set Form) p := rfl
 
 /-- Expanded characterization of K standard frames. -/
+-- HOL: `IN_K_STANDARD_FRAME` (`k_completeness.ml`); set-world formulation.
 theorem IN_K_STANDARD_FRAME (p : Form) (frame : Frame (Set Form)) :
     frame ∈ K_STANDARD_FRAME p ↔
       frame.worlds =
@@ -81,15 +90,19 @@ theorem IN_K_STANDARD_FRAME (p : Form) (frame : Frame (Set Form)) :
     ← FINITE_FRAME_APPR_K (Set Form)]
 
 /-- A K standard model is the corresponding generic standard model. -/
+-- HOL: `K_STANDARD_MODEL` (definition: `K_STANDARD_MODEL_DEF`) (`k_completeness.ml`); set-world
+--   formulation.
 def K_STANDARD_MODEL (p : Form) (model : Model (Set Form)) : Prop :=
   GEN_STANDARD_MODEL (∅ : Set Form) p model
 
 /-- Defining equation for K standard models. -/
+-- HOL: `K_STANDARD_MODEL_DEF` (`k_completeness.ml`); set-world formulation.
 theorem K_STANDARD_MODEL_DEF (p : Form) (model : Model (Set Form)) :
     K_STANDARD_MODEL p model ↔
       GEN_STANDARD_MODEL (∅ : Set Form) p model := Iff.rfl
 
 /-- Expanded characterization of K standard models. -/
+-- HOL: `K_STANDARD_MODEL_CAR` (`k_completeness.ml`); set-world formulation.
 theorem K_STANDARD_MODEL_CAR (p : Form) (model : Model (Set Form)) :
     K_STANDARD_MODEL p model ↔
       model.frame ∈ K_STANDARD_FRAME p ∧
@@ -99,6 +112,7 @@ theorem K_STANDARD_MODEL_CAR (p : Form) (model : Model (Set Form)) :
 
 /-- Truth in a K standard model agrees with membership for every subformula
 of the distinguished formula. -/
+-- HOL: `K_TRUTH_LEMMA` (`k_completeness.ml`).
 theorem K_TRUTH_LEMMA {p q : Form} (model : Model (Set Form))
     (hnp : ¬((∅ : Set Form) ⊢ₘ[(∅ : Set Form)] p))
     (hmodel : K_STANDARD_MODEL p model) (hsub : q ⊑ p) :
@@ -109,14 +123,18 @@ theorem K_TRUTH_LEMMA {p q : Form} (model : Model (Set Form))
 /-! ## Canonical relation and accessibility -/
 
 /-- The canonical accessibility relation for K. -/
+-- HOL: `K_STANDARD_REL` (definition: `K_STANDARD_REL_DEF`) (`k_completeness.ml`); set-world
+--   formulation.
 def K_STANDARD_REL (p : Form) (w x : Set Form) : Prop :=
   GEN_STANDARD_REL (∅ : Set Form) p w x
 
 /-- Defining equation for the K canonical relation. -/
+-- HOL: `K_STANDARD_REL_DEF` (`k_completeness.ml`); set-world formulation.
 theorem K_STANDARD_REL_DEF (p : Form) :
     K_STANDARD_REL p = GEN_STANDARD_REL (∅ : Set Form) p := rfl
 
 /-- Expanded characterization of the K canonical relation. -/
+-- HOL: `K_STANDARD_REL_CAR` (`k_completeness.ml`); set-world formulation.
 theorem K_STANDARD_REL_CAR (p : Form) (w x : Set Form) :
     K_STANDARD_REL p w x ↔
       MAXIMAL_SETCONSISTENT (∅ : Set Form) p w ∧
@@ -126,6 +144,7 @@ theorem K_STANDARD_REL_CAR (p : Form) (w x : Set Form) :
       ∀ B, □B ∈ w → B ∈ x := Iff.rfl
 
 /-- The K canonical worlds and relation form a finite well-formed frame. -/
+-- HOL: `K_MAXIMAL_CONSISTENT` (`k_completeness.ml`); set-world formulation.
 theorem K_MAXIMAL_CONSISTENT {p : Form}
     (hnp : ¬((∅ : Set Form) ⊢ₘ[(∅ : Set Form)] p)) :
     (⟨GEN_STANDARD_WORLD (∅ : Set Form) p, K_STANDARD_REL p⟩ :
@@ -138,6 +157,7 @@ theorem K_MAXIMAL_CONSISTENT {p : Form}
 
 /-- If every K-canonical successor of `w` contains `q`, then `w` contains
 `□q`. -/
+-- HOL: `K_ACCESSIBILITY_LEMMA` (`k_completeness.ml`); set-world formulation.
 theorem K_ACCESSIBILITY_LEMMA {p q : Form} {w : Set Form}
     (hnp : ¬((∅ : Set Form) ⊢ₘ[(∅ : Set Form)] p))
     (hmaxw : MAXIMAL_SETCONSISTENT (∅ : Set Form) p w)
@@ -155,6 +175,7 @@ theorem K_ACCESSIBILITY_LEMMA {p q : Form} {w : Set Form}
 /-! ## Countermodels and completeness -/
 
 /-- The canonical finite frame for a non-theorem of K is a K standard frame. -/
+-- HOL: `KF_IN_STANDARD_K_FRAME` (`k_completeness.ml`); set-world formulation.
 theorem KF_IN_STANDARD_K_FRAME {p : Form}
     (hnp : ¬((∅ : Set Form) ⊢ₘ[(∅ : Set Form)] p)) :
     (⟨GEN_STANDARD_WORLD (∅ : Set Form) p, K_STANDARD_REL p⟩ :
@@ -169,6 +190,7 @@ theorem KF_IN_STANDARD_K_FRAME {p : Form}
     exact K_ACCESSIBILITY_LEMMA hnp hw.1 hw.2 hboxsub hall
 
 /-- A canonical world containing `¬p` falsifies `p` in the K canonical model. -/
+-- HOL: `K_COUNTERMODEL` (`k_completeness.ml`); set-world formulation.
 theorem K_COUNTERMODEL {M : Set Form} {p : Form}
     (hnp : ¬((∅ : Set Form) ⊢ₘ[(∅ : Set Form)] p))
     (hmaxM : MAXIMAL_SETCONSISTENT (∅ : Set Form) p M)
@@ -190,6 +212,7 @@ theorem K_COUNTERMODEL {M : Set Form} {p : Form}
 
 /-- Every non-theorem of K has a finite countermodel whose worlds are sets of
 formulas. -/
+-- HOL: `K_COUNTERMODEL_FINITE_SETS` (`k_completeness.ml`); set-world formulation.
 theorem K_COUNTERMODEL_FINITE_SETS {p : Form}
     (hnp : ¬((∅ : Set Form) ⊢ₘ[(∅ : Set Form)] p)) :
     ¬p.holdsIn
@@ -199,6 +222,7 @@ theorem K_COUNTERMODEL_FINITE_SETS {p : Form}
   simpa only [K_STANDARD_FRAME] using KF_IN_STANDARD_K_FRAME hnp
 
 /-- Finite-frame completeness of K on the canonical set-world type. -/
+-- HOL: `K_COMPLETENESS_THM` (`k_completeness.ml`); set-world formulation.
 theorem K_COMPLETENESS_THM {p : Form}
     (hvalid : p.Valid (FINITE_FRAME (Set Form))) :
     (∅ : Set Form) ⊢ₘ[(∅ : Set Form)] p := by
@@ -210,6 +234,7 @@ theorem K_COMPLETENESS_THM {p : Form}
   exact K_COUNTERMODEL_FINITE_SETS hnp (hvalid frame hfinite)
 
 /-- Finite-frame completeness of K over every infinite type of worlds. -/
+-- HOL: `K_COMPLETENESS_THM_GEN` (`k_completeness.ml`).
 theorem K_COMPLETENESS_THM_GEN {A : Type*} [Infinite A] {p : Form}
     (hvalid : p.Valid (FINITE_FRAME A)) :
     (∅ : Set Form) ⊢ₘ[(∅ : Set Form)] p := by
@@ -224,6 +249,7 @@ theorem K_COMPLETENESS_THM_GEN {A : Type*} [Infinite A] {p : Form}
 
 /-- Prove a closed theorem of K by finite-frame completeness, semantic
 normalization, and first-order proof search. -/
+-- HOL: `K_TAC` / `K_RULE` (`k_completeness.ml`); one Lean tactic interface.
 macro "modal_k" : tactic =>
   `(tactic|
     apply K_COMPLETENESS_THM <;>
@@ -233,13 +259,16 @@ macro "modal_k" : tactic =>
 
 /-! Compile-time regression tests for `modal_k`. -/
 
+-- HOL: unnamed `K_RULE` example 1 in `k_completeness.ml`; regression test.
 example (p q r : Form) :
     ∅ ⊢ₘ[∅] (((¬p) ⟶ q ⟶ r) ⟷ ((p ⟶ ⊥ₘ) ⟶ q ⟶ r)) := by
   modal_k
 
+-- HOL: unnamed `K_RULE` example 2 in `k_completeness.ml`; regression test.
 example (p : Form) : ∅ ⊢ₘ[∅] (((p ⟶ ⊥ₘ) ⟶ ⊥ₘ) ⟷ p) := by
   modal_k
 
+-- HOL: unnamed `K_RULE` example 3 in `k_completeness.ml`; regression test.
 example (p q : Form) : ∅ ⊢ₘ[∅] ((¬ (p ⋏ q)) ⟷ ((¬p) ⋎ ¬ q)) := by
   modal_k
 
