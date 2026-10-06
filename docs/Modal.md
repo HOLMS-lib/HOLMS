@@ -1,9 +1,12 @@
 # Sintassi e semantica della logica modale in HOLMS
 
-Questo capitolo descrive la teoria matematica formalizzata in `modal.ml` e in
-`Modal.lean`. L'esposizione non dipende dal linguaggio del verificatore e
-include le dimostrazioni in linguaggio naturale dei risultati presenti nel
-modulo.
+Questo capitolo presenta la sintassi e la semantica della logica modale,
+con le dimostrazioni in linguaggio naturale dei risultati. L'esposizione è
+indipendente dalle implementazioni nei verificatori.
+
+Per gli altri capitoli si veda l'[indice della documentazione matematica](README.md).
+Le corrispondenze fra HOL Light e Lean e le scelte di implementazione sono
+descritte nelle [note di traduzione di Modal](../lean/translation/Modal.md).
 
 ## 1. Formule modali
 
@@ -27,8 +30,8 @@ $$
 \boxdot p := \Box p\land p.
 $$
 
-Il primo è la possibilità, duale della necessità. Il secondo, chiamato
-`Dotbox` nell'originale, raccoglie la necessità di $p$ e $p$ stesso.
+Il primo è la possibilità, duale della necessità. Il secondo raccoglie la
+necessità di $p$ e $p$ stesso.
 
 ### 1.1 Costituenti terminali e profondità
 

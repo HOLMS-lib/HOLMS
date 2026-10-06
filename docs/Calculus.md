@@ -1,12 +1,16 @@
 # Il calcolo assiomatico modale di HOLMS
 
-Questo capitolo descrive la teoria matematica formalizzata in `calculus.ml` e
-in `Calculus.lean`. L'esposizione è indipendente dal linguaggio del verificatore
+Questo capitolo presenta il calcolo assiomatico modale e le sue regole
+derivate. L'esposizione è indipendente dalle implementazioni nei verificatori
 e dai dettagli delle dimostrazioni formali.
+
+Per gli altri capitoli si veda l'[indice della documentazione matematica](README.md).
+Le corrispondenze fra HOL Light e Lean e le scelte di implementazione sono
+descritte nelle [note di traduzione di Calculus](../lean/translation/Calculus.md).
 
 ## 1. Scopo del calcolo
 
-Il file definisce un calcolo hilbertiano per la logica modale proposizionale
+Consideriamo un calcolo hilbertiano per la logica modale proposizionale
 classica. La base modale è la logica normale **K**, ma il sistema è
 parametrizzato da un insieme arbitrario di assiomi aggiuntivi. La stessa
 nozione di derivabilità può quindi essere usata per K, GL e altri sistemi

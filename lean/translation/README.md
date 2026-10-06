@@ -1,7 +1,7 @@
 # Module-specific translation notes
 
-This directory documents implementation decisions that apply to one Lean
-module rather than to the port as a whole. Before changing a module, read the
+This directory documents the translation of HOLMS from HOL Light to Lean,
+with implementation decisions specific to each Lean module. Before changing a module, read the
 project-wide [`CONVENTIONS.md`](../CONVENTIONS.md) and then the matching note
 below.
 
@@ -24,7 +24,15 @@ with HOL Light belong in these notes, not in `.lean` files.
 The notes describe representation choices, proof interfaces, deliberate
 departures from a mechanical translation, and source material that was not
 reproduced. They are not substitutes for the natural-language mathematical
-expositions under [`../../docs`](../../docs).
+expositions indexed in [`docs/README.md`](../../docs/README.md). That directory
+explains definitions, results, and proofs essentially independently of either
+implementation; implementation-specific details belong there only when they
+are particularly important to understanding the mathematics.
+
+The available mathematical chapters are [Modal](../../docs/Modal.md) and
+[Calculus](../../docs/Calculus.md). Each module note should link to its
+corresponding mathematical chapter when one is available, without duplicating
+that exposition.
 
 When a new Lean module is added, add its note and index entry in the same
 change. A choice affecting several modules belongs in `CONVENTIONS.md`; a
