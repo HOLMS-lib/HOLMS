@@ -4,8 +4,10 @@ Lean module: [`../HOLMS/ParametricCorrespondence.lean`](../HOLMS/ParametricCorre
 
 HOL Light source: [`../../parametric_correspondence.ml`](../../parametric_correspondence.ml)
 
-This note records module-specific representation and proof choices. General
-conventions are in [`../CONVENTIONS.md`](../CONVENTIONS.md).
+This note records module-specific representation and proof choices. The
+mathematical presentation is in
+[`../../docs/ParametricCorrespondence.md`](../../docs/ParametricCorrespondence.md).
+General conventions are in [`../CONVENTIONS.md`](../CONVENTIONS.md).
 
 ## Frame classes
 
@@ -29,8 +31,8 @@ structured frames.
 The generic soundness proof proceeds by induction on `ModProves`. Primitive K
 axioms are handled semantically, additional axioms by membership in `CHAR`,
 modus ponens pointwise, and necessitation by the empty-context premise built
-into the calculus. Substitution variants are derived using the substitution
-infrastructure from `Calculus`.
+into the calculus. The `SUBS` variants concern subclasses of `CHAR S`, not uniform
+substitution: restricting the class preserves axiom validity and soundness.
 
 The characterizations `CHAR_CAR`, `APPR_CAR`, and `APPR_EQ_CHAR_FINITE` are
 proved as equalities or membership equivalences of sets. Named structure fields

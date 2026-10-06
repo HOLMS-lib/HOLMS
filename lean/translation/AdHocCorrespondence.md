@@ -5,6 +5,8 @@ Lean module: [`../HOLMS/AdHocCorrespondence.lean`](../HOLMS/AdHocCorrespondence.
 HOL Light source: [`../../ad_hoc_correspondence.ml`](../../ad_hoc_correspondence.ml)
 
 This note documents choices specific to the concrete correspondence results.
+The mathematical presentation is in
+[`../../docs/AdHocCorrespondence.md`](../../docs/AdHocCorrespondence.md).
 Shared representation conventions are in
 [`../CONVENTIONS.md`](../CONVENTIONS.md).
 
@@ -27,16 +29,19 @@ identical as interfaces to Lean's unrestricted relation predicates.
 
 ## Converse well-foundedness
 
-`WWF` preserves the source's field-based formulation: well-foundedness is
-required on the field of the relation, not on unrelated ambient elements. The
+`WWF` preserves the source's field-based formulation: each nonempty subset
+of the field must have a point with no distinct predecessor in that subset.
+Self-loops are permitted. The
 bridge theorem `wwf_iff_wellFounded_strict` relates this definition to Lean's
-`WellFounded` predicate for the reversed strict relation. This permits the
-Löb and Grzegorczyk arguments to use Lean's well-founded induction while
-retaining the exact HOLMS frame condition.
+`WellFounded` predicate after removing the diagonal of the supplied relation.
+Applied to converse accessibility, it gives induction on distinct accessible
+successors in the Grzegorczyk proof. Löb's correspondence uses ordinary
+well-foundedness of converse accessibility directly.
 
 The companion results `WWF_EQ` and `WWF_IND` expose source-compatible
-characterizations and induction principles. They are proved from the bridge
-rather than postulated as additional axioms.
+characterizations and induction principles. `WWF_EQ` unfolds the definition;
+the forward direction of `WWF_IND` uses the bridge. Neither is postulated
+as an additional axiom.
 
 ## Correspondence proofs
 
@@ -45,10 +50,10 @@ chosen world when proving a relational property from validity. Conversely,
 the semantic directions unfold `Form.holds` and apply the assumed relational
 property to accessible designated worlds.
 
-The transitive nonterminal and reflexive-transitive well-founded
-correspondences require induction or minimality arguments. In Lean these are
-organized around the `WWF` bridge instead of duplicating HOL Light's tactic
-script. The formula schemata and frame conditions themselves are unchanged.
+The Löb and Grzegorczyk correspondences require well-founded induction and
+chain arguments. Lean uses the `WWF` bridge for Grzegorczyk and a library
+characterization of failure of well-foundedness by descending chains in both
+converse proofs. The formula schemata and frame conditions are unchanged.
 
 ## Deliberate boundaries
 

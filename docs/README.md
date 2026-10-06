@@ -16,6 +16,8 @@ enunciati e le spiegazioni matematiche.
 |---|---|---|
 | Sintassi, sottoformule, semantica di Kripke e bisimulazione | [Modal](Modal.md) | [HOLMS.Modal](../lean/translation/Modal.md) |
 | Calcolo assiomatico, derivabilità e regole derivate | [Calculus](Calculus.md) | [HOLMS.Calculus](../lean/translation/Calculus.md) |
+| Classi di frame, corrispondenza parametrica e correttezza generale | [ParametricCorrespondence](ParametricCorrespondence.md) | [HOLMS.ParametricCorrespondence](../lean/translation/ParametricCorrespondence.md) |
+| Corrispondenze per D, T, 4, B, 5, Löb e Grzegorczyk | [AdHocCorrespondence](AdHocCorrespondence.md) | [HOLMS.AdHocCorrespondence](../lean/translation/AdHocCorrespondence.md) |
 
 ## Rapporto con la documentazione della traduzione
 
