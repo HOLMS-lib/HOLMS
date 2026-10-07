@@ -18,6 +18,7 @@ enunciati e le spiegazioni matematiche.
 | Calcolo assiomatico, derivabilità e regole derivate | [Calculus](Calculus.md) | [HOLMS.Calculus](../lean/translation/Calculus.md) |
 | Classi di frame, corrispondenza parametrica e correttezza generale | [ParametricCorrespondence](ParametricCorrespondence.md) | [HOLMS.ParametricCorrespondence](../lean/translation/ParametricCorrespondence.md) |
 | Corrispondenze per D, T, 4, B, 5, Löb e Grzegorczyk | [AdHocCorrespondence](AdHocCorrespondence.md) | [HOLMS.AdHocCorrespondence](../lean/translation/AdHocCorrespondence.md) |
+| Consistenza, chiusura booleana ed estensioni massimali finite | [SetConsistent](SetConsistent.md) | [HOLMS.SetConsistent](../lean/translation/SetConsistent.md) |
 
 ## Rapporto con la documentazione della traduzione
 

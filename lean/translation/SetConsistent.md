@@ -5,6 +5,12 @@ Lean module: [`../HOLMS/SetConsistent.lean`](../HOLMS/SetConsistent.lean)
 HOL Light source: [`../../setconsistent.ml`](../../setconsistent.ml)
 
 This note records choices specific to consistency and maximal extensions. The
+mathematical presentation is in
+[`../../docs/SetConsistent.md`](../../docs/SetConsistent.md). It uses collections
+of formulas without prescribing a representation where that is immaterial,
+and states finiteness and subformula restrictions explicitly. Its HOL Light
+reference is `setconsistent.ml`; it does not give a parallel exposition of
+`consistent.ml` or a natural-language translation of `conjlist.ml`. The
 project-wide decision to use sets rather than lists is explained in
 [`../CONVENTIONS.md`](../CONVENTIONS.md).
 
@@ -12,7 +18,9 @@ project-wide decision to use sets rather than lists is explained in
 
 `SETCONSISTENT S X` is defined directly as non-derivability of modal falsity
 from the set `X`. `MAXIMAL_SETCONSISTENT S p X` means that `X` is consistent
-and decides every subformula of the distinguished formula `p`.
+and decides every subformula of the distinguished formula `p`. The definition
+alone does not require finiteness or restriction to subsentences, nor does it
+assert inclusion-maximality among all consistent sets of formulas.
 
 The module translates `setconsistent.ml`; it does not introduce parallel
 list-valued versions of consistency or maximality from `consistent.ml`.
@@ -44,10 +52,11 @@ using `SETCONSISTENT_EXTEND_CASES` to preserve consistency. The resulting set
 is shown to contain the original context, consist only of subsentences, remain
 finite, and decide every subformula.
 
-This construction replaces the list enumeration, duplicate removal, and
-permutation obligations of the HOL Light list presentation. The finset is an
-implementation device for recursion; the theorem's logical input and output
-remain sets.
+The corresponding proof in `setconsistent.ml` already uses induction on a
+finite set of pending subformulas. Lean uses a finset for this induction; the
+theorem's logical input and output remain sets. No list enumeration, duplicate
+removal, permutation, or iterated-conjunction obligations are needed in either
+set-based proof.
 
 `NONEMPTY_MAXIMAL_SETCONSISTENT` obtains a canonical world containing `¬p`
 from the consistency of the singleton negation, using the calculus's
