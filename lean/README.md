@@ -33,6 +33,8 @@ Light library.
 - [`CONVENTIONS.md`](CONVENTIONS.md) is the authoritative guide to
   representation, style, and proof-engineering choices shared by several
   translated modules.
+- [`FUTURE_WORK.md`](FUTURE_WORK.md) collects TODOs and plans for future
+  improvements to the Lean implementation.
 - [`translation/README.md`](translation/README.md) indexes one implementation
   note for every Lean module. Consult the matching note when reading or
   changing that module.
