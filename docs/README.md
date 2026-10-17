@@ -20,6 +20,14 @@ enunciati e le spiegazioni matematiche.
 | Corrispondenze per D, T, 4, B, 5, Löb e Grzegorczyk | [AdHocCorrespondence](AdHocCorrespondence.md) | [HOLMS.AdHocCorrespondence](../lean/translation/AdHocCorrespondence.md) |
 | Consistenza, chiusura booleana ed estensioni massimali finite | [SetConsistent](SetConsistent.md) | [HOLMS.SetConsistent](../lean/translation/SetConsistent.md) |
 
+## Note di progetto per sviluppi futuri
+
+[Labelled](Labelled.md) discute la rappresentazione dei sequenti etichettati,
+delle regole e delle derivazioni. Per il momento l'implementazione è prevista
+solo in Lean, senza un corrispondente sviluppo in HOL Light. Il documento
+presenta proposte e questioni aperte, non risultati già formalizzati; il task è
+incluso nel [piano di lavoro Lean](../lean/FUTURE_WORK.md#labelled-sequent-calculi).
+
 ## Rapporto con la documentazione della traduzione
 
 La cartella [`lean/translation`](../lean/translation/README.md) documenta la

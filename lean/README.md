@@ -34,7 +34,8 @@ Light library.
   representation, style, and proof-engineering choices shared by several
   translated modules.
 - [`FUTURE_WORK.md`](FUTURE_WORK.md) collects the remaining translation work,
-  new mathematical developments such as modular labelled sequent calculi,
+  new mathematical developments such as
+  [modular labelled sequent calculi](../docs/Labelled.md),
   and possible implementation improvements.
 - [`translation/README.md`](translation/README.md) indexes one implementation
   note for every Lean module. Consult the
