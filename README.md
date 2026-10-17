@@ -11,7 +11,10 @@ An ongoing Lean 4 port is maintained under [`lean/`](lean/). Its
 [`README`](lean/README.md) describes the translated modules, while
 [`CONVENTIONS.md`](lean/CONVENTIONS.md) and the
 [`module-specific translation index`](lean/translation/README.md) document
-the current implementation choices. The older
+the current implementation choices. See also
+[`FUTURE_WORK.md`](lean/FUTURE_WORK.md) for the remaining translation work,
+planned developments such as labelled sequent calculi, and implementation
+improvements. The older
 [`TRANSLATION.md`](lean/TRANSLATION.md) is retained only as a legacy snapshot.
 
  At its current stage, nine modal system and their adequacy proofs are now implemented in HOLMS:

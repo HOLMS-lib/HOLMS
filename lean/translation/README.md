@@ -1,9 +1,13 @@
 # Module-specific translation notes
 
 This directory documents the translation of HOLMS from HOL Light to Lean,
-with implementation decisions specific to each Lean module. Before changing a module, read the
-project-wide [`CONVENTIONS.md`](../CONVENTIONS.md) and then the matching note
-below.
+with implementation decisions specific to each Lean module. The remaining
+translation work, planned mathematical developments, and possible
+implementation improvements are collected in
+[`FUTURE_WORK.md`](../FUTURE_WORK.md).
+
+Before changing a module, read the project-wide
+[`CONVENTIONS.md`](../CONVENTIONS.md) and then the matching note below.
 
 | Lean module | Translation note | HOL Light source |
 |---|---|---|

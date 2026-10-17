@@ -33,11 +33,12 @@ Light library.
 - [`CONVENTIONS.md`](CONVENTIONS.md) is the authoritative guide to
   representation, style, and proof-engineering choices shared by several
   translated modules.
-- [`FUTURE_WORK.md`](FUTURE_WORK.md) collects TODOs and plans for future
-  improvements to the Lean implementation.
+- [`FUTURE_WORK.md`](FUTURE_WORK.md) collects the remaining translation work,
+  new mathematical developments such as modular labelled sequent calculi,
+  and possible implementation improvements.
 - [`translation/README.md`](translation/README.md) indexes one implementation
-  note for every Lean module. Consult the matching note when reading or
-  changing that module.
+  note for every Lean module. Consult the
+  matching note when reading or changing that module.
 - [`TRANSLATION.md`](TRANSLATION.md) is retained only as a legacy snapshot of
   the earlier combined documentation; it is redundant and may be obsolete.
 - `lakefile.toml` defines the `HOLMS` Lake library.
