@@ -41,7 +41,10 @@ This representation is intended to support three complementary goals:
 For now, implementation of this deep embedding is planned **in Lean 4 only**;
 no corresponding HOL Light implementation is currently planned. This is new
 work beyond the translation of the existing HOL Light library and builds on
-the proof-search experience provided by its shallow embedding.
+the proof-search experience provided by its shallow embedding. Nevertheless,
+the design should consider a possible future HOL Light port; the portability
+discussion below is a design consideration, not a commitment to implement
+that port now.
 
 These are design notes for a planned development, not documentation of an
 implemented calculus. The [Lean work plan](../lean/FUTURE_WORK.md#labelled-sequent-calculi)
@@ -151,7 +154,75 @@ $$
 \operatorname{conclusion}(d)=S.
 $$
 
-An explicit tree is particularly useful for external proof search, proof certificates, serialization, and proof transformations; inductive derivability is particularly convenient for mathematical reasoning.
+### 5.1. Explicit derivations for proof theory
+
+Option B is useful for proof theory as well as for certificates. Explicit
+trees support recursive definitions of height, size, cut rank, and label
+support, together with transformations of derivations. This permits direct
+statements about height-preserving admissibility, cut elimination as a
+transformation, and bounds on the size or height of the resulting proof.
+
+Option A also supports induction on derivations and proofs of soundness,
+completeness, structural admissibility, and cut elimination. However, Lean's
+`Prop` is proof-irrelevant, and elimination from inductive propositions into
+data types is restricted. In general, one cannot define a function computing
+the height or a transformed tree by inspecting a proof of `Derivable C S`.
+See the [Lean reference on propositions](https://lean-lang.org/doc/reference/latest/The-Type-System/Propositions/).
+An indexed predicate such as `DerivableWithin C h S : Prop` can still express
+derivability within height `h` and support quantitative metatheorems.
+
+With Option B, for example, a cut-elimination function on trees would need a
+theorem stating that valid inputs produce valid, cut-free outputs with the
+same conclusion. If the transformation is only defined on valid trees, its
+interface may take a validity proof as an additional argument. Neither the
+existence of the function nor its termination follows merely from choosing
+explicit trees; these remain substantive proof obligations.
+
+### 5.2. An alternative: intrinsically valid derivations in `Type`
+
+Explicit derivations need not be raw trees. Another possibility is an
+inductive family `Derivation (C : Calculus) : Sequent → Type`, with one
+constructor per rule and validity conditions, including freshness, built
+into the constructors. This combines induction and computation on proof
+objects with a guarantee that each inhabitant represents a valid derivation
+of its indexed conclusion. Propositional derivability can then be expressed
+as `Nonempty (Derivation C S)`.
+
+This representation avoids repeatedly establishing validity of raw trees,
+but introduces dependent indices into proof transformations. Raw trees with
+a separate validity predicate and intrinsically valid derivations are two
+different ways to obtain explicit proof objects; their relative convenience
+should be tested on renaming and a structural admissibility argument.
+
+### 5.3. Possible translation to HOL Light
+
+For maintaining parallel Lean and HOL Light developments, **raw trees with a
+separate validity predicate are a promising common representation**. A tree
+datatype, recursive operations on it, and a predicate `Valid C d` can be
+expressed in HOL Light's simple type theory. HOL Light supports
+[inductive datatypes](https://www.cl.cam.ac.uk/~jrh13/hol-light/HTML/define_type.html)
+and [inductively defined relations](https://hol-light.github.io/references/HTML/new_inductive_definition.html).
+The dependent family `Derivation C S : Type` has no direct counterpart as a
+type indexed by the term `S` in HOL Light; its information would normally be
+expressed using an ordinary datatype and predicates instead.
+
+Keeping validity separate would therefore allow both implementations to
+share the mathematical shape of their definitions and theorems: operations
+act on trees, and preservation theorems assert validity, preservation of the
+conclusion, and any height or size bounds under explicit hypotheses. The
+predicate must express both local rule correctness and validity of all
+subderivations. Merely defining an inductive derivability predicate, as in
+Option A, is also portable, but does not by itself provide explicit proof
+objects for these operations.
+
+This suggests using Option B as the common mathematical interface if
+portability is a priority. Lean may additionally package a tree together
+with its validity proof in a subtype, or provide an indexed interface, while
+retaining the raw representation for external certificates and a possible
+HOL Light port. Such wrappers need not dictate the representation in HOL
+Light. Portability still requires compatible choices of contexts, rule
+instances, and freshness conditions; it does not imply automatic translation
+of Lean definitions or proofs.
 
 ## 6. Modularity across modal logics
 
@@ -165,6 +236,140 @@ logics. The design must also accommodate systems such as GL and Grz without
 assuming that adding the usual geometric frame rules to `G3K` is sufficient.
 The appropriate rules and their metatheory remain to be established for each
 chosen calculus.
+
+### 6.1. A common tree type and parameterized validity
+
+Raw proof trees offer a further modularity advantage: the same datatype and
+the same tree can be considered in different calculi. A tree valid in one
+calculus need not be valid in another. The recursive definition of validity
+can remain fixed; only the predicate describing allowed rule instances
+changes.
+
+For a fixed representation of rule identifiers and parameters, let
+
+```lean
+-- Schematic type of a calculus's local rule-instance relation.
+Step : Rule → List Sequent → Sequent → Prop
+```
+
+Here `Step r premises conclusion` states that this particular inference is
+allowed, including its arity, formula and context requirements, and side
+conditions such as freshness. For a node storing conclusion `S`, rule data
+`r`, and children `ds`, define validity schematically by
+
+$$
+\operatorname{Valid}(C,\operatorname{node}(S,r,ds))
+\iff C(r,\operatorname{map}(\operatorname{conclusion},ds),S)
+\land \forall d\in ds,\ \operatorname{Valid}(C,d).
+$$
+
+Initial sequents are zero-premise rule instances: a leaf is valid only if
+its stored rule and conclusion satisfy `C r [] S`. There is no separate
+blanket acceptance of leaves. This definition inspects the tree structure,
+so height, size, and other purely syntactic operations are independent of
+the selected calculus.
+
+### 6.2. Composition at the level of inference steps
+
+Define each rule family separately: for example, `CoreStep`, `ReflStep`,
+`TransStep`, or `SerialStep`, all with the common interface above. Combine
+them by pointwise disjunction. A proposed S4 calculus could then use
+`CoreStep ∨ ReflStep ∨ TransStep`, while T uses `CoreStep ∨ ReflStep`.
+These are design examples; the rules and the adequacy of each resulting
+calculus still need to be specified and proved.
+
+Composition must take place at the step level, not by disjoining validity
+of whole trees. In general, `Valid (C₁ ∪ C₂) d` is not equivalent to
+`Valid C₁ d ∨ Valid C₂ d`: a derivation may use rules from both components
+at different nodes. By contrast, pointwise inclusion `C₁ ⊆ C₂` should give
+the generic theorem `Valid C₁ d → Valid C₂ d`, by induction on the tree.
+Thus extending a calculus can preserve the very same proof object.
+
+The rule-data interface must itself allow extensions, for example through
+parameterized identifiers and payloads, rather than a closed enumeration
+that must be redesigned for each new logic. Keeping this interface fixed
+gives literally the same tree type; changing its parameter may instead
+require an explicit embedding of old trees and a validity-preservation
+theorem.
+
+### 6.3. Shared metatheory and its limits
+
+Generic soundness can be organized around a local soundness assumption for
+`C`: each allowed step preserves semantic validity from its premises to its
+conclusion. Soundness of a union then reduces to the corresponding results
+for its components. Similarly, generic renaming results can assume stability
+of the step relation under the appropriate label transformations.
+
+Cut elimination and structural admissibility do not follow merely from
+composing rule predicates: interactions between rule families require
+additional hypotheses and proofs. A local step interface directly covers
+finitary rules whose side conditions depend on their recorded data and
+premise/conclusion sequents. Calculi with global proof conditions would
+require a richer validity specification. The common tree representation
+therefore supports modularity without assuming a uniform metatheory for all
+normal modal logics.
+
+### 6.4. Lean classes as an interface to rule availability
+
+Lean type classes can organize the hypotheses of generic results without
+determining the underlying tree representation. A class is a record whose
+instances Lean can search for automatically; its fields may contain data or
+proofs. A parameter `[HasRefl C]` requests an instance certifying that the
+calculus `C` includes the reflexivity rule family. Each instance must supply
+the required proof: instance synthesis does not introduce an assumption or
+prove arbitrary inclusions on its own. See the
+[Lean introduction to type classes](https://lean-lang.org/theorem_proving_in_lean4/Type-Classes/).
+
+A possible design separates the explicit calculus data from classes
+certifying inclusion of rule families:
+
+```lean
+-- Schematic design only; Rule, Sequent, and ReflStep are not defined here.
+structure Calculus where
+  step : Rule → List Sequent → Sequent → Prop
+
+class HasRefl (C : Calculus) : Prop where
+  admitted :
+    ∀ r premises conclusion,
+      ReflStep r premises conclusion → C.step r premises conclusion
+```
+
+The parameter `C`, used directly as a step relation in Sections 6.1–6.3,
+would here package that relation in its `step` field. `Valid C d` would
+still use the same recursive definition, through `C.step`.
+
+Analogous classes could record `HasCore C`, `HasTrans C`, and `HasSerial C`.
+For S4, instances of `HasCore S4`, `HasRefl S4`, and `HasTrans S4` would be
+proved from its explicit definition. A generic lemma could then require
+`(C : Calculus) [HasCore C] [HasRefl C]`, making it usable for T, S4, and
+other calculi with those instances. Instances can also propagate rule
+availability along suitable calculus extensions, provided the necessary
+inclusions have been proved and the search is organized to avoid loops and
+unnecessary competing candidates.
+
+These classes certify that rules are available as individual steps. This
+is stronger than admissibility, which may require replacing a rule
+application by an entire derivation. Admissibility and height-preserving
+admissibility should have distinct specifications; they must not silently
+be substituted for primitive rule availability.
+
+The composition of calculi should remain explicit. Registering multiple
+instances that each provide a different `step` relation for the same
+calculus does not cause Lean to union those relations: instance synthesis
+searches for a suitable instance rather than combining the fields of all
+available instances. See the
+[instance synthesis reference](https://lean-lang.org/doc/reference/latest/Type-Classes/Instance-Synthesis/).
+Use pointwise union to define the calculus, and classes to certify its rule
+inclusions or metatheoretic properties. Availability of rule families alone
+does not establish soundness or cut elimination.
+
+This keeps the mathematical core portable to HOL Light: trees, step
+relations, and validity remain explicit, while class witnesses translate
+into ordinary hypotheses or inclusion theorems. Classes are a Lean
+interface convenience, not a required feature of the object calculus.
+The proposed first experiment is to define the core, reflexivity, and
+transitivity families and test a generic lemma using the resulting classes
+before committing to a larger hierarchy.
 
 ## 7. Labels, renaming, and structural metatheory
 
@@ -202,7 +407,13 @@ These representations answer different questions:
 
 A raw tree should not be confused with a certified proof. Its constructor guarantees only the shape of a tree; `Valid C d` guarantees that every node is a legitimate rule application. If both representations are implemented, their equivalence should be proved, rather than assumed.
 
-**Proposed direction:** keep both options open. Start with whichever makes the first metatheorems simpler, but avoid an API that prevents adding explicit certificates later.
+**Proposed direction:** prioritize explicit derivations for proof theory and
+certificates. Evaluate raw trees with separate validity as the common
+interface for a possible HOL Light port, and compare an intrinsically valid
+Lean interface on small examples. Keep propositional derivability available
+as an abstract judgment, with a proved correspondence to the explicit
+representation. Section 5 discusses the tradeoffs; no final representation
+is fixed yet.
 
 ### 8.3. Which data structure should represent contexts?
 
@@ -263,6 +474,11 @@ The extensional approach is flexible: adding a rule amounts to enlarging the col
 Named schemas provide more information about the proof itself and support human-readable certificates, rule-specific transformations, and executable checking. A predicate on arbitrary steps alone may lose the name and parameters of the applied rule.
 
 **Proposed direction:** distinguish a mathematical *rule-instance relation* from an optional *rule identifier* used by explicit proof trees. This can support both modular metatheory and inspectable certificates.
+
+Section 6 gives a candidate interface that retains rule data, defines tree
+validity uniformly, and composes calculi by union of their local step
+relations. It also distinguishes extension of a rule predicate from extension
+of the datatype used to record rule instances.
 
 ### 8.7. What must be executable?
 
