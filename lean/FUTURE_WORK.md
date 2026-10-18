@@ -61,10 +61,17 @@ embedding is currently planned in HOL Light. The
 [design notes on labelled sequent calculi](../docs/Labelled.md) discuss the
 proposed representations, rule interfaces, and initial milestones.
 
-The first task is to **implement derivations for modal systems based on
-labelled sequents**. Define labels, labelled formulas, relational atoms,
-sequent contexts, and inductively generated derivations, making rule premises
-and freshness conditions explicit.
+The [initial prototype](HOLMS/Labelled.lean), documented in its
+[implementation note](translation/Labelled.md), defines labels, labelled
+formulas, relational atoms, multiset sequents, raw proof trees, core rule
+instances, and a uniform inductive validity predicate. K and T share the
+same tree type; verified examples exercise their rule relations, inclusion,
+freshness, and certificate rejection. This does not yet establish semantic
+adequacy of the prototype calculi.
+
+Next, connect these derivations to Kripke semantics, develop label renaming
+and structural results, and add an executable certificate checker before
+integrating external proof search.
 
 The design must be modular: share the propositional and modal core, and
 parameterize the calculus by additional rules and their side conditions.

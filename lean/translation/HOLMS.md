@@ -27,6 +27,12 @@ represented by empty files, placeholder imports, or declarations containing
 `sorry`. As a result, this module describes the actually available Lean
 library rather than the complete eventual scope of HOLMS.
 
+`HOLMS.Labelled` exports the new labelled-calculus prototype after its
+independent build. Its syntax, rule relations, validity predicate, and
+certificate lemmas are implemented without placeholders; this does not
+assert soundness, completeness, or the remaining structural metatheory.
+See [`Labelled.md`](Labelled.md) for its exact scope.
+
 OCaml session setup, parser installation, printers, and test execution from
 `make.ml` do not belong here. Lake, Lean notation scopes, and the test/build
 commands provide those services separately.

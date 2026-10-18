@@ -14,6 +14,10 @@ Light library.
 - `HOLMS.lean` is the root module of the Lean library.
 - `HOLMS/Modal.lean` formalizes modal syntax, Kripke semantics, subformulas,
   countability, and bisimulation.
+- [`HOLMS/Labelled.lean`](HOLMS/Labelled.lean) prototypes labelled sequents,
+  raw proof trees, modular rule relations and validity for K and T, with
+  kernel-checked certificate examples. Semantic soundness, completeness,
+  proof search, and structural metatheory are not yet implemented.
 - `HOLMS/Calculus.lean` translates the Hilbert calculus for normal modal
   logics, including its derived propositional and modal rules, uniform
   substitution, and the deduction theorem.

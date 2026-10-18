@@ -25,8 +25,13 @@ enunciati e le spiegazioni matematiche.
 [Labelled](Labelled.md) discute la rappresentazione dei sequenti etichettati,
 delle regole e delle derivazioni. Per il momento l'implementazione è prevista
 solo in Lean, senza un corrispondente sviluppo in HOL Light. Il documento
-presenta proposte e questioni aperte, non risultati già formalizzati; il task è
-incluso nel [piano di lavoro Lean](../lean/FUTURE_WORK.md#labelled-sequent-calculi).
+presenta le scelte progettuali e le questioni aperte. Un
+[prototipo Lean](../lean/HOLMS/Labelled.lean) implementa sintassi, alberi di
+prova e validità per K e T, con esempi verificati; la correttezza semantica e
+la metateoria restano da dimostrare. La
+[nota di implementazione](../lean/translation/Labelled.md) ne precisa la
+portata; il task è incluso nel
+[piano di lavoro Lean](../lean/FUTURE_WORK.md#labelled-sequent-calculi).
 
 ## Rapporto con la documentazione della traduzione
 

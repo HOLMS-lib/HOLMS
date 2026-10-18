@@ -1,6 +1,6 @@
 # Deep Embedding of Labelled Sequent Calculi
 
-*Design notes for discussion — HOLMS (Lean 4)*
+*Design notes and initial prototype — HOLMS (Lean 4)*
 
 ## 1. Motivation and scope
 
@@ -46,8 +46,14 @@ the design should consider a possible future HOL Light port; the portability
 discussion below is a design consideration, not a commitment to implement
 that port now.
 
-These are design notes for a planned development, not documentation of an
-implemented calculus. The [Lean work plan](../lean/FUTURE_WORK.md#labelled-sequent-calculi)
+An initial prototype is implemented in
+[`HOLMS.Labelled`](../lean/HOLMS/Labelled.lean); its
+[implementation note](../lean/translation/Labelled.md) records the precise
+scope. It provides raw trees, a common validity predicate, core rules, K/T
+instances, and certified examples. Semantic soundness, completeness, and
+structural metatheory remain future work. The sketches below are design
+alternatives, not literal copies of the implemented API. The
+[Lean work plan](../lean/FUTURE_WORK.md#labelled-sequent-calculi)
 records its place in the project; the [documentation index](README.md)
 links to the existing mathematical chapters.
 
@@ -338,11 +344,19 @@ The parameter `C`, used directly as a step relation in Sections 6.1–6.3,
 would here package that relation in its `step` field. `Valid C d` would
 still use the same recursive definition, through `C.step`.
 
-Analogous classes could record `HasCore C`, `HasTrans C`, and `HasSerial C`.
-For S4, instances of `HasCore S4`, `HasRefl S4`, and `HasTrans S4` would be
-proved from its explicit definition. A generic lemma could then require
-`(C : Calculus) [HasCore C] [HasRefl C]`, making it usable for T, S4, and
-other calculi with those instances. Instances can also propagate rule
+The prototype separates `HasPropositionalCore C`, `HasBoxLeft C`, and
+`HasBoxRight C`. `HasCore C` bundles these standard capabilities for ordinary
+extensions, while `HasRefl C` records reflexivity independently. Future
+classes could record `HasTrans C` and `HasSerial C` as well. For S4,
+instances of `HasCore S4`, `HasRefl S4`, and `HasTrans S4` would be proved
+from its explicit definition.
+
+Generic lemmas should request only the capabilities they use. For example,
+the prototype's T-axiom certificate requires `HasPropositionalCore C`,
+`HasBoxLeft C`, and `HasRefl C`, but not `HasBoxRight C`. This permits reuse
+in a calculus that omits or replaces standard box-right. Initial sequents
+and purely propositional certificates require only the propositional
+capability. Instances can also propagate rule
 availability along suitable calculus extensions, provided the necessary
 inclusions have been proved and the search is organized to avoid loops and
 unnecessary competing candidates.
@@ -352,6 +366,15 @@ is stronger than admissibility, which may require replacing a rule
 application by an entire derivation. Admissibility and height-preserving
 admissibility should have distinct specifications; they must not silently
 be substituted for primitive rule availability.
+
+The datatype of rule tags records what can be represented, not what each
+calculus must permit. Neither `Valid C d` nor the tree datatype requires a
+full-core instance. A calculus's explicit step relation can therefore
+filter out old rules and admit replacements while preserving the raw tree
+representation. A separate predicate asserting that a tree uses only
+selected rules can be useful for metatheory, but is not required in addition
+to validity in an appropriately restricted calculus. Changing the rules
+does not automatically preserve semantic or proof-theoretic results.
 
 The composition of calculi should remain explicit. Registering multiple
 instances that each provide a different `step` relation for the same
