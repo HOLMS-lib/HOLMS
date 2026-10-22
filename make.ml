@@ -50,6 +50,7 @@ loadt "HOLMS/t_completeness.ml";;
 loadt "HOLMS/k4_completeness.ml";;
 loadt "HOLMS/s4_completeness.ml";;
 loadt "HOLMS/kb_completeness.ml";;
+loadt "HOLMS/kb5_completeness.ml";;
 loadt "HOLMS/b_completeness.ml";;
 loadt "HOLMS/s5_completeness.ml";;
 loadt "HOLMS/gl_completeness.ml";;

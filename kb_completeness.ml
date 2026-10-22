@@ -590,7 +590,7 @@ let KB_COMPLETENESS_THM_GEN = prove
   ASM_MESON_TAC[SYF_APPR_KB; GEN_LEMMA_FOR_GEN_COMPLETENESS]);;
 
 (* ------------------------------------------------------------------------- *)
-(* Simple decision procedure for B.                                          *)
+(* Simple decision procedure for KB.                                         *)
 (* ------------------------------------------------------------------------- *)
 
 let KB_TAC : tactic =
