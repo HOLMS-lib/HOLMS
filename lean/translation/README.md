@@ -13,6 +13,8 @@ Before changing a module, read the project-wide
 |---|---|---|
 | [`HOLMS.lean`](../HOLMS.lean) | [`HOLMS.md`](HOLMS.md) | root aggregate; no direct source file |
 | [`HOLMS.Modal`](../HOLMS/Modal.lean) | [`Modal.md`](Modal.md) | [`modal.ml`](../../modal.ml) |
+| [`HOLMS.Labelled`](../HOLMS/Labelled.lean) | [`Labelled.md`](Labelled.md) | new deep embedding; shallow tactics in [`gen_decid.ml`](../../gen_decid.ml) |
+| [`HOLMS.LabelledSoundness`](../HOLMS/LabelledSoundness.lean) | [`LabelledSoundness.md`](LabelledSoundness.md) | new Kripke-soundness development for the deep embedding |
 | [`HOLMS.Calculus`](../HOLMS/Calculus.lean) | [`Calculus.md`](Calculus.md) | [`calculus.ml`](../../calculus.ml) |
 | [`HOLMS.ParametricCorrespondence`](../HOLMS/ParametricCorrespondence.lean) | [`ParametricCorrespondence.md`](ParametricCorrespondence.md) | [`parametric_correspondence.ml`](../../parametric_correspondence.ml) |
 | [`HOLMS.AdHocCorrespondence`](../HOLMS/AdHocCorrespondence.lean) | [`AdHocCorrespondence.md`](AdHocCorrespondence.md) | [`ad_hoc_correspondence.ml`](../../ad_hoc_correspondence.ml) |
