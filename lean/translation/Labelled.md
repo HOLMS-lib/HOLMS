@@ -41,13 +41,12 @@ All declarations are in `HOLMS.Labelled`. The only project dependency is
 - `Calculus` is directly the function from rule names to schemas;
   `Calculus.step` passes a raw rule's flat arguments to the selected schema.
   `Calculus.union` composes calculi pointwise.
-- K is `standardCalculus`; T is
-  `standardCalculus.union reflCalculus`; B is
-  `T.union symmCalculus`. This deliberately follows HOLMS terminology:
-  `B_AX` contains both the T schema and the B schema and is characterized by
-  reflexive symmetric frames, while KB is the merely symmetric system. Since
-  extensions compose calculi without changing a datatype, every calculus uses
-  literally the same raw certificate type and no tree embedding is required.
+- This module deliberately does not define an individual modal system.
+  [`HOLMS.LabelledK`](../HOLMS/LabelledK.lean),
+  [`HOLMS.LabelledT`](../HOLMS/LabelledT.lean), and
+  [`HOLMS.LabelledB`](../HOLMS/LabelledB.lean) compose the reusable singleton
+  calculi into systems. Every system still uses literally the same raw
+  certificate type and no tree embedding is required.
 - `HasPropositionalCore`, `HasBoxLeft`, and `HasBoxRight` separately certify
   inclusion for the propositional family and the two standard box calculi.
   `HasCore` certifies inclusion of `standardCalculus` and supplies the granular
@@ -121,16 +120,17 @@ extension-parameterized tree types have been removed. The existing certificate
 theorems now use composed calculi and flat named rules directly. Examples check
 rejection of a box-right leaf and of a step whose premise introduces no new
 label. Semantic soundness is deliberately kept out of this foundational
-syntax module and is proved in
-[`HOLMS.LabelledSoundness`](../HOLMS/LabelledSoundness.lean).
+syntax module and is proved generically in
+[`HOLMS.LabelledSoundness`](../HOLMS/LabelledSoundness.lean), then specialized
+by the individual system modules.
 
 ## Verified certificate examples and generic results
 
-The module proves validity monotonicity under local step inclusion and
-specializes it to K-to-T and T-to-B inclusion, preserving the same raw tree.
-Existential derivability is monotone as well.
-`identity_valid` and the modal certificate lemmas use rule-availability
-classes rather than hard-coding a system name.
+The module proves validity monotonicity under local step inclusion; the system
+modules use it for inclusions such as K-to-T and T-to-B while preserving the
+same raw tree. Existential derivability is monotone as well. `identity_valid`
+and the generic certificate lemmas use rule-availability classes rather than
+hard-coding a system name.
 
 Certificate lemmas require only the appropriate capability groups:
 
@@ -139,9 +139,6 @@ Certificate lemmas require only the appropriate capability groups:
 | `identity_valid`, `conjunctionTree_valid` | `HasPropositionalCore` |
 | `boxUseTree_valid` | `HasPropositionalCore`, `HasBoxLeft` |
 | `boxedIdentityTree_valid` | `HasPropositionalCore`, `HasBoxLeft`, `HasBoxRight` |
-| `reflexiveBoxTree_valid`, `tAxiomTree_valid` | `HasPropositionalCore`, `HasBoxLeft`, `HasRefl` |
-| `symmetricContradictionTree_valid` | `HasPropositionalCore`, `HasBoxLeft`, `HasSymm` |
-| `bAxiomTree_valid` | `HasPropositionalCore`, `HasBoxLeft`, `HasBoxRight`, `HasSymm` |
 
 The tree datatype and validity definition do not impose `HasCore`. A
 calculus can omit or replace selected standard rules through its explicit
@@ -149,32 +146,11 @@ definition. Finer propositional fragments can be assembled from singleton calcul
 but need their own weaker inclusion hypotheses rather than
 `HasPropositionalCore`.
 
-`boxedIdentityTree` uses box-right, box-left, and identity. Its validity
-requires distinct source/eigenlabels, and the same concrete tree is accepted
-in K and T. `tAxiomTree` uses implication-right, reflexivity, box-left, and
-identity to derive the labelled formula `□A → A` in T. The module proves
-that this particular tree is invalid in K. This is rejection of a certificate,
-not a theorem that the formula has no other K derivation.
-
-`symmetricContradictionTree` uses a forward edge and the symmetry rule to add
-its reverse, then applies box-left and negation-left to close by identity.
-`bAxiomTree` wraps this subderivation with negation-right, box-right, and
-implication-right to derive `A → □◇A`. It has seven nodes and is accepted by B
-when the eigenlabel is fresh. The same concrete certificate is rejected by T
-because it contains a primitive symmetry node; this again concerns that tree,
-not nonderivability by every possible T certificate.
-
-Further negative checks show that a box-right leaf is invalid in K and that
-any correct box-right instance has an eigenlabel distinct from its
-source. `conjunctionTree` verifies a binary conjunction-right step with both
-identity leaves. Examples also check the concrete height and size of the T
-tree.
-
-A private regression calculus removes box-right from T while retaining
-propositional rules, box-left, and reflexivity. Lean verifies the
-propositional and T-axiom certificates in this calculus and rejects the
-boxed-identity certificate because its root uses the missing rule. This
-checks that the granular interfaces work without a full-core instance.
+`boxedIdentityTree` uses box-right, box-left, and identity; its validity only
+requires distinct source and eigenlabels. `conjunctionTree` verifies a binary
+conjunction-right step with both identity leaves. T- and B-specific
+certificates, rejection examples, and structural computations now live with
+their systems rather than in the common infrastructure.
 
 ## Scope and remaining obligations
 
@@ -185,7 +161,8 @@ general identity expansion, weakening, contraction, renaming preservation,
 and cut elimination remain open. Acceptance by `Valid` in this module only
 certifies adherence to the specified calculus; the separate
 [`LabelledSoundness` implementation note](LabelledSoundness.md) documents the
-proved implication from such certificates to Kripke validity for K, T, and B.
+generic semantic implication. The K, T, and B notes document the corresponding
+system-level specializations.
 
 Raw syntax and separate validity were chosen to keep a possible future HOL
 Light deep embedding straightforward. No such port is implemented or promised.

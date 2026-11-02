@@ -27,11 +27,12 @@ represented by empty files, placeholder imports, or declarations containing
 `sorry`. As a result, this module describes the actually available Lean
 library rather than the complete eventual scope of HOLMS.
 
-`HOLMS.Labelled` exports the new labelled-calculus prototype after its
-independent build. Its syntax, rule relations, validity predicate, and
-certificate lemmas are implemented without placeholders; this does not
-assert soundness, completeness, or the remaining structural metatheory.
-See [`Labelled.md`](Labelled.md) for its exact scope.
+The root exports the common labelled-calculus infrastructure and generic
+soundness layer, followed by the separate K, T, and B system modules. Their
+syntax, rule relations, validity predicates, certificates, and soundness
+theorems are implemented without placeholders; completeness and the remaining
+structural metatheory are not asserted. See [`Labelled.md`](Labelled.md) and
+the system notes indexed by [`README.md`](README.md) for their exact scope.
 
 OCaml session setup, parser installation, printers, and test execution from
 `make.ml` do not belong here. Lake, Lean notation scopes, and the test/build

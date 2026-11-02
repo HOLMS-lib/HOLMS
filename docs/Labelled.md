@@ -49,13 +49,19 @@ that port now.
 An initial prototype is implemented in
 [`HOLMS.Labelled`](../lean/HOLMS/Labelled.lean); its
 [implementation note](../lean/translation/Labelled.md) records the precise
-scope. It provides raw trees, a common validity predicate, core rules, K/T/B
-instances, and certified examples. The companion module
+scope. It provides raw trees, a common validity predicate, reusable rule
+families, and generic certificate lemmas. The companion module
 [`HOLMS.LabelledSoundness`](../lean/HOLMS/LabelledSoundness.lean), documented
 in its [implementation note](../lean/translation/LabelledSoundness.md), proves
-Kripke soundness for every primitive rule and for the composed K, T, and B
-calculi. Completeness and structural metatheory remain future work. The
-sketches below are design alternatives, not literal copies of the implemented API. The
+Kripke soundness for every primitive rule and provides compositional
+soundness. Individual systems are isolated in
+[`HOLMS.LabelledK`](../lean/HOLMS/LabelledK.lean),
+[`HOLMS.LabelledT`](../lean/HOLMS/LabelledT.lean), and
+[`HOLMS.LabelledB`](../lean/HOLMS/LabelledB.lean), each with its own
+composition, certificates, soundness theorems, and
+[implementation note](../lean/translation/README.md). Completeness and
+structural metatheory remain future work. The sketches below are design
+alternatives, not literal copies of the implemented API. The
 [Lean work plan](../lean/FUTURE_WORK.md#labelled-sequent-calculi)
 records its place in the project; the [documentation index](README.md)
 links to the existing mathematical chapters.
@@ -285,11 +291,12 @@ Define each rule family separately: for example, `IdentityStep`,
 schema interface. Associate each schema with its string name using a singleton
 calculus, and combine calculi pointwise. The current prototype builds
 `propositionalCalculus` from the fifteen propositional singleton calculi and
-then builds `standardCalculus` by adding box-left and box-right. A proposed S4
-calculus could use
+then builds `standardCalculus` by adding box-left and box-right. Each modal
+system is placed in its own Lean module: K selects `standardCalculus`, T forms
+`K ∪ reflCalculus`, and B forms `T ∪ symmCalculus`. A proposed S4 calculus
+could use
 `standardCalculus ∪ reflCalculus ∪ transCalculus`, while T uses
-`standardCalculus ∪ reflCalculus`. The implemented B calculus is
-`T ∪ symmCalculus`. Here “B” follows the existing HOLMS convention:
+`standardCalculus ∪ reflCalculus`. Here “B” follows the existing HOLMS convention:
 `B_AX` contains both the T and B schemas and therefore corresponds to
 reflexive symmetric frames; KB will denote the merely symmetric system. The
 additional rules and adequacy results for the other systems still need to be

@@ -61,16 +61,19 @@ embedding is currently planned in HOL Light. The
 [design notes on labelled sequent calculi](../docs/Labelled.md) discuss the
 proposed representations, rule interfaces, and initial milestones.
 
-The [initial prototype](HOLMS/Labelled.lean), documented in its
+The [common infrastructure](HOLMS/Labelled.lean), documented in its
 [implementation note](translation/Labelled.md), defines labels, labelled
-formulas, relational atoms, multiset sequents, raw proof trees, core rule
-instances, and a uniform inductive validity predicate. K, T, and B share the
+formulas, relational atoms, multiset sequents, raw proof trees, reusable rule
+families, and a uniform inductive validity predicate. The separate
+[`LabelledK`](HOLMS/LabelledK.lean), [`LabelledT`](HOLMS/LabelledT.lean), and
+[`LabelledB`](HOLMS/LabelledB.lean) modules assemble systems while sharing the
 same tree type; verified examples exercise their rule relations, inclusion,
 freshness, symmetry, and certificate rejection. The companion
 [`HOLMS.LabelledSoundness`](HOLMS/LabelledSoundness.lean), documented in
 [`translation/LabelledSoundness.md`](translation/LabelledSoundness.md), proves
-soundness of every primitive K/T/B rule, compositional soundness of rule-map
-unions, and Kripke soundness of K, T, and B derivability.
+soundness of every reusable primitive rule and compositional soundness of
+rule-map unions. Each system module contains its own Kripke-soundness
+specialization.
 
 Next, develop label renaming and structural results, prove completeness and
 the desired connections with the existing Hilbert calculi, and add an

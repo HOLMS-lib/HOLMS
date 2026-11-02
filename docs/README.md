@@ -27,10 +27,12 @@ delle regole e delle derivazioni. Per il momento l'implementazione è prevista
 solo in Lean, senza un corrispondente sviluppo in HOL Light. Il documento
 presenta le scelte progettuali e le questioni aperte. Un
 [prototipo Lean](../lean/HOLMS/Labelled.lean) implementa sintassi, alberi di
-prova e validità per K e T, con esempi verificati; la correttezza semantica e
-la metateoria restano da dimostrare. La
-[nota di implementazione](../lean/translation/Labelled.md) ne precisa la
-portata; il task è incluso nel
+prova e regole riutilizzabili. Moduli distinti assemblano i sistemi
+[K](../lean/HOLMS/LabelledK.lean), [T](../lean/HOLMS/LabelledT.lean) e
+[B](../lean/HOLMS/LabelledB.lean), con certificati verificati e teoremi di
+correttezza semantica; completezza e metateoria strutturale restano da
+dimostrare. L'[indice delle note di implementazione](../lean/translation/README.md)
+ne precisa la portata; il task è incluso nel
 [piano di lavoro Lean](../lean/FUTURE_WORK.md#labelled-sequent-calculi).
 
 ## Rapporto con la documentazione della traduzione

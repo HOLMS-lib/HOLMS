@@ -5,9 +5,11 @@ import HOLMS.AdHocCorrespondence
 # Kripke soundness of labelled sequent calculi
 
 This module interprets labelled sequents in the Kripke semantics of
-`HOLMS.Modal`.  It proves local soundness of every rule used by the labelled
-K, T, and B calculi, shows that sound calculi are closed under pointwise union,
-and lifts local soundness to valid proof trees and derivability.
+`HOLMS.Modal`. It proves local soundness of the reusable primitive rule
+families, shows that sound calculi are closed under pointwise union, and lifts
+local soundness to valid proof trees and derivability. Individual systems
+specialize these results in `HOLMS.LabelledK`, `HOLMS.LabelledT`, and
+`HOLMS.LabelledB`.
 
 The development is specific to the Lean deep embedding of labelled calculi;
 it has no direct HOL Light counterpart.
@@ -582,7 +584,7 @@ theorem SymmStep.soundOn {W : Type*} {frame : Frame W}
         right := counterexample.right
       }
 
-/-! ## Soundness of the composed K, T, and B calculi -/
+/-! ## Soundness of the primitive calculi -/
 
 /-- The singleton identity calculus is sound on every frame. -/
 -- HOL: no direct counterpart; singleton packaging of `IdentityStep.soundOn`.
@@ -732,26 +734,6 @@ theorem standardCalculus_soundOn {W : Type*} (frame : Frame W) :
       ((boxRightCalculus_soundOn frame).union
         (Calculus.soundOn_empty frame)))
 
-/-- The labelled K calculus is sound on every Kripke frame. -/
--- HOL: no direct counterpart; soundness of `K` in the Lean labelled calculus.
-theorem K_soundOn {W : Type*} (frame : Frame W) : K.SoundOn frame := by
-  simpa only [K] using standardCalculus_soundOn frame
-
-/-- The labelled T calculus is sound on every reflexive Kripke frame. -/
--- HOL: no direct counterpart; soundness of `T` in the Lean labelled calculus.
-theorem T_soundOn {W : Type*} {frame : Frame W}
-    (hrefl : REFLEXIVE frame.worlds frame.rel) : T.SoundOn frame := by
-  exact (K_soundOn frame).union (reflCalculus_soundOn hrefl)
-
-/-- The labelled B calculus is sound on every reflexive symmetric Kripke
-frame. HOLMS's B contains both the T and B schemas; KB is the merely symmetric
-system. -/
--- HOL: labelled soundness counterpart of `B_RSYM_VALID` (`b_completeness.ml`).
-theorem B_soundOn {W : Type*} {frame : Frame W}
-    (hrefl : REFLEXIVE frame.worlds frame.rel)
-    (hsymm : SYMMETRIC frame.worlds frame.rel) : B.SoundOn frame := by
-  exact (T_soundOn hrefl).union (symmCalculus_soundOn hsymm)
-
 /-! ## Soundness of proof trees and derivability -/
 
 /-- A locally valid proof tree over a sound calculus has a semantically valid
@@ -777,27 +759,5 @@ theorem Derivable.soundOn {W : Type*} {frame : Frame W} {C : Calculus}
     s.ValidOn frame := by
   obtain ⟨tree, hvalid, rfl⟩ := hderivable
   exact hvalid.soundOn hsound
-
-/-- Every K-derivable labelled sequent is valid on every Kripke frame. -/
--- HOL: no direct counterpart; derivability soundness for the Lean labelled K calculus.
-theorem K_derivable_sound {W : Type*} {frame : Frame W} {s : Sequent}
-    (hderivable : Derivable K s) : s.ValidOn frame :=
-  hderivable.soundOn (K_soundOn frame)
-
-/-- Every T-derivable labelled sequent is valid on every reflexive Kripke frame. -/
--- HOL: no direct counterpart; derivability soundness for the Lean labelled T calculus.
-theorem T_derivable_sound {W : Type*} {frame : Frame W}
-    (hrefl : REFLEXIVE frame.worlds frame.rel) {s : Sequent}
-    (hderivable : Derivable T s) : s.ValidOn frame :=
-  hderivable.soundOn (T_soundOn hrefl)
-
-/-- Every B-derivable labelled sequent is valid on every reflexive symmetric
-Kripke frame. -/
--- HOL: labelled soundness counterpart of `B_RSYM_VALID` (`b_completeness.ml`).
-theorem B_derivable_sound {W : Type*} {frame : Frame W}
-    (hrefl : REFLEXIVE frame.worlds frame.rel)
-    (hsymm : SYMMETRIC frame.worlds frame.rel) {s : Sequent}
-    (hderivable : Derivable B s) : s.ValidOn frame :=
-  hderivable.soundOn (B_soundOn hrefl hsymm)
 
 end HOLMS.Labelled

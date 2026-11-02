@@ -67,30 +67,24 @@ the world assigned to its label. `SymmStep.soundOn` similarly requires
 conclusion supplies truth of the auxiliary reverse edge in the premise.
 
 Each primitive result is packaged for its singleton calculus. Their unions
-prove `propositionalCalculus_soundOn`, `standardCalculus_soundOn`,
-`K_soundOn`, `T_soundOn`, and `B_soundOn`; K is sound on every frame, T is
-sound on every reflexive frame, and B is sound on every reflexive symmetric
-frame. B includes reflexivity because HOLMS's `B_AX` contains both the T and B
-schemas; the merely symmetric system is KB.
+prove `propositionalCalculus_soundOn` and `standardCalculus_soundOn`, while
+`reflCalculus_soundOn` and `symmCalculus_soundOn` expose the frame-relative
+extension results. The individual K, T, and B modules compose these theorems
+in exactly the same shape as their calculus definitions.
 
 ## From local rules to derivability
 
 `Valid.soundOn` inducts over a valid raw proof tree. At each node it invokes
 local calculus soundness and the induction hypotheses for the children.
-`Derivable.soundOn` removes the existential proof-tree wrapper. The final
-specializations are:
+`Derivable.soundOn` removes the existential proof-tree wrapper. System-level
+specializations are intentionally colocated with their definitions:
+`K_derivable_sound` in `HOLMS.LabelledK`, `T_derivable_sound` in
+`HOLMS.LabelledT`, and `B_derivable_sound` in `HOLMS.LabelledB`.
 
-- `K_derivable_sound`: every K-derivable labelled sequent is valid on every
-  Kripke frame;
-- `T_derivable_sound`: every T-derivable labelled sequent is valid on every
-  reflexive Kripke frame;
-- `B_derivable_sound`: every B-derivable labelled sequent is valid on every
-  reflexive symmetric Kripke frame.
-
-These results establish semantic soundness of the implemented calculi. They
-do not establish completeness, correspondence with the Hilbert calculi,
-structural admissibility, cut elimination, or an executable certificate
-checker.
+These generic results are the reusable semantic foundation for implemented
+and future calculi. They do not establish completeness, correspondence with
+the Hilbert calculi, structural admissibility, cut elimination, or an
+executable certificate checker.
 
 ## Verification
 
